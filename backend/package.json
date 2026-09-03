@@ -1,0 +1,23 @@
+{
+  "name": "edugate-backend",
+  "version": "1.0.0",
+  "description": "EDUGATE Global CRM Backend API",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": ["crm", "edugate", "express", "supabase", "postgresql"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}
