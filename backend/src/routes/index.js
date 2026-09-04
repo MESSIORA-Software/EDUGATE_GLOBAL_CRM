@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import UserRoleRoutes from './UserRoleRoutes.js';
 import UsersRoutes from './UsersRoutes.js';
+import  AuthRoutes  from './AuthRoutes.js';
 
 const router = Router();
 
@@ -16,4 +17,6 @@ router.get('/health', (req, res) => {
 // User Role Endpoint
 router.use('/roles', UserRoleRoutes);
 router.use('/users', UsersRoutes);
+router.use('/auth', AuthRoutes);
+
 export default router;

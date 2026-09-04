@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/UsersRepository.js';
 
 
@@ -31,11 +32,19 @@ export const userService = {
     created_by = null
 }) {
 
+    // Automatically hash plain password if not already hashed
+        let hashedPassword = password_hash;
+        if (password_hash && !password_hash.startsWith('$2')) {
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(password_hash, salt);
+        }
+
+
     const userData = {
         branch_id: branch_id,
         name: name,
         email: email,
-        password_hash: password_hash,
+        password_hash: hashedPassword,
         role_id: role_id,
         status: status,
         created_by: created_by || null,
@@ -57,7 +66,16 @@ export const userService = {
         if (branch_id !== undefined) updateData.branch_id = branch_id;
         if (name !== undefined) updateData.name = name;
         if (email !== undefined) updateData.email = email;
-        if (password_hash !== undefined) updateData.password_hash = password_hash;
+
+      if (password_hash !== undefined) {
+            if (!password_hash.startsWith('$2')) {
+                const salt = await bcrypt.genSalt(10);
+                updateData.password_hash = await bcrypt.hash(password_hash, salt);
+            } else {
+                updateData.password_hash = password_hash;
+            }
+        }
+
         if (role_id !== undefined) updateData.role_id = role_id;
         if (status !== undefined) updateData.status = status;
         updateData.updated_at = new Date();

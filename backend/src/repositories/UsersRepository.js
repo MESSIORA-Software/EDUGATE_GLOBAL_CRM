@@ -26,6 +26,19 @@ export const UserRepository = {
         return data;
     },
 
+    // NEW: Find a user by Email (for Login)
+    async finduserbyemail(email) {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+            
+        if (error) throw error;
+        return data;
+    },
+
+
     // Create a new user
      async createuser(UserData) {
         const { data, error } = await supabase
