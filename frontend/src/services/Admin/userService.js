@@ -1,7 +1,7 @@
 const BASE_URL = 'https://edugate-global-crm.vercel.app/api';
 
-const getAllRoles = async () => {
-  const response = await fetch(`${BASE_URL}/roles`, {
+const getAllUsers = async () => {
+  const response = await fetch(`${BASE_URL}/users`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -10,86 +10,84 @@ const getAllRoles = async () => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to fetch system user roles');
+    throw new Error(errorData.message || 'Failed to fetch users list');
   }
 
   return await response.json();
 };
 
-
-
-const getRoleById = async (role_id) => {
-  const response = await fetch(`${BASE_URL}/roles/find-by-id`, {
+const getUserById = async (user_id) => {
+  const response = await fetch(`${BASE_URL}/users/user`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role_id }),
+    body: JSON.stringify({ user_id }),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Failed to find role with ID: ${role_id}`);
+    throw new Error(errorData.message || `Failed to find user with ID: ${user_id}`);
   }
 
   return await response.json();
 };
 
-const createRole = async (role_id, role_name) => {
-  const response = await fetch(`${BASE_URL}/roles`, {
+const createUser = async (userData) => {
+  const response = await fetch(`${BASE_URL}/users`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role_id, role_name }),
+    body: JSON.stringify(userData),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to create role');
+    throw new Error(errorData.message || 'Failed to create user');
   }
 
   return await response.json();
 };
 
-const updateRole = async (role_id, role_name) => {
-  const response = await fetch(`${BASE_URL}/roles`, {
+const updateUser = async (userData) => {
+  const response = await fetch(`${BASE_URL}/users`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role_id, role_name }),
+    body: JSON.stringify(userData),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to update role');
+    throw new Error(errorData.message || 'Failed to update user');
   }
 
   return await response.json();
 };
 
-const deleteRole = async (role_id) => {
-  const response = await fetch(`${BASE_URL}/roles`, {
+const deleteUser = async (user_id) => {
+  const response = await fetch(`${BASE_URL}/users`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role_id }),
+    body: JSON.stringify({ user_id }),
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to delete role');
+    throw new Error(errorData.message || 'Failed to delete user');
   }
 
   return await response.json();
 };
 
 export default {
-  getAllRoles,
-  getRoleById,
-  createRole,
-  updateRole,
-  deleteRole,
+  getAllUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
 };

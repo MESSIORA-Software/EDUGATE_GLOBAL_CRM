@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import MainLayout from '../layout/MainLayout';
 import RolesManagement from '../pages/Admin/RolesManagement';
+import UsersManagement from '../pages/Admin/UsersManagement';
 
 function AppRoutes() {
   return (
@@ -9,30 +10,22 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<RolesManagement />} />
         <Route path="/roles" element={<RolesManagement />} />
-        <Route
-          path="/users"
-          element={
-            <div className="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm text-center">
-              <h2 className="text-xl font-bold text-slate-800">User Accounts Management</h2>
-              <p className="text-slate-500 text-sm mt-1">User management module configured with Redux.</p>
-            </div>
-          }
-        />
+        <Route path="/users" element={<UsersManagement />} />
         <Route
           path="/dashboard"
           element={
-            <div className="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm text-center">
-              <h2 className="text-xl font-bold text-slate-800">EDUGATE CRM Dashboard</h2>
-              <p className="text-slate-500 text-sm mt-1">Global CRM analytics overview.</p>
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs text-center">
+              <h2 className="text-lg font-bold text-slate-800">EDUGATE Global CRM Dashboard</h2>
+              <p className="text-slate-500 text-xs mt-1">Analytics overview.</p>
             </div>
           }
         />
         <Route
           path="/settings"
           element={
-            <div className="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm text-center">
-              <h2 className="text-xl font-bold text-slate-800">System Settings</h2>
-              <p className="text-slate-500 text-sm mt-1">Configure global application parameters.</p>
+            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs text-center">
+              <h2 className="text-lg font-bold text-slate-800">System Settings</h2>
+              <p className="text-slate-500 text-xs mt-1">Configure CRM global preferences.</p>
             </div>
           }
         />

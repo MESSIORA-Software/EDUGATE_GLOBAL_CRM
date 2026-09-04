@@ -1,16 +1,16 @@
 import React from 'react';
-import useAdminRoles from '../../hooks/Admin/Roles/useAdminRoles';
-import RoleAddModal from '../../components/Modals/Admin/RoleAddModal';
-import RoleUpdateModal from '../../components/Modals/Admin/RoleUpdateModal';
-import RoleDetailModal from '../../components/Modals/Admin/RoleDetailModal';
+import useAdminUsers from '../../hooks/Admin/Users/useAdminUsers';
+import UserAddModal from '../../components/Modals/Admin/UserAddModal';
+import UserUpdateModal from '../../components/Modals/Admin/UserUpdateModal';
+import UserDetailModal from '../../components/Modals/Admin/UserDetailModal';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typography';
 
 import {
-  Shield,
-  Plus,
+  Users,
+  UserPlus,
   Search,
   RefreshCw,
   Edit2,
@@ -18,36 +18,39 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
-  ShieldAlert,
+  Building2,
+  ShieldCheck,
   Server,
-  Layers,
   Sparkles,
   Loader2,
 } from 'lucide-react';
 
-export default function RolesManagement() {
+export default function UsersManagement() {
   const {
-    filteredRoles,
+    filteredUsers,
     apiLoading,
     error,
     totalCount,
-    searchTerm,
-    setSearchTerm,
+    activeCount,
+    searchQuery,
+    setSearchQuery,
+    selectedStatus,
+    setSelectedStatus,
     findIdInput,
     setFindIdInput,
     isFinding,
     isAddOpen,
     setIsAddOpen,
-    editingRole,
-    setEditingRole,
-    detailRole,
-    setDetailRole,
+    editingUser,
+    setEditingUser,
+    detailUser,
+    setDetailUser,
     toast,
     showToast,
     handleRefresh,
     handleFindById,
     handleDelete,
-  } = useAdminRoles();
+  } = useAdminUsers();
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -79,17 +82,17 @@ export default function RolesManagement() {
             style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
             className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0"
           >
-            <Shield className="w-6 h-6" />
+            <Users className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className={TYPOGRAPHY.h2}>System Roles Management</h1>
+              <h1 className={TYPOGRAPHY.h2}>System User Accounts</h1>
               <Badge variant="red" icon={Sparkles}>
-                CRM Redux API
+                CRM Users API
               </Badge>
             </div>
             <p className={TYPOGRAPHY.subheading}>
-              Configure user role definitions via Edugate Vercel API
+              Manage user accounts, roles & status via Edugate Vercel API
             </p>
           </div>
         </div>
@@ -99,24 +102,24 @@ export default function RolesManagement() {
             onClick={handleRefresh}
             style={{ borderColor: COLORS.border, color: COLORS.muted }}
             className="p-2 rounded-xl border hover:bg-slate-100 transition-colors"
-            title="Refresh Roles"
+            title="Refresh Users"
           >
             <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-[#1E3A8A]' : ''}`} />
           </button>
-          <Button variant="secondary" icon={Plus} onClick={() => setIsAddOpen(true)}>
-            Add New Role
+          <Button variant="secondary" icon={UserPlus} onClick={() => setIsAddOpen(true)}>
+            Add New User
           </Button>
         </div>
       </div>
 
-      {/* High Density Metric Cards */}
+      {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
           className="p-4 rounded-2xl border shadow-2xs flex items-center justify-between"
         >
           <div>
-            <p className={TYPOGRAPHY.label}>Total Roles</p>
+            <p className={TYPOGRAPHY.label}>Total Users</p>
             <p style={{ color: COLORS.primary }} className="text-2xl font-extrabold mt-0.5">
               {totalCount}
             </p>
@@ -125,7 +128,7 @@ export default function RolesManagement() {
             style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
             className="w-10 h-10 rounded-xl flex items-center justify-center font-bold"
           >
-            <Layers className="w-5 h-5" />
+            <Users className="w-5 h-5" />
           </div>
         </div>
 
@@ -134,17 +137,16 @@ export default function RolesManagement() {
           className="p-4 rounded-2xl border shadow-2xs flex items-center justify-between"
         >
           <div>
-            <p className={TYPOGRAPHY.label}>API Status</p>
-            <p style={{ color: COLORS.success }} className="text-xs font-bold mt-1 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Connected Live
+            <p className={TYPOGRAPHY.label}>Active Accounts</p>
+            <p style={{ color: COLORS.success }} className="text-2xl font-extrabold mt-0.5">
+              {activeCount}
             </p>
           </div>
           <div
             style={{ backgroundColor: COLORS.successLight, color: COLORS.success }}
             className="w-10 h-10 rounded-xl flex items-center justify-center font-bold"
           >
-            <Server className="w-5 h-5" />
+            <CheckCircle2 className="w-5 h-5" />
           </div>
         </div>
 
@@ -153,16 +155,17 @@ export default function RolesManagement() {
           className="p-4 rounded-2xl border shadow-2xs flex items-center justify-between"
         >
           <div>
-            <p className={TYPOGRAPHY.label}>Primary Role</p>
-            <p style={{ color: COLORS.secondary }} className="text-sm font-bold font-mono mt-0.5">
-              ADMIN
+            <p className={TYPOGRAPHY.label}>Live API</p>
+            <p style={{ color: COLORS.secondary }} className="text-xs font-bold mt-1 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              Users Connected
             </p>
           </div>
           <div
             style={{ backgroundColor: COLORS.secondaryLight, color: COLORS.secondary }}
             className="w-10 h-10 rounded-xl flex items-center justify-center font-bold"
           >
-            <ShieldAlert className="w-5 h-5" />
+            <Server className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -172,26 +175,40 @@ export default function RolesManagement() {
         style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
         className="p-3.5 rounded-2xl border shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center"
       >
-        <div className="relative w-full md:w-72">
-          <Search style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Filter roles..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="Search user name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+              className="w-full pl-9 pr-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+            />
+          </div>
+
+          <select
+            value={selectedStatus}
+            onChange={(e) => setSelectedStatus(e.target.value)}
             style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-            className="w-full pl-9 pr-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-          />
+            className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+          >
+            <option value="All">All Status</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
         </div>
 
+        {/* Find By User ID Form */}
         <form onSubmit={handleFindById} className="flex items-center gap-2 w-full md:w-auto">
           <input
             type="text"
-            placeholder="Role ID (e.g. ADMIN)"
+            placeholder="User ID (e.g. 1)"
             value={findIdInput}
             onChange={(e) => setFindIdInput(e.target.value)}
             style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-            className="px-3 py-1.5 border rounded-xl text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] w-full md:w-48"
+            className="px-3 py-1.5 border rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] w-full md:w-44"
           />
           <Button
             type="submit"
@@ -220,15 +237,15 @@ export default function RolesManagement() {
           </div>
         )}
 
-        {apiLoading && filteredRoles?.length === 0 ? (
+        {apiLoading && filteredUsers?.length === 0 ? (
           <div className="p-8 text-center" style={{ color: COLORS.muted }}>
             <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: COLORS.primary }} />
-            <p className="font-semibold text-xs">Loading Roles...</p>
+            <p className="font-semibold text-xs">Loading User Accounts...</p>
           </div>
-        ) : filteredRoles.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <div className="p-8 text-center" style={{ color: COLORS.placeholder }}>
-            <Shield className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            <p className="font-bold text-sm" style={{ color: COLORS.foreground }}>No Roles Found</p>
+            <Users className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+            <p className="font-bold text-sm" style={{ color: COLORS.foreground }}>No User Accounts Found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -238,15 +255,16 @@ export default function RolesManagement() {
                   style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
                   className="border-b text-[11px] font-bold uppercase tracking-wider text-slate-500"
                 >
-                  <th className="py-3 px-4">Role ID</th>
-                  <th className="py-3 px-4">Role Name</th>
+                  <th className="py-3 px-4">ID</th>
+                  <th className="py-3 px-4">User Details</th>
+                  <th className="py-3 px-4">Branch / Role</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredRoles.map((r, index) => (
-                  <tr key={r.role_id || index} className="hover:bg-slate-50/70 transition-colors">
+                {filteredUsers.map((u, index) => (
+                  <tr key={u.user_id || u.id || index} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold">
                       <span
                         style={{
@@ -256,20 +274,34 @@ export default function RolesManagement() {
                         }}
                         className="px-2 py-0.5 rounded-md border text-[11px]"
                       >
-                        {r.role_id}
+                        #{u.user_id || u.id}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-bold" style={{ color: COLORS.foreground }}>
-                      {r.role_name}
+                    <td className="py-3 px-4">
+                      <p className="font-bold" style={{ color: COLORS.foreground }}>{u.name}</p>
+                      <p className="text-[11px]" style={{ color: COLORS.muted }}>{u.email}</p>
                     </td>
                     <td className="py-3 px-4">
-                      <Badge variant="green" icon={CheckCircle2}>
-                        Active
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600">
+                          <Building2 className="w-3 h-3 text-slate-400" /> B#{u.branch_id || 1}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700">
+                          <ShieldCheck className="w-3 h-3 text-indigo-500" /> R#{u.role_id || 1}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <Badge
+                        variant={u.status === 'INACTIVE' ? 'red' : 'green'}
+                        icon={CheckCircle2}
+                      >
+                        {u.status || 'ACTIVE'}
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right space-x-1.5">
                       <button
-                        onClick={() => setDetailRole(r)}
+                        onClick={() => setDetailUser(u)}
                         style={{ color: COLORS.muted, borderColor: COLORS.border }}
                         className="p-1.5 rounded-lg border hover:text-[#1E3A8A] hover:bg-slate-100 transition-colors"
                         title="View Details"
@@ -277,18 +309,18 @@ export default function RolesManagement() {
                         <Eye className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => setEditingRole(r)}
+                        onClick={() => setEditingUser(u)}
                         style={{ color: COLORS.muted, borderColor: COLORS.border }}
                         className="p-1.5 rounded-lg border hover:text-[#D97706] hover:bg-amber-50 transition-colors"
-                        title="Edit Role"
+                        title="Edit User"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(r.role_id)}
+                        onClick={() => handleDelete(u.user_id || u.id)}
                         style={{ color: COLORS.muted, borderColor: COLORS.border }}
                         className="p-1.5 rounded-lg border hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Delete Role"
+                        title="Delete User"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -302,23 +334,23 @@ export default function RolesManagement() {
       </div>
 
       {/* Modals */}
-      <RoleAddModal
+      <UserAddModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onSuccess={(msg) => showToast(msg)}
       />
 
-      <RoleUpdateModal
-        isOpen={!!editingRole}
-        role={editingRole}
-        onClose={() => setEditingRole(null)}
+      <UserUpdateModal
+        isOpen={!!editingUser}
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
         onSuccess={(msg) => showToast(msg)}
       />
 
-      <RoleDetailModal
-        isOpen={!!detailRole}
-        role={detailRole}
-        onClose={() => setDetailRole(null)}
+      <UserDetailModal
+        isOpen={!!detailUser}
+        user={detailUser}
+        onClose={() => setDetailUser(null)}
       />
     </div>
   );
