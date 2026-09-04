@@ -72,7 +72,7 @@ export default function RolesManagement() {
       {/* Packed Header Card */}
       <div
         style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="p-4 sm:p-5 rounded-2xl border shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div className="flex items-center gap-3.5">
           <div
@@ -113,7 +113,7 @@ export default function RolesManagement() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-          className="p-4 rounded-2xl border shadow-2xs flex items-center justify-between"
+          className="p-4 rounded-2xl border shadow-sm flex items-center justify-between"
         >
           <div>
             <p className={TYPOGRAPHY.label}>Total Roles</p>
@@ -131,7 +131,7 @@ export default function RolesManagement() {
 
         <div
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-          className="p-4 rounded-2xl border shadow-2xs flex items-center justify-between"
+          className="p-4 rounded-2xl border shadow-sm flex items-center justify-between"
         >
           <div>
             <p className={TYPOGRAPHY.label}>API Status</p>
@@ -150,7 +150,7 @@ export default function RolesManagement() {
 
         <div
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-          className="p-4 rounded-2xl border shadow-2xs flex items-center justify-between"
+          className="p-4 rounded-2xl border shadow-sm flex items-center justify-between"
         >
           <div>
             <p className={TYPOGRAPHY.label}>Primary Role</p>
@@ -170,7 +170,7 @@ export default function RolesManagement() {
       {/* Filter & Search Toolbar */}
       <div
         style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="p-3.5 rounded-2xl border shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center"
+        className="p-3.5 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center"
       >
         <div className="relative w-full md:w-72">
           <Search style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
@@ -208,7 +208,7 @@ export default function RolesManagement() {
       {/* Table Container */}
       <div
         style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="rounded-2xl border shadow-2xs overflow-hidden"
+        className="rounded-2xl border shadow-sm overflow-hidden"
       >
         {error && (
           <div

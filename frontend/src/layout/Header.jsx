@@ -1,28 +1,16 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../actions/Auth/authActions';
 import { COLORS } from '../constants/colors';
-import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { LogOut, Bell, Search, Menu } from 'lucide-react';
+import { Bell, Search, Menu, Sparkles } from 'lucide-react';
 
 export default function Header({ toggleSidebar }) {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to log out?')) {
-      dispatch(logout());
-    }
-  };
-
   return (
     <header
       style={{
         backgroundColor: COLORS.surface,
         borderColor: COLORS.border,
       }}
-      className="h-14 border-b px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-2xs"
+      className="h-14 border-b px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm"
     >
       <div className="flex items-center gap-3">
         <button
@@ -49,6 +37,19 @@ export default function Header({ toggleSidebar }) {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Live System Indicator Badge */}
+        <div
+          style={{
+            backgroundColor: COLORS.primaryLight,
+            borderColor: COLORS.primaryBorder,
+            color: COLORS.primary,
+          }}
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-[#DC2626]" />
+          <span>Edugate Global CRM</span>
+        </div>
+
         {/* Notification bell */}
         <button
           style={{ color: COLORS.muted }}
@@ -63,36 +64,14 @@ export default function Header({ toggleSidebar }) {
 
         <div style={{ backgroundColor: COLORS.border }} className="h-5 w-px mx-0.5" />
 
-        {/* User Pill */}
-        <div className="flex items-center gap-2.5">
+        {/* Logo Badge */}
+        <div className="flex items-center gap-2">
           <img
             src={edugateLogo}
-            alt="Logo"
-            className="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-2xs"
+            alt="Edugate Logo"
+            className="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-sm"
           />
-          <div className="hidden md:block text-left">
-            <p style={{ color: COLORS.foreground }} className="text-xs font-bold leading-none">
-              {user?.name || 'Edugate Admin'}
-            </p>
-            <p style={{ color: COLORS.secondary }} className="text-[10px] font-bold uppercase mt-0.5">
-              {user?.role || 'ADMIN'}
-            </p>
-          </div>
         </div>
-
-        {/* Logout Button */}
-        <button
-          onClick={handleLogout}
-          style={{
-            backgroundColor: COLORS.secondaryLight,
-            color: COLORS.secondary,
-            borderColor: COLORS.secondaryBorder,
-          }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold hover:bg-red-100 ml-1"
-        >
-          <LogOut className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Logout</span>
-        </button>
       </div>
     </header>
   );

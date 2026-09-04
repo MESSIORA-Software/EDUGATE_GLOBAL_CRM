@@ -1,22 +1,11 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { logout } from '../actions/Auth/authActions';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Users, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Shield, Users, LayoutDashboard, Settings } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
-
-  const handleLogout = () => {
-    if (window.confirm('Are you sure you want to log out?')) {
-      dispatch(logout());
-    }
-  };
-
   const navItems = [
     { name: 'System Roles', path: '/', icon: Shield },
     { name: 'User Accounts', path: '/users', icon: Users },
@@ -28,7 +17,7 @@ export default function Sidebar({ isOpen, onClose }) {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
@@ -51,7 +40,7 @@ export default function Sidebar({ isOpen, onClose }) {
             <img
               src={edugateLogo}
               alt="EDUGATE Global"
-              className="w-9 h-9 rounded-lg object-cover border border-slate-200 shadow-2xs shrink-0"
+              className="w-9 h-9 rounded-lg object-cover border border-slate-200 shadow-sm shrink-0"
             />
             <div>
               <h2
@@ -87,7 +76,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   })}
                   className={({ isActive }) =>
                     `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-slate-100 ${
-                      isActive ? 'border-l-4 border-[#DC2626] font-bold shadow-2xs' : ''
+                      isActive ? 'border-l-4 border-[#DC2626] font-bold shadow-sm' : ''
                     }`
                   }
                 >
@@ -99,8 +88,8 @@ export default function Sidebar({ isOpen, onClose }) {
           </nav>
         </div>
 
-        {/* Footer Profile & Logout */}
-        <div style={{ borderColor: COLORS.border }} className="p-3 border-t space-y-2">
+        {/* Footer Brand Info */}
+        <div style={{ borderColor: COLORS.border }} className="p-3 border-t">
           <div
             style={{
               backgroundColor: COLORS.background,
@@ -110,31 +99,18 @@ export default function Sidebar({ isOpen, onClose }) {
           >
             <img
               src={edugateLogo}
-              alt="Avatar"
+              alt="System Logo"
               className="w-7 h-7 rounded-md object-cover border border-slate-200 shrink-0"
             />
             <div className="overflow-hidden text-left">
               <p style={{ color: COLORS.foreground }} className="text-xs font-bold truncate">
-                {user?.name || 'Edugate Admin'}
+                Edugate System
               </p>
-              <p style={{ color: COLORS.muted }} className="text-[10px] truncate">
-                {user?.email || 'admin@edugate.com'}
+              <p style={{ color: COLORS.secondary }} className="text-[10px] font-bold uppercase truncate">
+                Global Roles API
               </p>
             </div>
           </div>
-
-          <button
-            onClick={handleLogout}
-            style={{
-              backgroundColor: COLORS.secondaryLight,
-              color: COLORS.secondary,
-              borderColor: COLORS.secondaryBorder,
-            }}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border text-xs font-bold transition-all hover:bg-red-100"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
         </div>
       </aside>
     </>

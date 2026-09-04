@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../../../actions/Admin/userActions';
+import { fetchRoles } from '../../../actions/Admin/roleActions';
 import { COLORS } from '../../../constants/colors';
 import { TYPOGRAPHY } from '../../../constants/typography';
 import Button from '../../ui/Button';
@@ -9,6 +10,7 @@ import { X, UserCheck, AlertCircle } from 'lucide-react';
 export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { submitting, error } = useSelector((state) => state.users);
+  const { roles } = useSelector((state) => state.roles);
 
   const [userId, setUserId] = useState('');
   const [branchId, setBranchId] = useState(1);
@@ -18,6 +20,12 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
   const [roleId, setRoleId] = useState(1);
   const [status, setStatus] = useState('ACTIVE');
   const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (isOpen && (!roles || roles.length === 0)) {
+      dispatch(fetchRoles());
+    }
+  }, [isOpen, roles, dispatch]);
 
   useEffect(() => {
     if (user) {
@@ -48,7 +56,7 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
       name: name.trim(),
       email: email.trim(),
       password_hash: passwordHash.trim() || 'new_hashed_password',
-      role_id: Number(roleId) || 1,
+      role_id: isNaN(Number(roleId)) ? roleId : Number(roleId),
       status: status,
     };
 
@@ -62,7 +70,7 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in duration-150">
       <div
         style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
         className="rounded-2xl shadow-xl border max-w-md w-full overflow-hidden"
@@ -129,13 +137,28 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
             </div>
             <div>
               <label className={`${TYPOGRAPHY.label} block mb-1`}>Role ID</label>
-              <input
-                type="number"
-                value={roleId}
-                onChange={(e) => setRoleId(e.target.value)}
-                style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-                className="w-full px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-              />
+              {roles && roles.length > 0 ? (
+                <select
+                  value={roleId}
+                  onChange={(e) => setRoleId(e.target.value)}
+                  style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+                  className="w-full px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                >
+                  {roles.map((r, i) => (
+                    <option key={r.role_id || r.id || i} value={r.role_id || r.id || (i + 1)}>
+                      {r.role_id || r.id} - {r.role_name || r.name || 'Role'}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="number"
+                  value={roleId}
+                  onChange={(e) => setRoleId(e.target.value)}
+                  style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+                  className="w-full px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                />
+              )}
             </div>
           </div>
 
