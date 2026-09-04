@@ -1,0 +1,6 @@
+export const AUTH_START = 'AUTH_START';
+export const AUTH_SUCCESS = 'AUTH_SUCCESS';
+export const AUTH_FAILURE = 'AUTH_FAILURE';
+export const LOGOUT = 'LOGOUT';
+export const UPDATE_LOGGED_IN_USER = 'UPDATE_LOGGED_IN_USER';
+export const AUTH_INITIALIZED = 'AUTH_INITIALIZED';
