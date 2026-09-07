@@ -4,7 +4,7 @@ import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Users, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Shield, Users, UserCheck, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
@@ -12,6 +12,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const navItems = [
     { name: 'System Roles', path: '/', icon: Shield },
     { name: 'User Accounts', path: '/users', icon: Users },
+    { name: 'My Profile', path: '/profile', icon: UserCheck },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
@@ -94,12 +95,15 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* User Info & Logout Footer */}
         <div style={{ borderColor: COLORS.border }} className="p-3 border-t space-y-2">
           {user && (
-            <div
+            <NavLink
+              to="/profile"
+              onClick={onClose}
               style={{
                 backgroundColor: COLORS.background,
                 borderColor: COLORS.border,
               }}
-              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border"
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border hover:bg-slate-100 transition-all cursor-pointer block"
+              title="Click to view full profile"
             >
               <div
                 style={{
@@ -118,7 +122,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   {user.email || user.role || 'User'}
                 </p>
               </div>
-            </div>
+            </NavLink>
           )}
 
           {/* Logout Button */}

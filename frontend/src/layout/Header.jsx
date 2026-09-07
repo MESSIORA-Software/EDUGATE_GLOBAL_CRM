@@ -1,9 +1,13 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
+import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Bell, Search, Menu, Sparkles } from 'lucide-react';
+import { Bell, Search, Menu, Sparkles, User } from 'lucide-react';
 
 export default function Header({ toggleSidebar }) {
+  const { user } = useAuth();
+
   return (
     <header
       style={{
@@ -16,7 +20,7 @@ export default function Header({ toggleSidebar }) {
         <button
           onClick={toggleSidebar}
           style={{ color: COLORS.muted }}
-          className="p-1.5 rounded-lg hover:bg-slate-100 lg:hidden"
+          className="p-1.5 rounded-lg hover:bg-slate-100 lg:hidden cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -53,7 +57,7 @@ export default function Header({ toggleSidebar }) {
         {/* Notification bell */}
         <button
           style={{ color: COLORS.muted }}
-          className="relative p-1.5 rounded-lg hover:text-[#1E3A8A] hover:bg-slate-100"
+          className="relative p-1.5 rounded-lg hover:text-[#1E3A8A] hover:bg-slate-100 cursor-pointer"
         >
           <Bell className="w-4 h-4" />
           <span
@@ -63,6 +67,24 @@ export default function Header({ toggleSidebar }) {
         </button>
 
         <div style={{ backgroundColor: COLORS.border }} className="h-5 w-px mx-0.5" />
+
+        {/* User Profile Quick Link */}
+        <NavLink
+          to="/profile"
+          className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+          title="View My Profile"
+        >
+          <div
+            style={{
+              backgroundColor: COLORS.primaryLight,
+              color: COLORS.primary,
+              borderColor: COLORS.primaryBorder,
+            }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs border"
+          >
+            {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
+          </div>
+        </NavLink>
 
         {/* Logo Badge */}
         <div className="flex items-center gap-2">
