@@ -28,5 +28,19 @@ export const authController = {
         } catch (error) {
             next(error);
         }
+    },
+    async logout(req, res, next) {
+        try {
+            // req.user is supplied by authenticateToken middleware
+            const result = await authService.logout(req.user?.user_id);
+            res.status(200).json({
+                status: 'success',
+                message: result.message
+            });
+        } catch (error) {
+            next(error);
+        }
     }
+
+    
 };

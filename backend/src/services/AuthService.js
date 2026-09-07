@@ -65,5 +65,14 @@ export const authService = {
         }
         const { password_hash, ...safeUser } = user;
         return safeUser;
+    },
+
+       async logout(user_id) {
+        // Optional: Update last_logout timestamp in DB or audit logs if needed
+        // await UserRepository.updateLastLogout(userId);
+        
+        return {
+            message: 'User logged out successfully'
+        };
     }
 };
