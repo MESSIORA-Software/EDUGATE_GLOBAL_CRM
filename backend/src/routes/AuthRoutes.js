@@ -7,5 +7,6 @@ const router = Router();
 
 router.post('/login', authController.login);
 router.get('/viewmyprofile', authenticateToken, authController.getMe);
+router.post('/logout', authenticateToken, authController.logout);
 
 export default router;
