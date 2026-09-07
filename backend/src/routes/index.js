@@ -2,6 +2,7 @@ import { Router } from 'express';
 import UserRoleRoutes from './UserRoleRoutes.js';
 import UsersRoutes from './UsersRoutes.js';
 import  AuthRoutes  from './AuthRoutes.js';
+import BranchRoutes from './BranchRoutes.js';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.get('/health', (req, res) => {
 router.use('/roles', UserRoleRoutes);
 router.use('/users', UsersRoutes);
 router.use('/auth', AuthRoutes);
+router.use('/branches', BranchRoutes);
 
 export default router;
