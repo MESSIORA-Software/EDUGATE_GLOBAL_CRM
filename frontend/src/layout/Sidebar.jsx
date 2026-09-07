@@ -1,11 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Users, LayoutDashboard, Settings } from 'lucide-react';
+import { Shield, Users, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
+  const { user, handleLogout } = useAuth();
+
   const navItems = [
     { name: 'System Roles', path: '/', icon: Shield },
     { name: 'User Accounts', path: '/users', icon: Users },
@@ -88,29 +91,49 @@ export default function Sidebar({ isOpen, onClose }) {
           </nav>
         </div>
 
-        {/* Footer Brand Info */}
-        <div style={{ borderColor: COLORS.border }} className="p-3 border-t">
-          <div
-            style={{
-              backgroundColor: COLORS.background,
-              borderColor: COLORS.border,
-            }}
-            className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border"
-          >
-            <img
-              src={edugateLogo}
-              alt="System Logo"
-              className="w-7 h-7 rounded-md object-cover border border-slate-200 shrink-0"
-            />
-            <div className="overflow-hidden text-left">
-              <p style={{ color: COLORS.foreground }} className="text-xs font-bold truncate">
-                Edugate System
-              </p>
-              <p style={{ color: COLORS.secondary }} className="text-[10px] font-bold uppercase truncate">
-                Global Roles API
-              </p>
+        {/* User Info & Logout Footer */}
+        <div style={{ borderColor: COLORS.border }} className="p-3 border-t space-y-2">
+          {user && (
+            <div
+              style={{
+                backgroundColor: COLORS.background,
+                borderColor: COLORS.border,
+              }}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border"
+            >
+              <div
+                style={{
+                  backgroundColor: COLORS.primaryLight,
+                  color: COLORS.primary,
+                }}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs border border-blue-200"
+              >
+                {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div className="overflow-hidden text-left flex-1">
+                <p style={{ color: COLORS.foreground }} className="text-xs font-bold truncate">
+                  {user.name || user.email || 'Logged In User'}
+                </p>
+                <p style={{ color: COLORS.muted }} className="text-[10px] truncate">
+                  {user.email || user.role || 'User'}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Logout Button */}
+          <button
+            onClick={() => handleLogout(onClose)}
+            style={{
+              borderColor: COLORS.secondaryBorder,
+              color: COLORS.secondary,
+              backgroundColor: COLORS.secondaryLight,
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:bg-red-100 active:scale-98 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </aside>
     </>

@@ -1,90 +1,91 @@
 import authService from '../../services/Auth/authService';
 import {
-  AUTH_START,
-  AUTH_SUCCESS,
-  AUTH_FAILURE,
-  AUTH_INITIALIZED,
+  LOGIN_START,
+  LOGIN_SUCCESS,
+  LOGIN_FAILURE,
+  VIEW_PROFILE_START,
+  VIEW_PROFILE_SUCCESS,
+  VIEW_PROFILE_FAILURE,
   LOGOUT,
-  UPDATE_LOGGED_IN_USER,
 } from '../../constants/Auth/AuthConstants';
 
-export const loginStart = () => ({ type: AUTH_START });
-export const loginSuccess = (userRole, user) => ({
-  type: AUTH_SUCCESS,
-  payload: { userRole, user },
-});
-export const loginFailure = (errorMsg) => ({
-  type: AUTH_FAILURE,
-  payload: errorMsg,
-});
-export const logoutUser = () => ({ type: LOGOUT });
-export const authInitialized = () => ({ type: AUTH_INITIALIZED });
+export const login = (email, password) => {
+  return async (dispatch) => {
+    if (!email || !password) {
+      const errorMsg = 'Email and password are required.';
+      dispatch({ type: LOGIN_FAILURE, payload: errorMsg });
+      return { success: false, error: errorMsg };
+    }
 
-export const initializeAuth = () => {
-  return (dispatch) => {
+    dispatch({ type: LOGIN_START });
+
     try {
-      const storedUser = localStorage.getItem('user');
-      const userRole = localStorage.getItem('userRole');
-      if (storedUser && userRole) {
-        dispatch(loginSuccess(userRole, JSON.parse(storedUser)));
+      const response = await authService.login(email, password);
+      const token = response?.token || response?.data?.token || response?.accessToken;
+      let user = response?.user || response?.data?.user || response?.data || null;
+
+      if (token) {
+        localStorage.setItem('token', token);
+
+        // Fetch user profile if not fully provided in login response
+        if (!user || typeof user !== 'object') {
+          try {
+            const profileRes = await authService.viewMyProfile(token);
+            user = profileRes?.data || profileRes?.user || profileRes;
+          } catch {
+            // Keep user as null or partial if viewMyProfile fails
+          }
+        }
       }
+
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      dispatch({
+        type: LOGIN_SUCCESS,
+        payload: { token, user },
+      });
+
+      return { success: true, token, user };
     } catch (err) {
-      console.warn('Failed to load local storage auth state:', err);
-    } finally {
-      dispatch(authInitialized());
+      const errorMsg = err.message || 'Login failed.';
+      dispatch({ type: LOGIN_FAILURE, payload: errorMsg });
+      return { success: false, error: errorMsg };
     }
   };
 };
 
-export const authenticate = (serviceNo, password) => {
+export const viewMyProfile = (token) => {
   return async (dispatch) => {
-    if (!serviceNo || !password) {
-      dispatch(loginFailure('Please enter credentials.'));
-      return { success: false, error: 'Please enter credentials.' };
-    }
-
-    dispatch(loginStart());
+    dispatch({ type: VIEW_PROFILE_START });
 
     try {
-      const loginRes = await authService.login(serviceNo, password);
-      const userProfile = loginRes.user || { serviceNo, name: 'Admin User', role: 'ADMIN' };
-      const userRole = (userProfile.role || 'ADMIN').toUpperCase();
+      const response = await authService.viewMyProfile(token);
+      const user = response?.data || response?.user || response;
 
-      localStorage.setItem('user', JSON.stringify(userProfile));
-      localStorage.setItem('userRole', userRole);
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
 
-      dispatch(loginSuccess(userRole, userProfile));
-      return { success: true, user: userProfile };
+      dispatch({
+        type: VIEW_PROFILE_SUCCESS,
+        payload: user,
+      });
+
+      return { success: true, data: user };
     } catch (err) {
-      const msg = err.message || 'Login failed.';
-      dispatch(loginFailure(msg));
-      return { success: false, error: msg };
+      const errorMsg = err.message || 'Failed to fetch user profile.';
+      dispatch({ type: VIEW_PROFILE_FAILURE, payload: errorMsg });
+      return { success: false, error: errorMsg };
     }
   };
 };
 
 export const logout = () => {
   return (dispatch) => {
-    try {
-      localStorage.removeItem('user');
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('token');
-    } catch (err) {
-      console.warn('Failed to clear localStorage on logout:', err);
-    }
-    dispatch(logoutUser());
-  };
-};
-
-export const updateLoggedInUser = (updatedFields) => {
-  return (dispatch, getState) => {
-    const currentUser = getState()?.auth?.user || {};
-    const mergedUser = { ...currentUser, ...updatedFields };
-    try {
-      localStorage.setItem('user', JSON.stringify(mergedUser));
-    } catch (err) {
-      console.warn('Failed to persist user update:', err);
-    }
-    dispatch({ type: UPDATE_LOGGED_IN_USER, payload: updatedFields });
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    dispatch({ type: LOGOUT });
   };
 };

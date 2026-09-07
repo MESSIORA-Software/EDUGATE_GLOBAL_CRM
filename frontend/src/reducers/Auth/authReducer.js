@@ -1,71 +1,76 @@
 import {
-  AUTH_START,
-  AUTH_SUCCESS,
-  AUTH_FAILURE,
-  AUTH_INITIALIZED,
+  LOGIN_START,
+  LOGIN_SUCCESS,
+  LOGIN_FAILURE,
+  VIEW_PROFILE_START,
+  VIEW_PROFILE_SUCCESS,
+  VIEW_PROFILE_FAILURE,
   LOGOUT,
-  UPDATE_LOGGED_IN_USER,
 } from '../../constants/Auth/AuthConstants';
 
+const getInitialUser = () => {
+  try {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+};
+
 const initialState = {
-  isAuthenticated: true, // Default active session for demonstration
-  userRole: 'ADMIN',
-  user: {
-    serviceNo: 'ADM001',
-    name: 'Edugate Admin',
-    email: 'admin@edugate-global.com',
-    role: 'ADMIN',
-  },
+  token: localStorage.getItem('token') || null,
+  user: getInitialUser(),
+  isAuthenticated: !!localStorage.getItem('token'),
   loading: false,
-  initialized: true,
   error: null,
 };
 
 export default function authReducer(state = initialState, action) {
   switch (action.type) {
-    case AUTH_START:
+    case LOGIN_START:
+    case VIEW_PROFILE_START:
       return {
         ...state,
         loading: true,
         error: null,
       };
-    case AUTH_SUCCESS:
+
+    case LOGIN_SUCCESS:
       return {
         ...state,
-        isAuthenticated: true,
-        userRole: action.payload.userRole,
-        user: action.payload.user,
         loading: false,
+        isAuthenticated: true,
+        token: action.payload.token,
+        user: action.payload.user,
         error: null,
       };
-    case AUTH_FAILURE:
+
+    case LOGIN_FAILURE:
+    case VIEW_PROFILE_FAILURE:
       return {
         ...state,
         loading: false,
         error: action.payload,
       };
-    case AUTH_INITIALIZED:
+
+    case VIEW_PROFILE_SUCCESS:
       return {
         ...state,
-        initialized: true,
+        loading: false,
+        user: action.payload,
+        error: null,
       };
+
     case LOGOUT:
       return {
         ...state,
-        isAuthenticated: false,
-        userRole: null,
+        token: null,
         user: null,
+        isAuthenticated: false,
         loading: false,
         error: null,
       };
-    case UPDATE_LOGGED_IN_USER:
-      return {
-        ...state,
-        user: {
-          ...state.user,
-          ...action.payload,
-        },
-      };
+
     default:
       return state;
   }
