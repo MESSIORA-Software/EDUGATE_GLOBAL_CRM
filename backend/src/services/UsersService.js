@@ -91,6 +91,10 @@ export const userService = {
         // 2. Call UserRepository to delete
         return await UserRepository.deleteUser(user_id);
     }, 
+
+    async findUsersByBranch(branch_id) {
+        return await UserRepository.findUsersByBranch(branch_id);
+    }
   
 };
     

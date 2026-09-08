@@ -84,6 +84,27 @@ export const usersController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    async findUsersByBranch(req, res, next) {
+        try {
+            const { branch_id } = req.body;
+            if (!branch_id) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Field "branch_id" is required in request body.',
+                });
+            }
+
+            const users = await userService.findUsersByBranch(branch_id);
+            res.status(200).json({
+                status: 'success',
+                count: users.length,
+                data: users,
+            });
+        } catch (error) {
+            next(error);
+        }
     }
 
 }
