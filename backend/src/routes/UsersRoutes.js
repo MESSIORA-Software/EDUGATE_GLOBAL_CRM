@@ -8,5 +8,5 @@ router.get('/user', usersController.getUserById);
 router.post('/', usersController.createuser);
 router.put('/', usersController.updateuser);
 router.delete('/', usersController.deleteuser);
-
+router.get('/branch', usersController.findUsersByBranch);
 export default router;

@@ -75,6 +75,20 @@ export const UserRepository = {
 
         if (error) throw error;
         return true;
-    }
+    },
+
+    async findUsersByBranch(branch_id) {
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('branch_id', branch_id)
+        .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    return data;
+}
+
+
+
 
 };
