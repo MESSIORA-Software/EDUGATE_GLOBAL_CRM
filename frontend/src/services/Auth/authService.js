@@ -1,4 +1,4 @@
-const BASE_URL = 'https://edugate-global-crm.vercel.app/api';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const login = async (email, password) => {
   const payload = JSON.stringify({ email, password });

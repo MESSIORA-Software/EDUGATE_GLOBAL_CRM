@@ -6,6 +6,7 @@ import LoginPage from '../pages/Auth/LoginPage';
 import ProfilePage from '../pages/Auth/ProfilePage';
 import RolesManagement from '../pages/Admin/RolesManagement';
 import UsersManagement from '../pages/Admin/UsersManagement';
+import BranchesManagement from '../pages/Admin/BranchesManagement';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -50,6 +51,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <RolesManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/branches"
+        element={
+          <ProtectedRoute>
+            <BranchesManagement />
           </ProtectedRoute>
         }
       />

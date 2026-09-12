@@ -4,13 +4,14 @@ import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Users, UserCheck, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
 
   const navItems = [
     { name: 'System Roles', path: '/', icon: Shield },
+    { name: 'Branch Locations', path: '/branches', icon: Building2 },
     { name: 'User Accounts', path: '/users', icon: Users },
     { name: 'My Profile', path: '/profile', icon: UserCheck },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -73,6 +74,7 @@ export default function Sidebar({ isOpen, onClose }) {
                 <NavLink
                   key={item.name}
                   to={item.path}
+                  end={item.path === '/'}
                   onClick={onClose}
                   style={({ isActive }) => ({
                     backgroundColor: isActive ? COLORS.primaryLight : COLORS.transparent,

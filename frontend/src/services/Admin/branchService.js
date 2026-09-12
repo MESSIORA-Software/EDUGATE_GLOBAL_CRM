@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://edugate-global-crm.vercel.app/api';
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 const REQUEST_TIMEOUT_MS = 15000;
 

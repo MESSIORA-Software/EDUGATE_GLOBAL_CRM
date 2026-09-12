@@ -20,7 +20,7 @@ import {
   BRANCH_USERS_FETCH_START,
   BRANCH_USERS_FETCH_SUCCESS,
   BRANCH_USERS_FETCH_FAILURE,
-} from '../../constants/Admin/BranchConstants';
+} from '../../constants/Admin/branchConstants';
 
 
 // ============================================================
@@ -83,8 +83,15 @@ export const fetchBranches = () => {
     try {
       const response = await BranchService.getBranches();
 
-      const list = Array.isArray(response.data?.resultSet)
-        ? response.data.resultSet
+      const resBody = response.data;
+      const list = Array.isArray(resBody?.data)
+        ? resBody.data
+        : Array.isArray(resBody?.resultSet)
+        ? resBody.resultSet
+        : Array.isArray(resBody?.branches)
+        ? resBody.branches
+        : Array.isArray(resBody)
+        ? resBody
         : [];
 
       dispatch({
@@ -338,8 +345,15 @@ export const fetchUsersByBranch = (branchId) => {
       const response =
         await BranchService.getUsersByBranch(branchId);
 
-      const users = Array.isArray(response.data?.resultSet)
-        ? response.data.resultSet
+      const usersBody = response.data;
+      const users = Array.isArray(usersBody?.data)
+        ? usersBody.data
+        : Array.isArray(usersBody?.resultSet)
+        ? usersBody.resultSet
+        : Array.isArray(usersBody?.users)
+        ? usersBody.users
+        : Array.isArray(usersBody)
+        ? usersBody
         : [];
 
       dispatch({
@@ -370,3 +384,59 @@ export const fetchUsersByBranch = (branchId) => {
     }
   };
 };
+
+
+// ============================================================
+// FIND BRANCH BY ID
+// ============================================================
+
+export const findBranchById = (branchId) => {
+  return async () => {
+    if (!branchId) {
+      const message = 'Branch ID is required to search.';
+      return {
+        success: false,
+        error: message,
+      };
+    }
+
+    try {
+      const response = await BranchService.getBranchById(branchId);
+      const resData = response.data;
+
+      // API may return: { data: {...} }, { data: [...] }, { resultSet: [...] }
+      let branch;
+      if (Array.isArray(resData?.data)) {
+        branch = resData.data[0];
+      } else if (resData?.data && typeof resData.data === 'object') {
+        branch = resData.data;
+      } else if (Array.isArray(resData?.resultSet)) {
+        branch = resData.resultSet[0];
+      } else if (resData?.resultSet && typeof resData.resultSet === 'object') {
+        branch = resData.resultSet;
+      } else if (Array.isArray(resData)) {
+        branch = resData[0];
+      } else {
+        branch = null;
+      }
+
+      if (!branch) {
+        return {
+          success: false,
+          error: `Branch #${branchId} not found.`,
+        };
+      }
+
+      return {
+        success: true,
+        data: branch,
+      };
+    } catch (err) {
+      const message = logAndExtractError('Find branch by ID', err);
+      return {
+        success: false,
+        error: message,
+      };
+    }
+  };
+};
