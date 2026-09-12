@@ -200,42 +200,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Bearer Token Box */}
-          <div className="pt-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>Active Authorization Token</span>
-              </span>
-              <button
-                onClick={handleCopyToken}
-                style={{
-                  backgroundColor: copiedToken ? COLORS.successLight : COLORS.background,
-                  borderColor: copiedToken ? '#A7F3D0' : COLORS.border,
-                  color: copiedToken ? COLORS.success : COLORS.muted,
-                }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all hover:bg-slate-100 cursor-pointer"
-              >
-                {copiedToken ? (
-                  <>
-                    <Check className="w-3 h-3 text-emerald-600" />
-                    <span>Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3" />
-                    <span>Copy Token</span>
-                  </>
-                )}
-              </button>
-            </div>
-            <div
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-              className="p-3 rounded-xl border font-mono text-[11px] text-slate-600 break-all select-all leading-relaxed"
-            >
-              {token ? `Bearer ${token}` : 'No active Authorization token found.'}
-            </div>
-          </div>
+
         </div>
 
         {/* Right Col: System & Branch Assignment Overview */}

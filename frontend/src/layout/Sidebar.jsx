@@ -10,12 +10,12 @@ export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
 
   const navItems = [
-    { name: 'System Roles', path: '/', icon: Shield },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+    { name: 'System Roles', path: '/roles', icon: Shield },
     { name: 'Branch Locations', path: '/branches', icon: Building2 },
     { name: 'User Accounts', path: '/users', icon: Users },
     { name: 'Students / Clients', path: '/clients', icon: UserCheck },
     { name: 'My Profile', path: '/profile', icon: UserCheck },
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 

@@ -43,7 +43,7 @@ function AppRoutes() {
         path="/"
         element={
           <ProtectedRoute>
-            <RolesManagement />
+            <Navigate to="/dashboard" replace />
           </ProtectedRoute>
         }
       />
