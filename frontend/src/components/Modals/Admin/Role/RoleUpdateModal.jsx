@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateRole } from '../../../actions/Admin/roleActions';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typography';
-import Button from '../../ui/Button';
+import { updateRole } from '../../../../actions/Admin/roleActions';
+import { COLORS } from '../../../../constants/colors';
+import { TYPOGRAPHY } from '../../../../constants/typography';
+import Button from '../../../ui/Button';
 import { X, Edit3, AlertCircle } from 'lucide-react';
 
 export default function RoleUpdateModal({ isOpen, role, onClose, onSuccess }) {

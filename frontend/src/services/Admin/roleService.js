@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://edugate-global-crm.vercel.app/api';
 
 const getAllRoles = async () => {
   const response = await fetch(`${BASE_URL}/roles`, {

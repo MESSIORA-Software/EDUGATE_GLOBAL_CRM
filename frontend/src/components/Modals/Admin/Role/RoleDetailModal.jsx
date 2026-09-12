@@ -1,16 +1,17 @@
 import React from 'react';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typography';
-import Button from '../../ui/Button';
-import Badge from '../../ui/Badge';
-import { X, Building2, MapPin, Phone, CheckCircle2, Users, Calendar, Hash } from 'lucide-react';
+import { COLORS } from '../../../../constants/colors';
+import { TYPOGRAPHY } from '../../../../constants/typography';
+import Button from '../../../ui/Button';
+import Badge from '../../../ui/Badge';
+import { X, ShieldCheck, CheckCircle2, Hash, Calendar, Layers } from 'lucide-react';
 
-export default function BranchDetailModal({ isOpen, branch, onClose, onViewUsers }) {
-  if (!isOpen || !branch) return null;
+export default function RoleDetailModal({ isOpen, role, onClose }) {
+  if (!isOpen || !role) return null;
 
-  const branchId = branch.branch_id || branch.id || 'N/A';
-  const createdAt = branch.created_at
-    ? new Date(branch.created_at).toLocaleDateString('en-US', {
+  const roleId = role.role_id || role.id || 'N/A';
+  const roleName = role.role_name || role.name || 'N/A';
+  const createdAt = role.created_at
+    ? new Date(role.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -35,11 +36,11 @@ export default function BranchDetailModal({ isOpen, branch, onClose, onViewUsers
               style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
               className="w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-xs shrink-0"
             >
-              <Building2 className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className={TYPOGRAPHY.heading}>{branch.name || 'Branch Details'}</h3>
-              <p className={TYPOGRAPHY.caption}>Branch Location & Contact Information</p>
+              <h3 className={TYPOGRAPHY.heading}>{roleName}</h3>
+              <p className={TYPOGRAPHY.caption}>System Access Role Definition</p>
             </div>
           </div>
           <button
@@ -53,16 +54,15 @@ export default function BranchDetailModal({ isOpen, branch, onClose, onViewUsers
 
         {/* Detail Cards Content */}
         <div className="p-5 space-y-3.5">
-          {/* Main Info Card */}
           <div
             style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
             className="border rounded-2xl p-4 space-y-3 shadow-2xs"
           >
-            {/* Branch ID & Status Header */}
+            {/* Role ID */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
                 <Hash className="w-3.5 h-3.5 text-slate-400" />
-                <span>Branch ID</span>
+                <span>Role Identifier</span>
               </div>
               <span
                 style={{
@@ -72,33 +72,22 @@ export default function BranchDetailModal({ isOpen, branch, onClose, onViewUsers
                 }}
                 className="font-mono text-xs font-extrabold px-2.5 py-0.5 rounded-lg border"
               >
-                #{branchId}
+                {roleId}
               </span>
             </div>
 
-            {/* Address */}
+            {/* Role Name */}
             <div className="space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Location Address
+                Role Description
               </span>
-              <div className="flex items-start gap-2 text-xs font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <MapPin className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{branch.address || 'No address specified'}</span>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <Layers className="w-4 h-4 text-indigo-500 shrink-0" />
+                <span>{roleName}</span>
               </div>
             </div>
 
-            {/* Contact Phone */}
-            <div className="space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Contact Phone
-              </span>
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>{branch.phone || 'No phone provided'}</span>
-              </div>
-            </div>
-
-            {/* Status & Created Date */}
+            {/* Status & Created At */}
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                 {createdAt && (
@@ -109,7 +98,7 @@ export default function BranchDetailModal({ isOpen, branch, onClose, onViewUsers
                 )}
               </div>
               <Badge variant="green" icon={CheckCircle2}>
-                Active Branch
+                Active Role
               </Badge>
             </div>
           </div>
@@ -118,22 +107,9 @@ export default function BranchDetailModal({ isOpen, branch, onClose, onViewUsers
         {/* Footer */}
         <div
           style={{ borderColor: COLORS.border, backgroundColor: COLORS.background }}
-          className="flex items-center justify-between px-5 py-3 border-t"
+          className="flex items-center justify-end px-5 py-3 border-t"
         >
-          {onViewUsers && (
-            <Button
-              variant="outline"
-              size="sm"
-              icon={Users}
-              onClick={() => {
-                onClose();
-                onViewUsers(branch);
-              }}
-            >
-              View Branch Users
-            </Button>
-          )}
-          <Button variant="primary" size="sm" onClick={onClose} className="ml-auto">
+          <Button variant="primary" size="sm" onClick={onClose}>
             Close
           </Button>
         </div>

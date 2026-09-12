@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser } from '../../../actions/Admin/userActions';
-import { fetchRoles } from '../../../actions/Admin/roleActions';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typography';
-import Button from '../../ui/Button';
-import { X, UserPlus, AlertCircle } from 'lucide-react';
+import { updateUser } from '../../../../actions/Admin/userActions';
+import { fetchRoles } from '../../../../actions/Admin/roleActions';
+import { COLORS } from '../../../../constants/colors';
+import { TYPOGRAPHY } from '../../../../constants/typography';
+import Button from '../../../ui/Button';
+import { X, UserCheck, AlertCircle } from 'lucide-react';
 
-export default function UserAddModal({ isOpen, onClose, onSuccess }) {
+export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { submitting, error } = useSelector((state) => state.users);
   const { roles } = useSelector((state) => state.roles);
 
+  const [userId, setUserId] = useState('');
   const [branchId, setBranchId] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,12 +28,18 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
   }, [isOpen, roles, dispatch]);
 
   useEffect(() => {
-    if (roles && roles.length > 0 && !roleId) {
-      setRoleId(roles[0].role_id || roles[0].id || 1);
+    if (user) {
+      setUserId(user.user_id || user.id || '');
+      setBranchId(user.branch_id || 1);
+      setName(user.name || '');
+      setEmail(user.email || '');
+      setPasswordHash(user.password_hash || '');
+      setRoleId(user.role_id || 1);
+      setStatus(user.status || 'ACTIVE');
     }
-  }, [roles, roleId]);
+  }, [user]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !user) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -42,30 +49,23 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
       setLocalError('User name is required.');
       return;
     }
-    if (!email.trim()) {
-      setLocalError('Email address is required.');
-      return;
-    }
 
     const payload = {
+      user_id: userId,
       branch_id: Number(branchId) || 1,
       name: name.trim(),
       email: email.trim(),
-      password_hash: passwordHash.trim() || 'hashed_password_123',
+      password_hash: passwordHash.trim() || 'new_hashed_password',
       role_id: isNaN(Number(roleId)) ? roleId : Number(roleId),
       status: status,
-      created_by: null,
     };
 
-    const res = await dispatch(registerUser(payload));
+    const res = await dispatch(updateUser(payload));
     if (res.success) {
-      setName('');
-      setEmail('');
-      setPasswordHash('');
-      onSuccess?.('User created successfully!');
+      onSuccess?.('User updated successfully!');
       onClose();
     } else {
-      setLocalError(res.error || 'Failed to create user.');
+      setLocalError(res.error || 'Failed to update user.');
     }
   };
 
@@ -82,14 +82,14 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
         >
           <div className="flex items-center gap-2.5">
             <div
-              style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
+              style={{ backgroundColor: '#FEF3C7', color: COLORS.warning }}
               className="w-8 h-8 rounded-lg flex items-center justify-center font-bold"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserCheck className="w-4 h-4" />
             </div>
             <div>
-              <h3 className={TYPOGRAPHY.heading}>Create New User</h3>
-              <p className={TYPOGRAPHY.caption}>Add system user account</p>
+              <h3 className={TYPOGRAPHY.heading}>Update User Account</h3>
+              <p className={TYPOGRAPHY.caption}>Modify account credentials & role</p>
             </div>
           </div>
           <button
@@ -113,6 +113,17 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
             </div>
           )}
 
+          <div>
+            <label className={`${TYPOGRAPHY.label} block mb-1`}>User ID (Read-only)</label>
+            <input
+              type="text"
+              value={userId}
+              disabled
+              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.placeholder }}
+              className="w-full px-3 py-1.5 border rounded-xl text-xs font-mono font-bold cursor-not-allowed"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={`${TYPOGRAPHY.label} block mb-1`}>Branch ID</label>
@@ -125,9 +136,7 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
               />
             </div>
             <div>
-              <label className={`${TYPOGRAPHY.label} block mb-1`}>
-                Role ID <span style={{ color: COLORS.secondary }}>*</span>
-              </label>
+              <label className={`${TYPOGRAPHY.label} block mb-1`}>Role ID</label>
               {roles && roles.length > 0 ? (
                 <select
                   value={roleId}
@@ -154,12 +163,9 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>
-              Full Name <span style={{ color: COLORS.secondary }}>*</span>
-            </label>
+            <label className={`${TYPOGRAPHY.label} block mb-1`}>Full Name</label>
             <input
               type="text"
-              placeholder="e.g. Kamal Perera"
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
@@ -169,12 +175,9 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>
-              Email Address <span style={{ color: COLORS.secondary }}>*</span>
-            </label>
+            <label className={`${TYPOGRAPHY.label} block mb-1`}>Email Address</label>
             <input
               type="email"
-              placeholder="e.g. kamal.perera@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
@@ -187,7 +190,6 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
             <label className={`${TYPOGRAPHY.label} block mb-1`}>Password Hash</label>
             <input
               type="text"
-              placeholder="e.g. hashed_password_123"
               value={passwordHash}
               onChange={(e) => setPasswordHash(e.target.value)}
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
@@ -214,7 +216,7 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
               Cancel
             </Button>
             <Button variant="primary" size="sm" type="submit" loading={submitting}>
-              Create User
+              Save Changes
             </Button>
           </div>
         </form>

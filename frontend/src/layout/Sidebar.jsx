@@ -13,10 +13,12 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'System Roles', path: '/', icon: Shield },
     { name: 'Branch Locations', path: '/branches', icon: Building2 },
     { name: 'User Accounts', path: '/users', icon: Users },
+    { name: 'Students / Clients', path: '/clients', icon: UserCheck },
     { name: 'My Profile', path: '/profile', icon: UserCheck },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
+
 
   return (
     <>

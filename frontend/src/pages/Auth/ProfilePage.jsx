@@ -11,11 +11,15 @@ import {
   Key,
   RefreshCw,
   CheckCircle2,
-  Code,
   Copy,
   Check,
   Sparkles,
   AlertCircle,
+  Building2,
+  Calendar,
+  Clock,
+  ShieldCheck,
+  Hash,
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -41,9 +45,27 @@ export default function ProfilePage() {
     setTimeout(() => setCopiedToken(false), 2500);
   };
 
+  const formattedCreatedAt = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
+
+  const formattedUpdatedAt = user?.updated_at
+    ? new Date(user.updated_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
+
   return (
-    <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Top Banner / Title */}
+    <div className="space-y-5 animate-in fade-in duration-200 max-w-7xl mx-auto">
+      {/* Top Banner / Header Card */}
       <div
         style={{
           backgroundColor: COLORS.surface,
@@ -64,15 +86,15 @@ export default function ProfilePage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold text-slate-800">
-                {user?.name || 'My Profile'}
+              <h1 className={TYPOGRAPHY.h2}>
+                {user?.name || 'User Profile'}
               </h1>
               <Badge variant="green" icon={CheckCircle2}>
-                {user?.status || 'Active Session'}
+                {user?.status || 'ACTIVE'}
               </Badge>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Profile endpoint: <span className="font-mono text-slate-600 font-semibold">POST /api/auth/viewmyprofile</span>
+            <p className={TYPOGRAPHY.subheading}>
+              System Account & Authentication Profile Overview
             </p>
           </div>
         </div>
@@ -95,7 +117,7 @@ export default function ProfilePage() {
       {refreshMessage && (
         <div
           style={{
-            backgroundColor: refreshMessage.type === 'success' ? COLORS.successLight : COLORS.dangerLight,
+            backgroundColor: refreshMessage.type === 'success' ? COLORS.successLight : COLORS.secondaryLight,
             borderColor: refreshMessage.type === 'success' ? '#A7F3D0' : COLORS.secondaryBorder,
             color: refreshMessage.type === 'success' ? COLORS.success : COLORS.secondary,
           }}
@@ -112,7 +134,7 @@ export default function ProfilePage() {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* Left 2 Cols: Details Card */}
+        {/* Left 2 Cols: User Details */}
         <div
           style={{
             backgroundColor: COLORS.surface,
@@ -123,51 +145,57 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: COLORS.border }}>
             <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
               <User className="w-4 h-4 text-[#1E3A8A]" />
-              <span>User Information</span>
+              <span>Personal & Account Details</span>
             </h2>
-            <span className="text-[11px] text-slate-400 font-medium">Find By ID Profile</span>
+            <span className="text-[11px] text-slate-400 font-medium">Verified Profile</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Full Name */}
             <div
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-              className="p-3.5 rounded-xl border"
+              className="p-3.5 rounded-xl border space-y-1"
             >
               <span className={TYPOGRAPHY.label}>Full Name</span>
-              <p className="text-xs font-bold text-slate-800 mt-1">
-                {user?.name || user?.fullName || 'Not specified'}
+              <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>{user?.name || user?.fullName || 'Not specified'}</span>
               </p>
             </div>
 
+            {/* Email Address */}
             <div
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-              className="p-3.5 rounded-xl border"
+              className="p-3.5 rounded-xl border space-y-1"
             >
               <span className={TYPOGRAPHY.label}>Email Address</span>
-              <p className="text-xs font-bold text-slate-800 mt-1 flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-slate-400" />
+              <p className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-indigo-500" />
                 <span>{user?.email || 'Not specified'}</span>
               </p>
             </div>
 
+            {/* User Role */}
             <div
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-              className="p-3.5 rounded-xl border"
+              className="p-3.5 rounded-xl border space-y-1"
             >
-              <span className={TYPOGRAPHY.label}>User Role</span>
-              <p className="text-xs font-bold text-slate-800 mt-1 flex items-center gap-1.5">
-                <Shield className="w-3.5 h-3.5 text-[#1E3A8A]" />
-                <span>{user?.role || user?.role_name || 'System User'}</span>
+              <span className={TYPOGRAPHY.label}>System User Role</span>
+              <p className="text-xs font-bold text-indigo-800 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                <span>{user?.role_id || user?.role || 'System User'}</span>
               </p>
             </div>
 
+            {/* User ID */}
             <div
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-              className="p-3.5 rounded-xl border"
+              className="p-3.5 rounded-xl border space-y-1"
             >
-              <span className={TYPOGRAPHY.label}>User ID / Service No</span>
-              <p className="text-xs font-mono font-bold text-slate-800 mt-1">
-                {user?.user_id || user?.serviceNo || user?.id || 'ADM001'}
+              <span className={TYPOGRAPHY.label}>User Identifier</span>
+              <p className="text-xs font-mono font-bold text-slate-800 flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-slate-400" />
+                <span>#{user?.user_id || user?.id || '1'}</span>
               </p>
             </div>
           </div>
@@ -177,7 +205,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                 <Key className="w-3.5 h-3.5 text-[#DC2626]" />
-                <span>Active Bearer Token (Authorization Tab)</span>
+                <span>Active Authorization Token</span>
               </span>
               <button
                 onClick={handleCopyToken}
@@ -186,7 +214,7 @@ export default function ProfilePage() {
                   borderColor: copiedToken ? '#A7F3D0' : COLORS.border,
                   color: copiedToken ? COLORS.success : COLORS.muted,
                 }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all hover:bg-slate-100"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all hover:bg-slate-100 cursor-pointer"
               >
                 {copiedToken ? (
                   <>
@@ -205,42 +233,72 @@ export default function ProfilePage() {
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
               className="p-3 rounded-xl border font-mono text-[11px] text-slate-600 break-all select-all leading-relaxed"
             >
-              {token ? `Bearer ${token}` : 'No active Bearer token found.'}
+              {token ? `Bearer ${token}` : 'No active Authorization token found.'}
             </div>
           </div>
         </div>
 
-        {/* Right Col: Live Raw JSON Response */}
+        {/* Right Col: System & Branch Assignment Overview */}
         <div
           style={{
             backgroundColor: COLORS.surface,
             borderColor: COLORS.border,
           }}
-          className="rounded-2xl border p-5 shadow-xs flex flex-col justify-between"
+          className="rounded-2xl border p-5 shadow-xs flex flex-col justify-between space-y-4"
         >
-          <div>
-            <div className="flex items-center justify-between border-b pb-3 mb-3" style={{ borderColor: COLORS.border }}>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: COLORS.border }}>
               <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Code className="w-4 h-4 text-[#1E3A8A]" />
-                <span>API Payload</span>
+                <Shield className="w-4 h-4 text-[#1E3A8A]" />
+                <span>Assignment & Activity</span>
               </h2>
-              <span className="text-[10px] bg-slate-100 text-slate-500 font-mono px-2 py-0.5 rounded-md">
-                JSON
-              </span>
+              <Badge variant="blue" icon={Sparkles}>
+                Live Profile
+              </Badge>
             </div>
-            <p className="text-[11px] text-slate-500 mb-2">
-              Profile object retrieved from <span className="font-semibold text-slate-700">viewmyprofile</span>:
-            </p>
-            <pre
-              style={{ backgroundColor: '#0F172A', color: '#34D399' }}
-              className="p-3 rounded-xl text-[10px] font-mono overflow-x-auto border border-slate-800 shadow-inner max-h-72 leading-relaxed"
-            >
-              {JSON.stringify(user || { message: 'No profile data loaded' }, null, 2)}
-            </pre>
+
+            {/* Branch Assignment Card */}
+            <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                <Building2 className="w-3 h-3 text-slate-400" /> Branch Location
+              </span>
+              <p className="text-xs font-bold text-slate-800">
+                Branch #{user?.branch_id || '1'}
+              </p>
+            </div>
+
+            {/* Account Status Card */}
+            <div className="p-3.5 bg-emerald-50/60 border border-emerald-100 rounded-xl space-y-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Session Status
+              </span>
+              <p className="text-xs font-bold text-emerald-800">
+                {user?.status || 'ACTIVE'} • Authenticated
+              </p>
+            </div>
+
+            {/* Registration Metadata */}
+            {formattedCreatedAt && (
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-slate-400" /> Member Since
+                </span>
+                <p className="text-xs font-semibold text-slate-700">{formattedCreatedAt}</p>
+              </div>
+            )}
+
+            {formattedUpdatedAt && (
+              <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-slate-400" /> Last Updated
+                </span>
+                <p className="text-xs font-semibold text-slate-700">{formattedUpdatedAt}</p>
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 pt-3 border-t text-[11px] text-slate-400" style={{ borderColor: COLORS.border }}>
-            Authorization: <span className="font-mono text-slate-600">Bearer Token</span>
+          <div className="pt-3 border-t text-[11px] text-slate-400" style={{ borderColor: COLORS.border }}>
+            Security Scheme: <span className="font-mono font-semibold text-slate-600">Bearer Token (JWT)</span>
           </div>
         </div>
       </div>

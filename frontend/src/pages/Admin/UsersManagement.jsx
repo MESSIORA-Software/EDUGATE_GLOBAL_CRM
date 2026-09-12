@@ -1,8 +1,9 @@
 import React from 'react';
 import useAdminUsers from '../../hooks/Admin/Users/useAdminUsers';
-import UserAddModal from '../../components/Modals/Admin/UserAddModal';
-import UserUpdateModal from '../../components/Modals/Admin/UserUpdateModal';
-import UserDetailModal from '../../components/Modals/Admin/UserDetailModal';
+import UserAddModal from '../../components/Modals/Admin/User/UserAddModal';
+import UserUpdateModal from '../../components/Modals/Admin/User/UserUpdateModal';
+import UserDetailModal from '../../components/Modals/Admin/User/UserDetailModal';
+
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { COLORS } from '../../constants/colors';

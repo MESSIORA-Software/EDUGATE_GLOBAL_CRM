@@ -1,26 +1,25 @@
 import React from 'react';
-import useBranches from '../../hooks/Admin/Branches/useBranches';
-import BranchAddModal from '../../components/Modals/Admin/Branch/BranchAddModal';
-import BranchUpdateModal from '../../components/Modals/Admin/Branch/BranchUpdateModal';
-import BranchDetailModal from '../../components/Modals/Admin/Branch/BranchDetailModal';
-import BranchUsersModal from '../../components/Modals/Admin/Branch/BranchUsersModal';
-
+import useClients from '../../hooks/Admin/Clients/useClients';
+import ClientAddModal from '../../components/Modals/Admin/Student/ClientAddModal';
+import ClientUpdateModal from '../../components/Modals/Admin/Student/ClientUpdateModal';
+import ClientDetailModal from '../../components/Modals/Admin/Student/ClientDetailModal';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
+
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typography';
 
 import {
-  Building2,
+  UserCheck,
   Plus,
   Search,
   RefreshCw,
   Edit2,
   Trash2,
   Eye,
-  Users,
-  Phone,
-  MapPin,
+  Mail,
+  Calendar,
+  Share2,
   CheckCircle2,
   AlertCircle,
   Server,
@@ -28,13 +27,12 @@ import {
   Loader2,
 } from 'lucide-react';
 
-export default function BranchesManagement() {
+export default function ClientsManagement() {
   const {
-    filteredBranches,
+    filteredClients,
     apiLoading,
     error,
     totalCount,
-    activeCount,
     searchTerm,
     setSearchTerm,
     findIdInput,
@@ -42,20 +40,16 @@ export default function BranchesManagement() {
     isFinding,
     isAddOpen,
     setIsAddOpen,
-    editingBranch,
-    setEditingBranch,
-    detailBranch,
-    setDetailBranch,
-    usersBranch,
-    setUsersBranch,
+    editingClient,
+    setEditingClient,
+    detailClient,
+    setDetailClient,
     toast,
     showToast,
     handleRefresh,
     handleFindById,
-    handleDeleteBranch,
-    handleViewBranchUsers,
-    getBadgeCode,
-  } = useBranches();
+    handleDeleteClient,
+  } = useClients();
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -87,17 +81,17 @@ export default function BranchesManagement() {
             style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
             className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0"
           >
-            <Building2 className="w-6 h-6" />
+            <UserCheck className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className={TYPOGRAPHY.h2}>Branch Locations Management</h1>
+              <h1 className={TYPOGRAPHY.h2}>Students & Clients Management</h1>
               <Badge variant="red" icon={Sparkles}>
-                CRM Branches API
+                CRM Clients API
               </Badge>
             </div>
             <p className={TYPOGRAPHY.subheading}>
-              Manage regional CRM branches and location staff via Edugate Vercel API
+              Manage student & client records, lead sources & profiles via Edugate Vercel API
             </p>
           </div>
         </div>
@@ -107,24 +101,24 @@ export default function BranchesManagement() {
             onClick={handleRefresh}
             style={{ borderColor: COLORS.border, color: COLORS.muted }}
             className="p-2 rounded-xl border hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Refresh Branches"
+            title="Refresh Clients"
           >
             <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-[#1E3A8A]' : ''}`} />
           </button>
           <Button variant="secondary" icon={Plus} onClick={() => setIsAddOpen(true)}>
-            Add New Branch
+            Add New Client
           </Button>
         </div>
       </div>
 
-      {/* Metrics Cards */}
+      {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
           className="p-4 rounded-2xl border shadow-sm flex items-center justify-between"
         >
           <div>
-            <p className={TYPOGRAPHY.label}>Total Branches</p>
+            <p className={TYPOGRAPHY.label}>Total Clients</p>
             <p style={{ color: COLORS.primary }} className="text-2xl font-extrabold mt-0.5">
               {totalCount}
             </p>
@@ -133,7 +127,7 @@ export default function BranchesManagement() {
             style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
             className="w-10 h-10 rounded-xl flex items-center justify-center font-bold"
           >
-            <Building2 className="w-5 h-5" />
+            <UserCheck className="w-5 h-5" />
           </div>
         </div>
 
@@ -142,9 +136,9 @@ export default function BranchesManagement() {
           className="p-4 rounded-2xl border shadow-sm flex items-center justify-between"
         >
           <div>
-            <p className={TYPOGRAPHY.label}>Active Locations</p>
+            <p className={TYPOGRAPHY.label}>Active Registered</p>
             <p style={{ color: COLORS.success }} className="text-2xl font-extrabold mt-0.5">
-              {activeCount}
+              {totalCount}
             </p>
           </div>
           <div
@@ -175,7 +169,7 @@ export default function BranchesManagement() {
         </div>
       </div>
 
-      {/* Filter & Search Toolbar */}
+      {/* Search & Filter Toolbar */}
       <div
         style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
         className="p-3.5 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center"
@@ -184,7 +178,7 @@ export default function BranchesManagement() {
           <Search style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
           <input
             type="text"
-            placeholder="Filter branch name, address, phone..."
+            placeholder="Search client name, email, source..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -196,11 +190,11 @@ export default function BranchesManagement() {
           />
         </div>
 
-        {/* Find By Branch ID Form (API #3) */}
+        {/* Find By Client ID Form */}
         <form onSubmit={handleFindById} className="flex items-center gap-2 w-full md:w-auto">
           <input
             type="text"
-            placeholder="Branch ID (e.g. 1)"
+            placeholder="Client ID (e.g. 1)"
             value={findIdInput}
             onChange={(e) => setFindIdInput(e.target.value)}
             style={{
@@ -241,19 +235,19 @@ export default function BranchesManagement() {
           </div>
         )}
 
-        {apiLoading && filteredBranches?.length === 0 ? (
+        {apiLoading && filteredClients?.length === 0 ? (
           <div className="p-8 text-center" style={{ color: COLORS.muted }}>
             <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: COLORS.primary }} />
-            <p className="font-semibold text-xs">Loading Branches...</p>
+            <p className="font-semibold text-xs">Loading Clients...</p>
           </div>
-        ) : filteredBranches.length === 0 ? (
+        ) : filteredClients.length === 0 ? (
           <div className="p-8 text-center" style={{ color: COLORS.placeholder }}>
-            <Building2 className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+            <UserCheck className="w-10 h-10 mx-auto mb-2 text-slate-300" />
             <p className="font-bold text-sm" style={{ color: COLORS.foreground }}>
-              No Branches Found
+              No Clients Found
             </p>
             <p className="text-xs mt-1" style={{ color: COLORS.muted }}>
-              {searchTerm ? 'Try adjusting your search criteria' : 'Click "Add New Branch" to create your first branch.'}
+              {searchTerm ? 'Try adjusting your search query' : 'Click "Add New Client" to create your first record.'}
             </p>
           </div>
         ) : (
@@ -265,20 +259,19 @@ export default function BranchesManagement() {
                   className="border-b text-[11px] font-bold uppercase tracking-wider text-slate-500"
                 >
                   <th className="py-3 px-4">ID</th>
-                  <th className="py-3 px-4">Branch Details</th>
-                  <th className="py-3 px-4">Address</th>
-                  <th className="py-3 px-4">Phone</th>
+                  <th className="py-3 px-4">Client Details</th>
+                  <th className="py-3 px-4">Date of Birth</th>
+                  <th className="py-3 px-4">Source</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredBranches.map((b, index) => {
-                  const branchId = b.branch_id || b.id || index + 1;
-                  const badgeCode = getBadgeCode(b.name);
+                {filteredClients.map((c, index) => {
+                  const clientId = c.client_id || c.id || index + 1;
 
                   return (
-                    <tr key={branchId} className="hover:bg-slate-50/70 transition-colors">
+                    <tr key={clientId} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3 px-4 font-mono font-bold">
                         <span
                           style={{
@@ -288,39 +281,29 @@ export default function BranchesManagement() {
                           }}
                           className="px-2 py-0.5 rounded-md border text-[11px]"
                         >
-                          #{branchId}
+                          #{clientId}
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <span
-                            style={{
-                              backgroundColor: '#F1F5F9',
-                              color: COLORS.primaryDark,
-                            }}
-                            className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[10px] uppercase shrink-0 border border-slate-200"
-                          >
-                            {badgeCode}
-                          </span>
-                          <div>
-                            <p className="font-bold" style={{ color: COLORS.foreground }}>
-                              {b.name || 'Unnamed Branch'}
-                            </p>
-                            <span className="text-[10px] text-slate-400">Branch Office</span>
-                          </div>
+                        <p className="font-bold" style={{ color: COLORS.foreground }}>
+                          {c.name || 'Unnamed Client'}
+                        </p>
+                        <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                          <Mail className="w-3 h-3 text-slate-400" />
+                          {c.email || 'No email'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1.5 text-slate-700">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>{c.dob || 'Not specified'}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 text-slate-600 max-w-xs truncate">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="truncate">{b.address || 'No address specified'}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 font-medium text-slate-700">
-                          <Phone className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                          <span>{b.phone || 'No phone'}</span>
-                        </div>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                          <Share2 className="w-3 h-3 text-emerald-500" />
+                          {c.source || 'General'}
+                        </span>
                       </td>
                       <td className="py-3 px-4">
                         <Badge variant="green" icon={CheckCircle2}>
@@ -328,39 +311,27 @@ export default function BranchesManagement() {
                         </Badge>
                       </td>
                       <td className="py-3 px-4 text-right space-x-1.5">
-                        {/* View Details (API #3) */}
                         <button
-                          onClick={() => setDetailBranch(b)}
+                          onClick={() => setDetailClient(c)}
                           style={{ color: COLORS.muted, borderColor: COLORS.border }}
                           className="p-1.5 rounded-lg border hover:text-[#1E3A8A] hover:bg-slate-100 transition-colors cursor-pointer"
-                          title="View Branch Details"
+                          title="View Client Details"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
-                        {/* View Users (API #6) */}
                         <button
-                          onClick={() => handleViewBranchUsers(b)}
-                          style={{ color: COLORS.muted, borderColor: COLORS.border }}
-                          className="p-1.5 rounded-lg border hover:text-[#2563EB] hover:bg-blue-50 transition-colors cursor-pointer"
-                          title="View Branch Users"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                        </button>
-                        {/* Edit Branch (API #4) */}
-                        <button
-                          onClick={() => setEditingBranch(b)}
+                          onClick={() => setEditingClient(c)}
                           style={{ color: COLORS.muted, borderColor: COLORS.border }}
                           className="p-1.5 rounded-lg border hover:text-[#D97706] hover:bg-amber-50 transition-colors cursor-pointer"
-                          title="Edit Branch"
+                          title="Edit Client"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        {/* Delete Branch (API #5) */}
                         <button
-                          onClick={() => handleDeleteBranch(branchId, b.name)}
+                          onClick={() => handleDeleteClient(clientId, c.name)}
                           style={{ color: COLORS.muted, borderColor: COLORS.border }}
                           className="p-1.5 rounded-lg border hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Delete Branch"
+                          title="Delete Client"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -375,30 +346,23 @@ export default function BranchesManagement() {
       </div>
 
       {/* Modals */}
-      <BranchAddModal
+      <ClientAddModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
         onSuccess={(msg) => showToast(msg)}
       />
 
-      <BranchUpdateModal
-        isOpen={!!editingBranch}
-        branch={editingBranch}
-        onClose={() => setEditingBranch(null)}
+      <ClientUpdateModal
+        isOpen={!!editingClient}
+        client={editingClient}
+        onClose={() => setEditingClient(null)}
         onSuccess={(msg) => showToast(msg)}
       />
 
-      <BranchDetailModal
-        isOpen={!!detailBranch}
-        branch={detailBranch}
-        onClose={() => setDetailBranch(null)}
-        onViewUsers={(b) => handleViewBranchUsers(b)}
-      />
-
-      <BranchUsersModal
-        isOpen={!!usersBranch}
-        branch={usersBranch}
-        onClose={() => setUsersBranch(null)}
+      <ClientDetailModal
+        isOpen={!!detailClient}
+        client={detailClient}
+        onClose={() => setDetailClient(null)}
       />
     </div>
   );

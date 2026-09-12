@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchUsersByBranch } from '../../../actions/Admin/branchAction';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typography';
-import Button from '../../ui/Button';
-import Badge from '../../ui/Badge';
+import { fetchUsersByBranch } from '../../../../actions/Admin/branchAction';
+import { COLORS } from '../../../../constants/colors';
+import { TYPOGRAPHY } from '../../../../constants/typography';
+import Button from '../../../ui/Button';
+import Badge from '../../../ui/Badge';
 import { X, Users, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Mail, Loader2 } from 'lucide-react';
 
 export default function BranchUsersModal({ isOpen, branch, onClose }) {

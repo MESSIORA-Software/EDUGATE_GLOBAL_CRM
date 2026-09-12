@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { createRole } from '../../../actions/Admin/roleActions';
-import { COLORS } from '../../../constants/colors';
-import { TYPOGRAPHY } from '../../../constants/typography';
-import Button from '../../ui/Button';
+import { createRole } from '../../../../actions/Admin/roleActions';
+import { COLORS } from '../../../../constants/colors';
+import { TYPOGRAPHY } from '../../../../constants/typography';
+import Button from '../../../ui/Button';
 import { X, ShieldPlus, AlertCircle } from 'lucide-react';
 
 export default function RoleAddModal({ isOpen, onClose, onSuccess }) {

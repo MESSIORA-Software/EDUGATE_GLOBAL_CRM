@@ -7,6 +7,7 @@ import ProfilePage from '../pages/Auth/ProfilePage';
 import RolesManagement from '../pages/Admin/RolesManagement';
 import UsersManagement from '../pages/Admin/UsersManagement';
 import BranchesManagement from '../pages/Admin/BranchesManagement';
+import ClientsManagement from '../pages/Admin/ClientsManagement';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -67,6 +68,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <UsersManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clients"
+        element={
+          <ProtectedRoute>
+            <ClientsManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/students"
+        element={
+          <ProtectedRoute>
+            <ClientsManagement />
           </ProtectedRoute>
         }
       />

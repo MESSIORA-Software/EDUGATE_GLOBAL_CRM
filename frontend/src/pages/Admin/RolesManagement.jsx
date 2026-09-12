@@ -1,8 +1,9 @@
 import React from 'react';
 import useAdminRoles from '../../hooks/Admin/Roles/useAdminRoles';
-import RoleAddModal from '../../components/Modals/Admin/RoleAddModal';
-import RoleUpdateModal from '../../components/Modals/Admin/RoleUpdateModal';
-import RoleDetailModal from '../../components/Modals/Admin/RoleDetailModal';
+import RoleAddModal from '../../components/Modals/Admin/Role/RoleAddModal';
+import RoleUpdateModal from '../../components/Modals/Admin/Role/RoleUpdateModal';
+import RoleDetailModal from '../../components/Modals/Admin/Role/RoleDetailModal';
+
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { COLORS } from '../../constants/colors';
