@@ -25,4 +25,15 @@ router.use('/branches', BranchRoutes);
 router.use('/clients', ClientRoutes);
 router.use('/oppertunity-status', OppertunityStatusRoute);
 
+// Branch CRUD Endpoints
+router.use('/branches', BranchRoutes);
+
+// User Endpoints (including branch filtering)
+router.use('/users', UserRoutes);
+
+// Client CRUD Endpoints
+router.use('/clients', ClientRoutes);
+
 export default router;
+
+
