@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import UserRoleRoutes from './UserRoleRoutes.js';
+import UsersRoutes from './UsersRoutes.js';
+import  AuthRoutes  from './AuthRoutes.js';
 import BranchRoutes from './BranchRoutes.js';
-import UserRoutes from './UserRoutes.js';
 import ClientRoutes from './ClientRoutes.js';
+import  OppertunityStatusRoute from './OppertunityStatusRoute.js';
 
 const router = Router();
 
@@ -17,6 +19,11 @@ router.get('/health', (req, res) => {
 
 // User Role Endpoint
 router.use('/roles', UserRoleRoutes);
+router.use('/users', UsersRoutes);
+router.use('/auth', AuthRoutes);
+router.use('/branches', BranchRoutes);
+router.use('/clients', ClientRoutes);
+router.use('/oppertunity-status', OppertunityStatusRoute);
 
 // Branch CRUD Endpoints
 router.use('/branches', BranchRoutes);

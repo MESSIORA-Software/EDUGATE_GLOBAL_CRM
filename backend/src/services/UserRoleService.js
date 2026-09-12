@@ -66,6 +66,6 @@ export const roleService = {
         // Check if exists
         await this.getRoleById(roleId);
 
-        return await roleRepository.delete(roleId);
+        return await roleRepository.delete(roleId); 
     }
 };
