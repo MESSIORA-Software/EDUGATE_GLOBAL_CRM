@@ -6,6 +6,7 @@ import BranchRoutes from './BranchRoutes.js';
 import ClientRoutes from './ClientRoutes.js';
 import  OppertunityStatusRoute from './OppertunityStatusRoute.js';
 import OppertunityRoute from './OppertunityRoute.js';
+import OppertunityNoteRoutes from './OppertunityNoteRoutes.js';
 
 const router = Router();
 
@@ -26,16 +27,7 @@ router.use('/branches', BranchRoutes);
 router.use('/clients', ClientRoutes);
 router.use('/oppertunity-status', OppertunityStatusRoute);
 router.use('/oppertunity', OppertunityRoute);
-
-// Branch CRUD Endpoints
-router.use('/branches', BranchRoutes);
-
-// User Endpoints (including branch filtering)
-router.use('/users', UserRoutes);
-
-// Client CRUD Endpoints
-router.use('/clients', ClientRoutes);
-
+router.use('/oppertunitynotes', OppertunityNoteRoutes);
 export default router;
 
 

@@ -57,7 +57,7 @@ const getBranchById = async (branchId) => {
 // Update Branch
 const updateBranch = async (branchId, name, address, phone) => {
   const config = {
-    method: 'post',
+    method: 'put',
     url: `${BASE_URL}/branches/updatebranch`,
     timeout: REQUEST_TIMEOUT_MS,
     headers: {
