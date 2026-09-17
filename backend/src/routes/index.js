@@ -1,15 +1,15 @@
 import { Router } from 'express';
 import UserRoleRoutes from './UserRoleRoutes.js';
 import UsersRoutes from './UsersRoutes.js';
-import  AuthRoutes  from './AuthRoutes.js';
+import AuthRoutes from './AuthRoutes.js';
 import BranchRoutes from './BranchRoutes.js';
 import ClientRoutes from './ClientRoutes.js';
-import  OppertunityStatusRoute from './OppertunityStatusRoute.js';
+import OppertunityStatusRoute from './OppertunityStatusRoute.js';
 import OppertunityRoute from './OppertunityRoute.js';
 import OppertunityNoteRoutes from './OppertunityNoteRoutes.js';
 import ConversationRoutes from './ConversationRoutes.js';
 import WebhookRoutes from './WebhookRoutes.js';
-
+import MobileSyncRoutes from './MobileSyncRoutes.js';
 
 const router = Router();
 
@@ -33,6 +33,6 @@ router.use('/oppertunity', OppertunityRoute);
 router.use('/oppertunitynotes', OppertunityNoteRoutes);
 router.use('/conversations', ConversationRoutes);
 router.use('/webhooks', WebhookRoutes);
+router.use('/mobile', MobileSyncRoutes);
+
 export default router;
-
-

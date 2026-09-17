@@ -87,13 +87,29 @@ export const ConversationController = {
         }
     },
 
+    // POST /api/conversations/:id/create-opportunity (Triggered by "Create Opportunity" button)
+    async createOpportunity(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { status_id, note_id } = req.body;
+            const opportunity = await ConversationService.createOpportunityFromConversation(id, req.user, { status_id, note_id });
+            res.status(201).json({
+                status: 'success',
+                message: 'Opportunity created successfully for this conversation client',
+                data: opportunity
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
     // POST /api/conversations/inbound
     async handleInbound(req, res, next) {
         try {
             const result = await ConversationService.handleInboundCommunication(req.body);
             res.status(201).json({
                 status: 'success',
-                message: 'Inbound message processed & opportunity created',
+                message: 'Inbound message processed successfully',
                 data: result
             });
         } catch (error) {
