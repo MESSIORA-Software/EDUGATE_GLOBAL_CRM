@@ -1,6 +1,5 @@
 import { ConversationRepository } from '../repositories/ConversationRepository.js';
 import { ClientRepository } from '../repositories/ClientRepository.js';
-import { OppertunityRepository } from '../repositories/OppertunityRepository.js';
 import { roleRepository } from '../repositories/UserRoleRepository.js';
 import { supabase } from '../database/supabaseClient.js';
 
@@ -55,7 +54,7 @@ export const ConversationService = {
         return await ClientRepository.updateClient(clientId, updateData);
     },
 
-    // 6. Inbound Communication Handler (Auto-Lead Creation)
+    // 6. Inbound Communication Handler (Does NOT auto-create opportunity)
     async handleInboundCommunication({ channel, channelClientId, clientName, clientEmail, content, messageType = 'text', callMetadata = null, media_url = null }) {
         // Step A: Check if a conversation thread already exists
         let conversation = await ConversationRepository.findByChannelAndClientId(channel, channelClientId);
@@ -82,30 +81,7 @@ export const ConversationService = {
             }
         }
 
-        // Step C: Auto create Opportunity as "New Lead" if no open opportunity exists
-        const { data: existingOpp } = await supabase
-            .from('opportunities')
-            .select('*')
-            .eq('client_id', client.client_id)
-            .eq('is_archived', false)
-            .maybeSingle();
-
-        if (!existingOpp) {
-            const { data: statusData } = await supabase
-                .from('opportunity_statuses')
-                .select('status_id')
-                .ilike('status_name', '%New Lead%')
-                .maybeSingle();
-
-            await OppertunityRepository.createOppertunity({
-                client_id: client.client_id,
-                status_id: statusData ? statusData.status_id : 1,
-                is_archived: false,
-                created_by: null
-            });
-        }
-
-        // Step D: Create Conversation Thread if not exists
+        // Step C: Create Conversation Thread if not exists
         if (!conversation) {
             conversation = await ConversationRepository.createConversation({
                 client_id: client.client_id,
@@ -115,7 +91,7 @@ export const ConversationService = {
             });
         }
 
-        // Step E: Insert the inbound message
+        // Step D: Insert the inbound message
         const { MessageRepository } = await import('../repositories/MessageRepository.js');
         const message = await MessageRepository.createMessage({
             conversation_id: conversation.conversation_id,
