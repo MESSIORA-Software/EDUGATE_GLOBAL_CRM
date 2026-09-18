@@ -10,6 +10,8 @@ import OppertunityNoteRoutes from './OppertunityNoteRoutes.js';
 import ConversationRoutes from './ConversationRoutes.js';
 import WebhookRoutes from './WebhookRoutes.js';
 import MobileSyncRoutes from './MobileSyncRoutes.js';
+import MediaRoutes from './MediaRoutes.js';
+
 
 const router = Router();
 
@@ -34,5 +36,6 @@ router.use('/oppertunitynotes', OppertunityNoteRoutes);
 router.use('/conversations', ConversationRoutes);
 router.use('/webhooks', WebhookRoutes);
 router.use('/mobile', MobileSyncRoutes);
+router.use('/media', MediaRoutes);
 
 export default router;
