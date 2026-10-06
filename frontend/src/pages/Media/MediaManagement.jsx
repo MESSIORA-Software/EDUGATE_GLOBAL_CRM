@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useMedia from '../../hooks/Media/useMedia';
 import UploadMediaModal from '../../components/Modals/Media/UploadMediaModal';
+import StudentMediaView from './StudentMediaView';
 
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
@@ -28,6 +29,7 @@ import {
   X,
   Sparkles,
   Server,
+  UserCircle,
 } from 'lucide-react';
 
 const getFileIcon = (mimeType = '') => {
@@ -80,6 +82,7 @@ export default function MediaManagement() {
 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [activeTab, setActiveTab] = useState('all'); // 'all' or 'student'
 
   const hasActiveFilters = mimeFilter || dateFrom || dateTo || providerFilter || uploadedByFilter;
 
@@ -143,7 +146,37 @@ export default function MediaManagement() {
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* Tabs */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-1">
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-xl text-sm font-bold transition-colors ${
+            activeTab === 'all'
+              ? 'text-[#1E3A8A] bg-blue-50 border-b-2 border-[#1E3A8A]'
+              : 'text-slate-500 hover:bg-slate-50'
+          }`}
+        >
+          <HardDrive className="w-4 h-4" />
+          All Media Files
+        </button>
+        <button
+          onClick={() => setActiveTab('student')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-t-xl text-sm font-bold transition-colors ${
+            activeTab === 'student'
+              ? 'text-indigo-600 bg-indigo-50 border-b-2 border-indigo-600'
+              : 'text-slate-500 hover:bg-slate-50'
+          }`}
+        >
+          <UserCircle className="w-4 h-4" />
+          Student Documents
+        </button>
+      </div>
+
+      {activeTab === 'student' ? (
+        <StudentMediaView />
+      ) : (
+        <>
+          {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div
           style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
@@ -513,9 +546,13 @@ export default function MediaManagement() {
         )}
       </div>
 
+        </>
+      )}
+
       {/* Upload Modal */}
       <UploadMediaModal
         isOpen={isUploadOpen}
+        isStudentMode={activeTab === 'student'}
         onClose={() => setIsUploadOpen(false)}
         onUpload={uploadMedia}
       />
