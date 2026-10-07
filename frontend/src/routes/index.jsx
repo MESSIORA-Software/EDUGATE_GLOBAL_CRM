@@ -8,6 +8,8 @@ import RolesManagement from '../pages/Admin/RolesManagement';
 import UsersManagement from '../pages/Admin/UsersManagement';
 import BranchesManagement from '../pages/Admin/BranchesManagement';
 import ClientsManagement from '../pages/Admin/ClientsManagement';
+import MediaManagement from '../pages/Media/MediaManagement';
+import GoogleCallback from '../pages/Media/GoogleCallback';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -84,6 +86,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ClientsManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/media"
+        element={
+          <ProtectedRoute>
+            <MediaManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/media/google/callback"
+        element={
+          <ProtectedRoute>
+            <GoogleCallback />
           </ProtectedRoute>
         }
       />
