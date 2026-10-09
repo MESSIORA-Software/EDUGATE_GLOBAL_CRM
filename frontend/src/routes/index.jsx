@@ -10,6 +10,7 @@ import BranchesManagement from '../pages/Admin/BranchesManagement';
 import ClientsManagement from '../pages/Admin/ClientsManagement';
 import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
+import EventManagement from '../pages/Admin/EventManagement';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -102,6 +103,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <GoogleCallback />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events"
+        element={
+          <ProtectedRoute>
+            <EventManagement />
           </ProtectedRoute>
         }
       />
