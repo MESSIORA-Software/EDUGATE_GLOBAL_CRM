@@ -32,6 +32,7 @@ export const OppertunityNoteRepository = {
         return data;
     },
 
+
     async getOppertunityNoteById(note_id) {
         const { data, error } = await supabase
             .from('OPPORTUNITY_NOTE')

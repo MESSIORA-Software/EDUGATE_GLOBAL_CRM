@@ -1,12 +1,18 @@
 import { Router } from 'express';
 import UserRoleRoutes from './UserRoleRoutes.js';
 import UsersRoutes from './UsersRoutes.js';
-import  AuthRoutes  from './AuthRoutes.js';
+import AuthRoutes from './AuthRoutes.js';
 import BranchRoutes from './BranchRoutes.js';
 import ClientRoutes from './ClientRoutes.js';
-import  OppertunityStatusRoute from './OppertunityStatusRoute.js';
+import OppertunityStatusRoute from './OppertunityStatusRoute.js';
 import OppertunityRoute from './OppertunityRoute.js';
 import OppertunityNoteRoutes from './OppertunityNoteRoutes.js';
+import ConversationRoutes from './ConversationRoutes.js';
+import WebhookRoutes from './WebhookRoutes.js';
+import MobileSyncRoutes from './MobileSyncRoutes.js';
+import MediaRoutes from './MediaRoutes.js';
+import CalendarRoutes from './CalendarRoutes.js';
+
 
 const router = Router();
 
@@ -28,6 +34,10 @@ router.use('/clients', ClientRoutes);
 router.use('/oppertunity-status', OppertunityStatusRoute);
 router.use('/oppertunity', OppertunityRoute);
 router.use('/oppertunitynotes', OppertunityNoteRoutes);
+router.use('/conversations', ConversationRoutes);
+router.use('/webhooks', WebhookRoutes);
+router.use('/mobile', MobileSyncRoutes);
+router.use('/media', MediaRoutes);
+router.use('/calendar', CalendarRoutes);
+
 export default router;
-
-

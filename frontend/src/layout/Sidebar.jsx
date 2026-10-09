@@ -4,7 +4,7 @@ import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut, HardDrive } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
@@ -15,6 +15,7 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Branch Locations', path: '/branches', icon: Building2 },
     { name: 'User Accounts', path: '/users', icon: Users },
     { name: 'Students / Clients', path: '/clients', icon: UserCheck },
+    { name: 'Media Storage', path: '/media', icon: HardDrive },
     { name: 'My Profile', path: '/profile', icon: UserCheck },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
