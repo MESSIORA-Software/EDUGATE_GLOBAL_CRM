@@ -12,6 +12,8 @@ import WebhookRoutes from './WebhookRoutes.js';
 import MobileSyncRoutes from './MobileSyncRoutes.js';
 import MediaRoutes from './MediaRoutes.js';
 import CalendarRoutes from './CalendarRoutes.js';
+import NotificationRoutes from './NotificationRoutes.js';
+import InternalNotificationRoutes from './InternalNotificationRoutes.js';
 
 
 const router = Router();
@@ -39,5 +41,7 @@ router.use('/webhooks', WebhookRoutes);
 router.use('/mobile', MobileSyncRoutes);
 router.use('/media', MediaRoutes);
 router.use('/calendar', CalendarRoutes);
+router.use('/notifications', NotificationRoutes);
+router.use('/internal/notifications', InternalNotificationRoutes);
 
 export default router;
