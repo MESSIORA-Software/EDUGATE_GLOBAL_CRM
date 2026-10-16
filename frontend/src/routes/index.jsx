@@ -12,6 +12,7 @@ import StudentPipeline from '../pages/Admin/StudentPipeline';
 import ConversationsPage from '../pages/Conversation/ConversationsPage';
 import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
+import EventManagement from '../pages/Admin/EventManagement';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -128,6 +129,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <GoogleCallback />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events"
+        element={
+          <ProtectedRoute>
+            <EventManagement />
           </ProtectedRoute>
         }
       />

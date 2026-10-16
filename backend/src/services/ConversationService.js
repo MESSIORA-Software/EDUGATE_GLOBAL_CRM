@@ -44,9 +44,9 @@ export const ConversationService = {
         return await ConversationRepository.getConversationsByClientId(clientId);
     },
 
-    // 4. Assign Staff member to conversation
-    async assignStaff(conversationId, staffId) {
-        return await ConversationRepository.assignStaff(conversationId, staffId);
+    // 4. Assign Staff member to conversation (actor = authenticated user, from JWT)
+    async assignStaff(conversationId, staffId, currentUser) {
+        return await ConversationRepository.assignStaff(conversationId, staffId, currentUser.user_id);
     },
 
     // 5. Update Client Details (Email, DOB, Source)

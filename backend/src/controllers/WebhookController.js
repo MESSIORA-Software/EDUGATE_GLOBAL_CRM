@@ -1,5 +1,17 @@
+import crypto from 'crypto';
 import { ConversationService } from '../services/ConversationService.js';
 import { FacebookMessengerService } from '../services/FacebookMessengerService.js';
+import { config } from '../config/index.js';
+
+/** HMAC-SHA256 of the RAW body with the app secret, compared in constant time. */
+export function verifyMetaSignature(rawBody, signatureHeader, appSecret) {
+    if (!rawBody || typeof signatureHeader !== 'string' || !signatureHeader.startsWith('sha256=')) return false;
+    const expected = crypto.createHmac('sha256', appSecret).update(rawBody).digest('hex');
+    const received = signatureHeader.slice('sha256='.length);
+    const a = Buffer.from(expected, 'utf8');
+    const b = Buffer.from(received, 'utf8');
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 
 export const WebhookController = {
     verifyFacebookWebhook(req, res) {
@@ -21,6 +33,23 @@ export const WebhookController = {
         res.status(200).send('EVENT_RECEIVED');
 
         if (body?.object !== 'page') return;
+        // Verify the Meta signature BEFORE trusting the payload (fail closed).
+        const appSecret = config.facebook.appSecret;
+        if (!appSecret) {
+            console.error('FACEBOOK_APP_SECRET is not configured; rejecting webhook.');
+            return res.sendStatus(503);
+        }
+        if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
+            return res.sendStatus(401);
+        }
+
+        const body = req.body;
+
+        try {
+        if (body.object === 'page' && Array.isArray(body.entry)) {
+            for (const entry of body.entry) {
+              for (const webhookEvent of entry.messaging || []) {
+                if (!webhookEvent) continue;
 
         for (const entry of body.entry || []) {
             for (const webhookEvent of entry.messaging || []) {
@@ -48,7 +77,15 @@ export const WebhookController = {
                 } catch (error) {
                     console.error('Error handling Facebook inbound message:', error);
                 }
+              }
             }
         }
+        } catch (err) {
+            console.error('Error processing Facebook webhook payload:', err);
+        }
+
+        // Respond after processing: on serverless, work after the response may be frozen.
+        // Signature is verified, so this only acknowledges authentic Meta traffic.
+        return res.status(200).send('EVENT_RECEIVED');
     }
 };
