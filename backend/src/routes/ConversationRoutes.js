@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ConversationController } from '../controllers/ConversationController.js';
 import { MessageController } from '../controllers/MessageController.js';
 import { authenticateToken } from '../middleware/authMiddleware.js';
+import { uploadMiddleware, validateFile } from '../validators/MediaValidator.js';
 import { requireAdmin } from '../middleware/roleMiddleware.js';
 
 const router = Router();
@@ -13,6 +14,8 @@ router.post('/inbound', authenticateToken, requireAdmin, ConversationController.
 
 // All routes below require JWT Authentication
 router.use(authenticateToken);
+
+router.post('/media/upload', uploadMiddleware, validateFile, MessageController.uploadMedia);
 
 // Conversation threads
 router.get('/', ConversationController.getConversations);

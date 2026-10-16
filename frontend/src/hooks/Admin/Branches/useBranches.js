@@ -122,8 +122,12 @@ export default function useBranches() {
   };
 
   // ── Helpers ────────────────────────────────────────────────
-  const getBadgeCode = (name) =>
-    name ? name.trim().toUpperCase().slice(0, 3) : '??';
+  const getBadgeCode = (input) => {
+    if (!input) return 'BR';
+    if (typeof input === 'string') return input.trim().toUpperCase().slice(0, 3) || 'BR';
+    const str = input.branch_name || input.name || String(input.branch_id || input.id || 'BR');
+    return String(str).trim().toUpperCase().slice(0, 3) || 'BR';
+  };
 
   const getBranchById = (id) =>
     id

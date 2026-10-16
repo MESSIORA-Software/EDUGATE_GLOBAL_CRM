@@ -4,7 +4,8 @@ import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut, HardDrive, Calendar } from 'lucide-react';
+import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut, HardDrive, Kanban, MessageSquare,Calendar } from 'lucide-react';
+
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
@@ -15,6 +16,8 @@ export default function Sidebar({ isOpen, onClose }) {
     { name: 'Branch Locations', path: '/branches', icon: Building2 },
     { name: 'User Accounts', path: '/users', icon: Users },
     { name: 'Students / Clients', path: '/clients', icon: UserCheck },
+    { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+    { name: 'Conversations', path: '/conversations', icon: MessageSquare },
     { name: 'Media Storage', path: '/media', icon: HardDrive },
     { name: 'Events', path: '/events', icon: Calendar },
     { name: 'My Profile', path: '/profile', icon: UserCheck },
@@ -36,7 +39,7 @@ export default function Sidebar({ isOpen, onClose }) {
           backgroundColor: COLORS.surface,
           borderColor: COLORS.sidebarBorder,
         }}
-        className={`fixed top-0 left-0 z-40 h-screen w-60 border-r flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-screen w-60 border-r flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

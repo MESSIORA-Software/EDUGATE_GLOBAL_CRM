@@ -11,6 +11,12 @@ export const MessageService = {
 
     // 2. Send outgoing message (WhatsApp & Messenger)
     async sendMessage(conversationId, staffUser, { content, media_url, media_source, message_type = 'text' }) {
+        if (!content?.trim() && !media_url) {
+            const error = new Error('Message content or media is required');
+            error.statusCode = 400;
+            throw error;
+        }
+
         const conversation = await ConversationRepository.getConversationById(conversationId);
         if (!conversation) {
             const error = new Error('Conversation not found');
@@ -27,11 +33,15 @@ export const MessageService = {
 
         // 1. If Facebook Messenger, send via Meta Graph API
         if (conversation.channel === 'messenger') {
-            await FacebookMessengerService.sendMessage(conversation.channel_client_id, {
-                content,
-                media_url,
-                message_type
-            });
+            if (content?.trim()) {
+                await FacebookMessengerService.sendMessage(conversation.channel_client_id, { content: content.trim() });
+            }
+            if (media_url) {
+                await FacebookMessengerService.sendMessage(conversation.channel_client_id, {
+                    media_url,
+                    message_type
+                });
+            }
         }
 
         // 2. Save message record in database
