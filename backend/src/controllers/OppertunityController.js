@@ -65,7 +65,7 @@ export const OppertunityController = {
 
     async getOppertunitiesbyoppertunityStatus(req, res) {
         try {
-            const { status_id } = req.body;
+            const status_id = req.body?.status_id || req.query?.status_id || req.params?.status_id;
             const opportunities = await OppertunityService.getOppertunitiesbyoppertunityStatus(status_id);
             res.status(200).json({
                 status: 'success',

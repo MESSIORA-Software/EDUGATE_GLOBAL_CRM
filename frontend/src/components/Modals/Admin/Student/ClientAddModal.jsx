@@ -14,15 +14,28 @@ export default function ClientAddModal({ isOpen, onClose, onSuccess }) {
   const [email, setEmail]   = useState('');
   const [dob, setDob]       = useState('');
   const [source, setSource] = useState('');
+  const [selectedChannels, setSelectedChannels] = useState([]);
   const [submitError, setSubmitError] = useState('');
 
   if (!isOpen) return null;
+
+  const handleToggleChannel = (channelId) => {
+    let nextChannels;
+    if (selectedChannels.includes(channelId)) {
+      nextChannels = selectedChannels.filter((id) => id !== channelId);
+    } else {
+      nextChannels = [...selectedChannels, channelId];
+    }
+    setSelectedChannels(nextChannels);
+    setSource(nextChannels.join(', '));
+  };
 
   const resetForm = () => {
     setName('');
     setEmail('');
     setDob('');
     setSource('');
+    setSelectedChannels([]);
     setSubmitError('');
   };
 
@@ -49,10 +62,9 @@ export default function ClientAddModal({ isOpen, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="rounded-2xl shadow-xl border max-w-md w-full overflow-hidden"
+        className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-md w-full overflow-hidden"
       >
         {/* Header */}
         <div
@@ -131,7 +143,7 @@ export default function ClientAddModal({ isOpen, onClose, onSuccess }) {
           </div>
 
           {/* DOB & Source Grid */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div>
               <label className={`${TYPOGRAPHY.label} block mb-1`}>Date of Birth</label>
               <div className="relative">
@@ -146,13 +158,73 @@ export default function ClientAddModal({ isOpen, onClose, onSuccess }) {
               </div>
             </div>
 
+            {/* 4 Conversation Channels for Lead Source Multi-Select */}
             <div>
-              <label className={`${TYPOGRAPHY.label} block mb-1`}>Lead Source</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={`${TYPOGRAPHY.label} block`}>Lead Source (Select Channel(s))</label>
+                {selectedChannels.length > 0 && (
+                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                    {selectedChannels.length} Selected
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {[
+                  {
+                    id: 'Messenger',
+                    label: 'Messenger',
+                    bg: 'bg-blue-600 text-white',
+                    unselectedBg: 'bg-blue-50/50 text-blue-700 border-blue-200 hover:bg-blue-100/60',
+                    dot: 'bg-blue-500',
+                  },
+                  {
+                    id: 'Whatsapp',
+                    label: 'Whatsapp',
+                    bg: 'bg-emerald-600 text-white',
+                    unselectedBg: 'bg-emerald-50/50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/60',
+                    dot: 'bg-emerald-500',
+                  },
+                  {
+                    id: 'Email',
+                    label: 'Email',
+                    bg: 'bg-purple-600 text-white',
+                    unselectedBg: 'bg-purple-50/50 text-purple-700 border-purple-200 hover:bg-purple-100/60',
+                    dot: 'bg-purple-500',
+                  },
+                  {
+                    id: 'Messages & Phone calls',
+                    label: 'Messages & Calls',
+                    bg: 'bg-rose-600 text-white',
+                    unselectedBg: 'bg-rose-50/50 text-rose-700 border-rose-200 hover:bg-rose-100/60',
+                    dot: 'bg-rose-500',
+                  },
+                ].map((ch) => {
+                  const isSelected = selectedChannels.includes(ch.id);
+                  return (
+                    <button
+                      key={ch.id}
+                      type="button"
+                      onClick={() => handleToggleChannel(ch.id)}
+                      className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                        isSelected
+                          ? `${ch.bg} border-transparent shadow-xs scale-[1.01]`
+                          : `${ch.unselectedBg} border`
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? 'bg-white' : ch.dot}`} />
+                      <span className="truncate">{ch.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Source Text Input */}
               <div className="relative">
                 <Share2 style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
                 <input
                   type="text"
-                  placeholder="e.g. Website / Refer"
+                  placeholder="e.g. Messenger, Whatsapp, or Custom Source"
                   value={source}
                   onChange={(e) => setSource(e.target.value)}
                   style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}

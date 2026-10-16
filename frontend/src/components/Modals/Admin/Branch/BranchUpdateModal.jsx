@@ -84,10 +84,9 @@ export default function BranchUpdateModal({ isOpen, branch, onClose, onSuccess }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="rounded-2xl shadow-xl border max-w-md w-full overflow-hidden"
+        className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-md w-full overflow-hidden"
       >
         {/* Header */}
         <div

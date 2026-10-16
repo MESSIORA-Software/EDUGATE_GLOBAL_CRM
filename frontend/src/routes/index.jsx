@@ -8,6 +8,8 @@ import RolesManagement from '../pages/Admin/RolesManagement';
 import UsersManagement from '../pages/Admin/UsersManagement';
 import BranchesManagement from '../pages/Admin/BranchesManagement';
 import ClientsManagement from '../pages/Admin/ClientsManagement';
+import StudentPipeline from '../pages/Admin/StudentPipeline';
+import ConversationsPage from '../pages/Conversation/ConversationsPage';
 import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
 
@@ -86,6 +88,30 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ClientsManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pipeline"
+        element={
+          <ProtectedRoute>
+            <StudentPipeline />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student-pipeline"
+        element={
+          <ProtectedRoute>
+            <StudentPipeline />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/conversations"
+        element={
+          <ProtectedRoute>
+            <ConversationsPage />
           </ProtectedRoute>
         }
       />

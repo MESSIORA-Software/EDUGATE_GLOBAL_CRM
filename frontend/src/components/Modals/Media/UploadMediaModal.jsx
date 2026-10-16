@@ -142,10 +142,9 @@ export default function UploadMediaModal({ isOpen, onClose, onUpload, isStudentM
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="rounded-2xl shadow-2xl border max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
+        className="rounded-2xl shadow-2xl border border-blue-200/80 bg-white max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b bg-slate-50/50">

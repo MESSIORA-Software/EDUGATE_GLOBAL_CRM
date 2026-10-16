@@ -32,10 +32,9 @@ export default function BranchUsersModal({ isOpen, branch, onClose }) {
   const usersList = Array.isArray(branchUsers) ? branchUsers : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
       <div
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="rounded-2xl shadow-xl border max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh]"
+        className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh]"
       >
         {/* Header */}
         <div
