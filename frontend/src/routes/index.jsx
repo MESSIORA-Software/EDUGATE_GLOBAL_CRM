@@ -11,6 +11,7 @@ import ClientsManagement from '../pages/Admin/ClientsManagement';
 import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
 import EventManagement from '../pages/Admin/EventManagement';
+import NotificationsPage from '../pages/Notifications/NotificationsPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -111,6 +112,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <EventManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />

@@ -5,6 +5,7 @@ import authReducer from './reducers/Auth/authReducer';
 import branchReducer from './reducers/Admin/branchReducer';
 import clientReducer from './reducers/Admin/clientReducer';
 import eventReducer from './reducers/Admin/eventReducer';
+import notificationReducer from './reducers/Notifications/notificationReducer';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     branch: branchReducer,
     client: clientReducer,
     event: eventReducer,
+    notifications: notificationReducer,
   },
 
   middleware: (getDefaultMiddleware) =>
