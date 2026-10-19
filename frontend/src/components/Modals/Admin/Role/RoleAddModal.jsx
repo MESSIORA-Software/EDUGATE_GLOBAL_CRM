@@ -6,6 +6,14 @@ import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
 import { X, ShieldPlus, AlertCircle } from 'lucide-react';
 
+const generateRoleId = (name) => {
+  if (!name) return '';
+  return name
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '_')
+    .replace(/^_+/, '');
+};
+
 export default function RoleAddModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { submitting, error } = useSelector((state) => state.roles);
@@ -16,23 +24,45 @@ export default function RoleAddModal({ isOpen, onClose, onSuccess }) {
 
   if (!isOpen) return null;
 
+  const handleRoleNameChange = (e) => {
+    const name = e.target.value;
+    setRoleName(name);
+    setRoleId(generateRoleId(name));
+    if (localError) setLocalError('');
+  };
+
+  const handleClose = () => {
+    setRoleId('');
+    setRoleName('');
+    setLocalError('');
+    onClose();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLocalError('');
 
-    if (!roleId.trim()) {
-      setLocalError('Role ID is required.');
-      return;
-    }
-    if (!roleName.trim()) {
+    const trimmedName = roleName.trim();
+    if (!trimmedName) {
       setLocalError('Role Name is required.');
       return;
     }
 
-    const res = await dispatch(createRole(roleId.trim().toUpperCase(), roleName.trim()));
+    const finalRoleId = trimmedName
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    if (!finalRoleId) {
+      setLocalError('Please enter a valid role name containing alphanumeric characters.');
+      return;
+    }
+
+    const res = await dispatch(createRole(finalRoleId, trimmedName));
     if (res.success) {
       setRoleId('');
       setRoleName('');
+      setLocalError('');
       onSuccess?.('Role created successfully!');
       onClose();
     } else {
@@ -63,7 +93,7 @@ export default function RoleAddModal({ isOpen, onClose, onSuccess }) {
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             style={{ color: COLORS.muted }}
             className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center"
           >
@@ -85,37 +115,46 @@ export default function RoleAddModal({ isOpen, onClose, onSuccess }) {
 
           <div>
             <label className={`${TYPOGRAPHY.label} block mb-1`}>
-              Role ID <span style={{ color: COLORS.secondary }}>*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. COUNSELOR"
-              value={roleId}
-              onChange={(e) => setRoleId(e.target.value.toUpperCase())}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="w-full px-3 py-2 border rounded-xl text-xs font-mono uppercase focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-              required
-            />
-          </div>
-
-          <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>
               Role Name <span style={{ color: COLORS.secondary }}>*</span>
             </label>
             <input
               type="text"
               placeholder="e.g. Education Counselor"
               value={roleName}
-              onChange={(e) => setRoleName(e.target.value)}
+              onChange={handleRoleNameChange}
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
               className="w-full px-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+              autoFocus
               required
             />
           </div>
 
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className={TYPOGRAPHY.label}>
+                Role ID <span className="text-[10px] text-slate-400 font-normal">(Auto-generated)</span>
+              </label>
+              <span className="text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-full">
+                System Key
+              </span>
+            </div>
+            <input
+              type="text"
+              placeholder="E.G. EDUCATION_COUNSELOR"
+              value={roleId}
+              readOnly
+              disabled
+              style={{ backgroundColor: '#F8FAFC', borderColor: COLORS.border, color: roleId ? COLORS.foreground : COLORS.placeholder }}
+              className="w-full px-3 py-2 border rounded-xl text-xs font-mono font-bold uppercase cursor-not-allowed select-none"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Role ID is automatically generated from the role name and passed to the API.
+            </p>
+          </div>
+
           {/* Actions */}
           <div style={{ borderColor: COLORS.border }} className="flex items-center justify-end gap-2 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={onClose} disabled={submitting}>
+            <Button variant="outline" size="sm" type="button" onClick={handleClose} disabled={submitting}>
               Cancel
             </Button>
             <Button variant="primary" size="sm" type="submit" loading={submitting}>

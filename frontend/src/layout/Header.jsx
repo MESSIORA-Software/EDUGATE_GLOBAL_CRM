@@ -3,10 +3,12 @@ import { NavLink } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
 import { COLORS } from '../constants/colors';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Bell, Search, Menu, Sparkles, User } from 'lucide-react';
+import { Bell, Search, Menu, Sparkles, User, Shield } from 'lucide-react';
+import { getRoleDashboardTitle } from '../utils/roleUtils';
 
 export default function Header({ toggleSidebar }) {
   const { user } = useAuth();
+  const dashboardTitle = getRoleDashboardTitle(user);
 
   return (
     <header
@@ -40,7 +42,7 @@ export default function Header({ toggleSidebar }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3">
         {/* Live System Indicator Badge */}
         <div
           style={{
@@ -52,6 +54,19 @@ export default function Header({ toggleSidebar }) {
         >
           <Sparkles className="w-3.5 h-3.5 text-[#DC2626]" />
           <span>Edugate Global CRM</span>
+        </div>
+
+        {/* Logged User Role Dashboard Badge */}
+        <div
+          style={{
+            backgroundColor: '#EFF6FF',
+            borderColor: '#BFDBFE',
+            color: '#1E3A8A',
+          }}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs"
+        >
+          <Shield className="w-3.5 h-3.5 text-blue-600" />
+          <span>{dashboardTitle}</span>
         </div>
 
         {/* Notification bell */}

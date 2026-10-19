@@ -36,8 +36,9 @@ export const usersController = {
 
     async createuser(req, res, next) {
         try {
-            const { branch_id, name, email, password_hash, role_id, status, created_by } = req.body;
-            const newUser = await userService.createUser({ branch_id, name, email, password_hash, role_id, status, created_by });
+            const { branch_id, name, email, password_hash, password, role_id, status, created_by } = req.body;
+            const finalPasswordHash = password_hash || password || 'hashed_password_123';
+            const newUser = await userService.createUser({ branch_id, name, email, password_hash: finalPasswordHash, role_id, status, created_by });
             res.status(201).json({
                 status: 'success',
                 message: 'User created successfully',
@@ -49,14 +50,19 @@ export const usersController = {
     },
     async updateuser(req, res, next) {
         try {
-            const { user_id, branch_id, name, email, password_hash, role_id, status } = req.body;
+            const { user_id, branch_id, name, email, password_hash, password, role_id, status } = req.body;
             if (!user_id) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Field "user_id" is required in request body.',
                 });
             }
-            const updateduser = await userService.updateuser(user_id, { branch_id, name, email, password_hash, role_id, status });
+            const updatePayload = { branch_id, name, email, role_id, status };
+            const finalPassword = password_hash !== undefined ? password_hash : password;
+            if (finalPassword !== undefined) {
+                updatePayload.password_hash = finalPassword;
+            }
+            const updateduser = await userService.updateuser(user_id, updatePayload);
             res.status(200).json({
                 status: 'success',
                 message: 'User updated successfully',

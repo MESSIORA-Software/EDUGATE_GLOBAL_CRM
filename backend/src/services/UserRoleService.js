@@ -22,18 +22,30 @@ export const roleService = {
 
     // Create role
     async createRole({ role_id, role_name, created_by = null }) {
+        let finalRoleId = (role_id || role_name || '')
+            .toString()
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '');
+
+        if (!finalRoleId) {
+            const error = new Error('Role ID could not be generated or is required');
+            error.statusCode = 400;
+            throw error;
+        }
 
         // Check duplicate
-        const existingRole = await roleRepository.findById(role_id);
+        const existingRole = await roleRepository.findById(finalRoleId);
         if (existingRole) {
-            const error = new Error(`Role with ID '${role_id}' already exists`);
+            const error = new Error(`Role with ID '${finalRoleId}' already exists`);
             error.statusCode = 409;
             throw error;
         }
 
         const roleData = {
-            role_id: role_id,
-            role_name: role_name,
+            role_id: finalRoleId,
+            role_name: role_name.trim(),
             created_by: created_by || null,
         };
 

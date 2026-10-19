@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
@@ -6,6 +7,9 @@ import Badge from '../../../ui/Badge';
 import { X, UserCheck, Mail, Building2, ShieldCheck, CheckCircle2, Hash, Calendar } from 'lucide-react';
 
 export default function UserDetailModal({ isOpen, user, onClose }) {
+  const { list: branches } = useSelector((state) => state.branch ?? {});
+  const { roles } = useSelector((state) => state.roles ?? {});
+
   if (!isOpen || !user) return null;
 
   const userId = user.user_id || user.id || 'N/A';
@@ -13,6 +17,12 @@ export default function UserDetailModal({ isOpen, user, onClose }) {
   const userEmail = user.email || 'No email provided';
   const branchId = user.branch_id || 1;
   const roleId = user.role_id || 1;
+
+  const matchedBranch = branches?.find((b) => (b.branch_id || b.id) == branchId);
+  const branchDisplayName = user.branch_name || matchedBranch?.branch_name || matchedBranch?.name || `Branch #${branchId}`;
+
+  const matchedRole = roles?.find((r) => (r.role_id || r.id) == roleId);
+  const roleDisplayName = user.role_name || matchedRole?.role_name || matchedRole?.name || `Role #${roleId}`;
   const createdAt = user.created_at
     ? new Date(user.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -95,14 +105,14 @@ export default function UserDetailModal({ isOpen, user, onClose }) {
                 <span className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1">
                   <Building2 className="w-3 h-3 text-slate-400" /> Branch
                 </span>
-                <p className="text-xs font-extrabold text-slate-700">Branch #{branchId}</p>
+                <p className="text-xs font-extrabold text-slate-700">{branchDisplayName}</p>
               </div>
 
               <div className="p-2.5 bg-indigo-50/50 border border-indigo-100 rounded-xl space-y-0.5">
                 <span className="text-[10px] font-bold uppercase text-indigo-500 flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-indigo-500" /> Role
                 </span>
-                <p className="text-xs font-extrabold text-indigo-800">Role #{roleId}</p>
+                <p className="text-xs font-extrabold text-indigo-800">{roleDisplayName}</p>
               </div>
             </div>
 
