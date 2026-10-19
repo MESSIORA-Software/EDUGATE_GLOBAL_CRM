@@ -2,42 +2,58 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../../../../actions/Admin/userActions';
 import { fetchRoles } from '../../../../actions/Admin/roleActions';
+import { fetchBranches } from '../../../../actions/Admin/branchAction';
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
-import { X, UserCheck, AlertCircle } from 'lucide-react';
+import { X, UserCheck, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { submitting, error } = useSelector((state) => state.users);
   const { roles } = useSelector((state) => state.roles);
+  const { list: branches } = useSelector((state) => state.branch ?? {});
 
   const [userId, setUserId] = useState('');
-  const [branchId, setBranchId] = useState(1);
+  const [branchId, setBranchId] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [passwordHash, setPasswordHash] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [roleId, setRoleId] = useState(1);
   const [status, setStatus] = useState('ACTIVE');
   const [localError, setLocalError] = useState('');
 
   useEffect(() => {
-    if (isOpen && (!roles || roles.length === 0)) {
-      dispatch(fetchRoles());
+    if (isOpen) {
+      if (!roles || roles.length === 0) {
+        dispatch(fetchRoles());
+      }
+      if (!branches || branches.length === 0) {
+        dispatch(fetchBranches());
+      }
     }
-  }, [isOpen, roles, dispatch]);
+  }, [isOpen, roles, branches, dispatch]);
 
   useEffect(() => {
     if (user) {
       setUserId(user.user_id || user.id || '');
-      setBranchId(user.branch_id || 1);
+      setBranchId(user.branch_id || '');
       setName(user.name || '');
       setEmail(user.email || '');
-      setPasswordHash(user.password_hash || '');
+      setPassword('');
       setRoleId(user.role_id || 1);
       setStatus(user.status || 'ACTIVE');
     }
   }, [user]);
+
+  const selectedRoleObj = roles?.find(
+    (r) => String(r.role_id) === String(roleId) || String(r.id) === String(roleId)
+  );
+  const selectedRoleKey = String(
+    selectedRoleObj?.role_id || selectedRoleObj?.role_name || roleId || ''
+  ).toUpperCase();
+  const isStaffRole = selectedRoleKey.includes('STAFF');
 
   if (!isOpen || !user) return null;
 
@@ -50,15 +66,25 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
       return;
     }
 
+    if (isStaffRole && !branchId) {
+      setLocalError('Please select a branch location for the staff account.');
+      return;
+    }
+
+    const defaultBranchId = user?.branch_id || branches?.[0]?.branch_id || 1;
     const payload = {
       user_id: userId,
-      branch_id: Number(branchId) || 1,
+      branch_id: isStaffRole ? (Number(branchId) || defaultBranchId) : defaultBranchId,
       name: name.trim(),
       email: email.trim(),
-      password_hash: passwordHash.trim() || 'new_hashed_password',
       role_id: isNaN(Number(roleId)) ? roleId : Number(roleId),
       status: status,
     };
+
+    if (password.trim()) {
+      payload.password = password.trim();
+      payload.password_hash = password.trim();
+    }
 
     const res = await dispatch(updateUser(payload));
     if (res.success) {
@@ -94,7 +120,7 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
           <button
             onClick={onClose}
             style={{ color: COLORS.muted }}
-            className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center"
+            className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -123,17 +149,7 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={`${TYPOGRAPHY.label} block mb-1`}>Branch ID</label>
-              <input
-                type="number"
-                value={branchId}
-                onChange={(e) => setBranchId(e.target.value)}
-                style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-                className="w-full px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-              />
-            </div>
+          <div className={isStaffRole ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}>
             <div>
               <label className={`${TYPOGRAPHY.label} block mb-1`}>Role ID</label>
               {roles && roles.length > 0 ? (
@@ -151,7 +167,7 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
                 </select>
               ) : (
                 <input
-                  type="number"
+                  type="text"
                   value={roleId}
                   onChange={(e) => setRoleId(e.target.value)}
                   style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
@@ -159,6 +175,38 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
                 />
               )}
             </div>
+
+            {isStaffRole && (
+              <div className="animate-in fade-in duration-150">
+                <label className={`${TYPOGRAPHY.label} block mb-1`}>Branch Location</label>
+                {branches && branches.length > 0 ? (
+                  <select
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+                    className="w-full px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                  >
+                    {branches.map((b, i) => {
+                      const bId = b.branch_id || b.id || (i + 1);
+                      const bName = b.branch_name || b.name || `Branch #${bId}`;
+                      return (
+                        <option key={bId} value={bId}>
+                          {bName}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+                    className="w-full px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                  />
+                )}
+              </div>
+            )}
           </div>
 
           <div>
@@ -186,14 +234,25 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
           </div>
 
           <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>Password Hash</label>
-            <input
-              type="text"
-              value={passwordHash}
-              onChange={(e) => setPasswordHash(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="w-full px-3 py-1.5 border rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            />
+            <label className={`${TYPOGRAPHY.label} block mb-1`}>Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Enter new password (optional)"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+                className="w-full pl-3 pr-10 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1">Leave blank to retain existing password.</p>
           </div>
 
           <div>

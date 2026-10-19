@@ -66,16 +66,21 @@ export const findRoleById = (roleId) => {
 
 export const createRole = (roleId, roleName) => {
   return async (dispatch) => {
-    if (!roleId || !roleName) {
-      const msg = 'Both Role ID and Role Name are required.';
+    const resolvedRoleId = (roleId || roleName || '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+
+    if (!resolvedRoleId || !roleName?.trim()) {
+      const msg = 'Valid Role Name and Role ID are required.';
       dispatch({ type: ROLE_ADD_FAILURE, payload: msg });
       return { success: false, error: msg };
     }
 
     dispatch({ type: ROLE_ADD_START });
     try {
-      const response = await roleService.createRole(roleId, roleName);
-      const newRole = { role_id: roleId, role_name: roleName, ...response?.data };
+      const response = await roleService.createRole(resolvedRoleId, roleName.trim());
+      const newRole = { role_id: resolvedRoleId, role_name: roleName.trim(), ...response?.data };
       dispatch({ type: ROLE_ADD_SUCCESS, payload: newRole });
       dispatch(fetchRoles());
       return { success: true, data: newRole };
