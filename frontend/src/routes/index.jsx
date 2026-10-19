@@ -14,6 +14,7 @@ import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import { getUserRole } from '../utils/roleUtils';
+import EventManagement from '../pages/Admin/EventManagement';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -159,6 +160,14 @@ function AppRoutes() {
             <SuperAdminRoute>
               <GoogleCallback />
             </SuperAdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/events"
+        element={
+          <ProtectedRoute>
+            <EventManagement />
           </ProtectedRoute>
         }
       />

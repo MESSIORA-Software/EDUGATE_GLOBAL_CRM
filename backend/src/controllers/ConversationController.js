@@ -60,7 +60,16 @@ export const ConversationController = {
                     message: 'Field "staff_id" is required.'
                 });
             }
-            const updated = await ConversationService.assignStaff(id, staff_id);
+            const conversationId = Number(id);
+            const staffId = Number(staff_id);
+            if (!Number.isSafeInteger(conversationId) || conversationId <= 0 ||
+                !Number.isSafeInteger(staffId) || staffId <= 0) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Conversation id and "staff_id" must be positive integers.'
+                });
+            }
+            const updated = await ConversationService.assignStaff(conversationId, staffId, req.user);
             res.status(200).json({
                 status: 'success',
                 message: 'Staff assigned successfully',
