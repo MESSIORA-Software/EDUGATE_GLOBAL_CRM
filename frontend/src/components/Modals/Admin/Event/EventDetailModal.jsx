@@ -3,6 +3,7 @@ import { X, Calendar as CalendarIcon, Clock, AlignLeft, User, UserCheck, Edit2 }
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
+import { formatEventId } from '../../../../hooks/Admin/Event/useEvent';
 
 export default function EventDetailModal({ isOpen, event, onClose, onEdit }) {
   if (!isOpen || !event) return null;
@@ -34,7 +35,7 @@ export default function EventDetailModal({ isOpen, event, onClose, onEdit }) {
                 Event Details
               </h2>
               <p className={TYPOGRAPHY.label} style={{ color: COLORS.muted }}>
-                Event #{event.event_id}
+                Event ID: <span className="font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">{formatEventId(event.event_id)}</span>
               </p>
             </div>
           </div>

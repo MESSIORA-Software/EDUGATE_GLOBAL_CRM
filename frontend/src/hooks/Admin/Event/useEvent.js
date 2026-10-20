@@ -7,6 +7,19 @@ import {
   deleteEvent,
   getEventById,
 } from '../../../actions/Admin/eventAction';
+export const formatEventId = (id) => {
+  if (id === null || id === undefined || id === '') return '';
+  const cleanId = String(id).replace(/^EDG-?/i, '').replace(/^#/, '').trim();
+  const num = parseInt(cleanId, 10);
+  return isNaN(num) ? String(id) : `EDG-${String(num).padStart(4, '0')}`;
+};
+
+export const parseEventId = (input) => {
+  if (!input) return '';
+  const cleaned = String(input).replace(/^EDG-?/i, '').replace(/^#/, '').trim();
+  const num = parseInt(cleaned, 10);
+  return isNaN(num) ? cleaned : String(num);
+};
 
 export default function useEvent() {
   const dispatch = useDispatch();
@@ -52,18 +65,19 @@ export default function useEvent() {
 
   const handleFindById = async (e) => {
     e?.preventDefault();
-    const id = findIdInput.trim();
-    if (!id) return;
+    const rawInput = findIdInput.trim();
+    if (!rawInput) return;
 
     setIsFinding(true);
-    const res = await dispatch(getEventById(id));
+    const numericId = parseEventId(rawInput);
+    const res = await dispatch(getEventById(numericId));
     setIsFinding(false);
 
     if (res?.success && res.data) {
       setDetailEvent(res.data);
-      showToast(`Event #${id} found!`);
+      showToast(`Event ${formatEventId(res.data.event_id || rawInput)} found!`);
     } else {
-      showToast(res?.error || `Event #${id} not found`, 'error');
+      showToast(res?.error || `Event ${formatEventId(rawInput)} not found`, 'error');
     }
   };
 
@@ -90,7 +104,7 @@ export default function useEvent() {
   };
 
   const handleDeleteEvent = async (eventId, eventTitle = '') => {
-    const label = eventTitle ? `"${eventTitle}"` : `Event #${eventId}`;
+    const label = eventTitle ? `"${eventTitle}"` : `Event ${formatEventId(eventId)}`;
     if (!window.confirm(`Are you sure you want to delete ${label}?`)) {
       return { success: false };
     }
@@ -106,14 +120,36 @@ export default function useEvent() {
   const totalCount = events.length;
 
   const filteredEvents = useMemo(() => {
-    if (!searchTerm.trim()) return [...events];
-    const q = searchTerm.toLowerCase().trim();
-    return events.filter((e) =>
-      String(e?.event_id ?? '').includes(q) ||
-      (e?.title   ?? '').toLowerCase().includes(q) ||
-      (e?.reason  ?? '').toLowerCase().includes(q)
-    );
-  }, [events, searchTerm]);
+    let result = [...events];
+
+    // Filter by general search query (title / reason / keyword)
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase().trim();
+      result = result.filter((e) =>
+        String(e?.event_id ?? '').includes(q) ||
+        formatEventId(e?.event_id).toLowerCase().includes(q) ||
+        (e?.title   ?? '').toLowerCase().includes(q) ||
+        (e?.reason  ?? '').toLowerCase().includes(q)
+      );
+    }
+
+    // Filter by ID search input in real time as the user types
+    if (findIdInput.trim()) {
+      const idQuery = findIdInput.toLowerCase().trim();
+      const pureNum = parseEventId(idQuery);
+      result = result.filter((e) => {
+        const rawId = String(e?.event_id ?? '');
+        const formatted = formatEventId(e?.event_id).toLowerCase();
+        return (
+          rawId === pureNum ||
+          rawId.includes(idQuery) ||
+          formatted.includes(idQuery)
+        );
+      });
+    }
+
+    return result;
+  }, [events, searchTerm, findIdInput]);
 
   return {
     events,

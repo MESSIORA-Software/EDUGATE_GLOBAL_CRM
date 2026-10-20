@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { COLORS } from '../../constants/colors';
 import useNotifications from '../../hooks/Notifications/useNotifications';
+import { formatEventId } from '../../hooks/Admin/Event/useEvent';
 
 const TYPE_CONFIG = {
   NEW_LEAD: {
