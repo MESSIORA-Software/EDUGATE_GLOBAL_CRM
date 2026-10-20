@@ -138,7 +138,7 @@ export default function MediaManagement() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'student'
 
-  const hasActiveFilters = mimeFilter || dateFrom || dateTo || providerFilter || uploadedByFilter;
+  const hasActiveFilters = mimeFilter || dateFrom || dateTo || uploadedByFilter;
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -338,7 +338,7 @@ export default function MediaManagement() {
             <span>Filters</span>
             {hasActiveFilters && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-600 text-white leading-tight">
-                {[mimeFilter, dateFrom, dateTo, providerFilter, uploadedByFilter].filter(Boolean).length}
+                {[mimeFilter, dateFrom, dateTo, uploadedByFilter].filter(Boolean).length}
               </span>
             )}
           </button>
@@ -394,20 +394,6 @@ export default function MediaManagement() {
               style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
               className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
             />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className={TYPOGRAPHY.label}>Storage Provider</label>
-            <select
-              value={providerFilter}
-              onChange={(e) => setProviderFilter(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            >
-              <option value="">All Providers</option>
-              <option value="supabase">Supabase</option>
-              <option value="google_drive">Google Drive</option>
-            </select>
           </div>
 
           <div className="flex flex-col gap-1">
