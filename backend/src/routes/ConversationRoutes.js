@@ -23,6 +23,16 @@ router.get('/client/:client_id', ConversationController.getClientConversations);
 router.get('/:id', ConversationController.getConversationDetails);
 router.patch('/:id/assign', ConversationController.assignStaff);
 router.put('/client/:client_id', ConversationController.updateClientDetails);
+router.post('/:id/opportunity', ConversationController.createOpportunityFromConversation);
+
+// WhatsApp Linked Device (QR Code) management
+router.get('/whatsapp/status', ConversationController.getWhatsAppStatus);
+router.post('/whatsapp/connect', ConversationController.connectWhatsApp);
+router.post('/whatsapp/disconnect', ConversationController.disconnectWhatsApp);
+
+// Gmail Email Channel management
+router.get('/email/status', ConversationController.getEmailStatus);
+router.post('/email/sync', ConversationController.syncEmails);
 
 // Messages & Call logs
 router.get('/:id/messages', MessageController.getMessages);
@@ -30,3 +40,5 @@ router.post('/:id/messages', MessageController.sendMessage);
 router.post('/:id/call-log', MessageController.logCallOrSMS);
 
 export default router;
+
+

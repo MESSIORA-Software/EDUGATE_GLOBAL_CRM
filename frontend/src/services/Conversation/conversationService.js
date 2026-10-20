@@ -34,10 +34,33 @@ const uploadMedia = (file) => {
   });
 };
 
+const getWhatsAppStatus = () => request('get', '/conversations/whatsapp/status');
+const connectWhatsApp = () => request('post', '/conversations/whatsapp/connect');
+const disconnectWhatsApp = () => request('post', '/conversations/whatsapp/disconnect');
+
+const getEmailStatus = () => request('get', '/conversations/email/status');
+const syncEmails = () => request('post', '/conversations/email/sync');
+
+const createOpportunityFromConversation = (id, data) => request('post', `/conversations/${id}/opportunity`, { data });
+const getOpportunityStatuses = () => request('get', '/oppertunity-status/getalloppertunitystatuses');
+const getUsersByRole = (roleId = 'STAFF') => request('get', `/users/role/${encodeURIComponent(roleId)}`);
+const getStaffUsers = () => getUsersByRole('STAFF');
+
 export default {
   getConversations,
   getConversationDetails,
   getMessages,
   sendMessage,
   uploadMedia,
+  getWhatsAppStatus,
+  connectWhatsApp,
+  disconnectWhatsApp,
+  getEmailStatus,
+  syncEmails,
+  createOpportunityFromConversation,
+  getOpportunityStatuses,
+  getUsersByRole,
+  getStaffUsers,
 };
+
+

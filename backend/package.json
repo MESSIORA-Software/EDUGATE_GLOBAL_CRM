@@ -20,14 +20,19 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
+    "@whiskeysockets/baileys": "^7.0.0-rc14",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "file-type": "^22.1.1",
     "googleapis": "^181.0.0",
+    "imap-simple": "^5.1.0",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.4.0"
+    "mailparser": "^3.9.47",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.1.7",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.10",
