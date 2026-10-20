@@ -26,6 +26,12 @@ export default function Header({ toggleSidebar }) {
   }, [fetchNotifications]);
 
   const handleClose = useCallback(() => setIsNotifOpen(false), []);
+import { Bell, Search, Menu, Sparkles, User, Shield } from 'lucide-react';
+import { getRoleDashboardTitle } from '../utils/roleUtils';
+
+export default function Header({ toggleSidebar }) {
+  const { user } = useAuth();
+  const dashboardTitle = getRoleDashboardTitle(user);
 
   return (
     <header
@@ -56,8 +62,8 @@ export default function Header({ toggleSidebar }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Live System Badge */}
+      <div className="flex items-center gap-2.5 sm:gap-3">
+        {/* Live System Indicator Badge */}
         <div
           style={{
             backgroundColor: COLORS.primaryLight,
@@ -81,6 +87,30 @@ export default function Header({ toggleSidebar }) {
           onMarkAsRead={markAsRead}
           onMarkAllAsRead={markAllAsRead}
         />
+        {/* Logged User Role Dashboard Badge */}
+        <div
+          style={{
+            backgroundColor: '#EFF6FF',
+            borderColor: '#BFDBFE',
+            color: '#1E3A8A',
+          }}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs"
+        >
+          <Shield className="w-3.5 h-3.5 text-blue-600" />
+          <span>{dashboardTitle}</span>
+        </div>
+
+        {/* Notification bell */}
+        <button
+          style={{ color: COLORS.muted }}
+          className="relative p-1.5 rounded-lg hover:text-[#1E3A8A] hover:bg-slate-100 cursor-pointer"
+        >
+          <Bell className="w-4 h-4" />
+          <span
+            style={{ backgroundColor: COLORS.secondary }}
+            className="absolute top-1 right-1 w-2 h-2 rounded-full ring-2 ring-white"
+          />
+        </button>
 
         <div style={{ backgroundColor: COLORS.border }} className="h-5 w-px mx-0.5" />
 

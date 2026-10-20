@@ -10,6 +10,12 @@ export const FacebookMessengerService = {
         if (!PAGE_ACCESS_TOKEN) {
             throw new Error('FACEBOOK_PAGE_ACCESS_TOKEN is not configured');
         }
+        if (!recipientPsid) {
+            throw new Error('A Messenger recipient PSID is required');
+        }
+        if (!messagePayload?.content && !messagePayload?.media_url) {
+            throw new Error('A message must contain text or media');
+        }
 
         let bodyPayload = {
             recipient: { id: recipientPsid },
@@ -52,9 +58,9 @@ export const FacebookMessengerService = {
         });
 
         const data = await response.json();
-        if (data.error) {
+        if (!response.ok || data.error) {
             console.error('Facebook Send API Error:', data.error);
-            throw new Error(`Facebook API Error: ${data.error.message}`);
+            throw new Error(`Facebook API Error: ${data.error?.message || 'Request failed'}`);
         }
 
         return data;

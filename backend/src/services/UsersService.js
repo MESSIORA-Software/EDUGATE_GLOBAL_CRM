@@ -1,12 +1,24 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/UsersRepository.js';
-
-
+import { BranchRepository } from '../repositories/BranchRepository.js';
 
 export const userService = {
     // Get all users
     async getAllUsers() {
         return await UserRepository.findusers();
+    },
+
+    // Get users by role (e.g. 'STAFF', 'ADMIN', 'SUPER_ADMIN')
+    async getUsersByRole(roleId) {
+        if (!roleId) return await UserRepository.findusers();
+        try {
+            const users = await UserRepository.findUsersByRole(roleId);
+            if (users && users.length > 0) return users;
+        } catch {
+            // fallback
+        }
+        const allUsers = await UserRepository.findusers();
+        return (allUsers || []).filter(u => String(u.role_id || '').toUpperCase() === String(roleId).toUpperCase());
     },
  
     // Get a user by ID
@@ -20,39 +32,46 @@ export const userService = {
                 return user;
     },
 
-
     // Create a new user
     async createUser({
-    branch_id,
-    name,
-    email,
-    password_hash,
-    role_id,
-    status,
-    created_by = null
-}) {
+        branch_id,
+        name,
+        email,
+        password_hash,
+        role_id,
+        status,
+        created_by = null
+    }) {
+        let finalBranchId = branch_id;
+        if (!finalBranchId) {
+            try {
+                const allBranches = await BranchRepository.getAllBranches();
+                finalBranchId = allBranches?.[0]?.branch_id || allBranches?.[0]?.id || 1;
+            } catch {
+                finalBranchId = 1;
+            }
+        }
 
-    // Automatically hash plain password if not already hashed
+        // Automatically hash plain password if not already hashed
         let hashedPassword = password_hash;
         if (password_hash && !password_hash.startsWith('$2')) {
             const salt = await bcrypt.genSalt(10);
             hashedPassword = await bcrypt.hash(password_hash, salt);
         }
 
+        const userData = {
+            branch_id: Number(finalBranchId) || 1,
+            name: name,
+            email: email,
+            password_hash: hashedPassword,
+            role_id: role_id,
+            status: status,
+            created_by: created_by || null,
+            created_at: new Date()
+        };
 
-    const userData = {
-        branch_id: branch_id,
-        name: name,
-        email: email,
-        password_hash: hashedPassword,
-        role_id: role_id,
-        status: status,
-        created_by: created_by || null,
-        created_at: new Date()
-    };
-
-    return await UserRepository.createuser(userData);
-},
+        return await UserRepository.createuser(userData);
+    },
     
 
 

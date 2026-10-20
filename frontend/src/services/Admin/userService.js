@@ -84,8 +84,37 @@ const deleteUser = async (user_id) => {
   return await response.json();
 };
 
+const getUsersByRole = async (roleId = 'STAFF') => {
+  try {
+    const response = await fetch(`${BASE_URL}/users/role/${encodeURIComponent(roleId)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch {
+    // fallback below
+  }
+
+  // Fallback to filtering all users
+  const allUsersRes = await getAllUsers();
+  const rawList = Array.isArray(allUsersRes?.data) ? allUsersRes.data : Array.isArray(allUsersRes) ? allUsersRes : [];
+  return {
+    status: 'success',
+    data: rawList.filter((u) => String(u.role_id || u.role || '').toUpperCase() === String(roleId).toUpperCase()),
+  };
+};
+
+const getStaffUsers = () => getUsersByRole('STAFF');
+
 export default {
   getAllUsers,
+  getUsersByRole,
+  getStaffUsers,
   getUserById,
   createUser,
   updateUser,

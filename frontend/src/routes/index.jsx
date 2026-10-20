@@ -8,8 +8,12 @@ import RolesManagement from '../pages/Admin/RolesManagement';
 import UsersManagement from '../pages/Admin/UsersManagement';
 import BranchesManagement from '../pages/Admin/BranchesManagement';
 import ClientsManagement from '../pages/Admin/ClientsManagement';
+import StudentPipeline from '../pages/Admin/StudentPipeline';
+import ConversationsPage from '../pages/Conversation/ConversationsPage';
 import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
+import DashboardPage from '../pages/Dashboard/DashboardPage';
+import { getUserRole } from '../utils/roleUtils';
 import EventManagement from '../pages/Admin/EventManagement';
 import NotificationsPage from '../pages/Notifications/NotificationsPage';
 
@@ -19,6 +23,15 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
   return <MainLayout>{children}</MainLayout>;
+}
+
+function SuperAdminRoute({ children }) {
+  const { user } = useAuth();
+  const role = getUserRole(user);
+  if (role !== 'SUPER_ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
 }
 
 function PublicRoute({ children }) {
@@ -55,7 +68,9 @@ function AppRoutes() {
         path="/roles"
         element={
           <ProtectedRoute>
-            <RolesManagement />
+            <SuperAdminRoute>
+              <RolesManagement />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -63,7 +78,9 @@ function AppRoutes() {
         path="/branches"
         element={
           <ProtectedRoute>
-            <BranchesManagement />
+            <SuperAdminRoute>
+              <BranchesManagement />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -71,7 +88,9 @@ function AppRoutes() {
         path="/users"
         element={
           <ProtectedRoute>
-            <UsersManagement />
+            <SuperAdminRoute>
+              <UsersManagement />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -79,7 +98,9 @@ function AppRoutes() {
         path="/clients"
         element={
           <ProtectedRoute>
-            <ClientsManagement />
+            <SuperAdminRoute>
+              <ClientsManagement />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -87,7 +108,39 @@ function AppRoutes() {
         path="/students"
         element={
           <ProtectedRoute>
-            <ClientsManagement />
+            <SuperAdminRoute>
+              <ClientsManagement />
+            </SuperAdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/pipeline"
+        element={
+          <ProtectedRoute>
+            <SuperAdminRoute>
+              <StudentPipeline />
+            </SuperAdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student-pipeline"
+        element={
+          <ProtectedRoute>
+            <SuperAdminRoute>
+              <StudentPipeline />
+            </SuperAdminRoute>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/conversations"
+        element={
+          <ProtectedRoute>
+            <SuperAdminRoute>
+              <ConversationsPage />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -95,7 +148,9 @@ function AppRoutes() {
         path="/media"
         element={
           <ProtectedRoute>
-            <MediaManagement />
+            <SuperAdminRoute>
+              <MediaManagement />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -103,7 +158,9 @@ function AppRoutes() {
         path="/media/google/callback"
         element={
           <ProtectedRoute>
-            <GoogleCallback />
+            <SuperAdminRoute>
+              <GoogleCallback />
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
@@ -135,10 +192,7 @@ function AppRoutes() {
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs text-center">
-              <h2 className="text-lg font-bold text-slate-800">EDUGATE Global CRM Dashboard</h2>
-              <p className="text-slate-500 text-xs mt-1">Analytics overview.</p>
-            </div>
+            <DashboardPage />
           </ProtectedRoute>
         }
       />
@@ -146,10 +200,12 @@ function AppRoutes() {
         path="/settings"
         element={
           <ProtectedRoute>
-            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs text-center">
-              <h2 className="text-lg font-bold text-slate-800">System Settings</h2>
-              <p className="text-slate-500 text-xs mt-1">Configure CRM global preferences.</p>
-            </div>
+            <SuperAdminRoute>
+              <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs text-center">
+                <h2 className="text-lg font-bold text-slate-800">System Settings</h2>
+                <p className="text-slate-500 text-xs mt-1">Configure CRM global preferences.</p>
+              </div>
+            </SuperAdminRoute>
           </ProtectedRoute>
         }
       />
