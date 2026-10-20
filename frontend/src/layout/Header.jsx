@@ -28,8 +28,7 @@ export default function Header({ toggleSidebar }) {
   }, [fetchNotifications]);
 
   const handleClose = useCallback(() => setIsNotifOpen(false), []);
-<<<<<<< HEAD
-=======
+
 import { Bell, Search, Menu, Sparkles, User, Shield } from 'lucide-react';
 import { getRoleDashboardTitle } from '../utils/roleUtils';
 
@@ -37,7 +36,7 @@ export default function Header({ toggleSidebar }) {
   const { user } = useAuth();
   const location = useLocation();
   const pageTitle = getPageTitle(location.pathname);
->>>>>>> origin/Dev
+
 
   return (
     <header
