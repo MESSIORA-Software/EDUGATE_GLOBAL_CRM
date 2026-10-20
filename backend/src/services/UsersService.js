@@ -7,6 +7,19 @@ export const userService = {
     async getAllUsers() {
         return await UserRepository.findusers();
     },
+
+    // Get users by role (e.g. 'STAFF', 'ADMIN', 'SUPER_ADMIN')
+    async getUsersByRole(roleId) {
+        if (!roleId) return await UserRepository.findusers();
+        try {
+            const users = await UserRepository.findUsersByRole(roleId);
+            if (users && users.length > 0) return users;
+        } catch {
+            // fallback
+        }
+        const allUsers = await UserRepository.findusers();
+        return (allUsers || []).filter(u => String(u.role_id || '').toUpperCase() === String(roleId).toUpperCase());
+    },
  
     // Get a user by ID
     async getUserById(user_id) {

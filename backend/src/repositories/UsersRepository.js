@@ -13,6 +13,18 @@ export const UserRepository = {
         return data;
     },
 
+    // Find users by role ID (e.g. 'STAFF')
+    async findUsersByRole(roleId) {
+        const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('role_id', roleId)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        return data;
+    },
+
     // Find a user by ID
     async finduserbyid(user_id) {
         const { data, error } = await supabase

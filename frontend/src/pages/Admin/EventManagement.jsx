@@ -1,5 +1,5 @@
 import React from 'react';
-import useEvent from '../../hooks/Admin/Event/useEvent';
+import useEvent, { formatEventId } from '../../hooks/Admin/Event/useEvent';
 import EventAddModal from '../../components/Modals/Admin/Event/EventAddModal';
 import EventUpdateModal from '../../components/Modals/Admin/Event/EventUpdateModal';
 import EventDetailModal from '../../components/Modals/Admin/Event/EventDetailModal';
@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typography';
+
 import {
   Calendar as CalendarIcon,
   Plus,
@@ -21,6 +22,7 @@ import {
   Clock,
   User,
   AlignLeft,
+  X,
 } from 'lucide-react';
 
 export default function EventManagement() {
@@ -117,8 +119,8 @@ export default function EventManagement() {
       >
         <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
           {/* General Search */}
-          <div className="relative w-full md:w-80">
-            <Search style={{ color: COLORS.placeholder }} className="w-4 h-4 absolute left-3.5 top-2.5" />
+          <div className="relative w-full md:w-80 group">
+            <Search className="w-4 h-4 text-blue-600 group-focus-within:text-[#1E3A8A] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" strokeWidth={2.2} />
             <input
               type="text"
               placeholder="Search events by title or reason..."
@@ -129,19 +131,31 @@ export default function EventManagement() {
                 borderColor: COLORS.border,
                 color: COLORS.foreground,
               }}
-              className="w-full pl-10 pr-4 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+              className="w-full pl-10 pr-12 py-2 border rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#1E3A8A] focus:bg-white transition-all shadow-2xs hover:border-slate-300"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1 rounded-md transition-all cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="hidden md:block h-6 w-[1px] bg-slate-200"></div>
 
           {/* Find By Event ID Form */}
           <form onSubmit={handleFindById} className="flex items-center w-full md:w-auto relative group">
-            <div className="relative flex-1 md:w-56">
-              <span className="absolute left-3.5 top-2 text-slate-400 font-mono text-xs font-bold">#</span>
+            <div className="relative flex-1 md:w-64">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-mono text-[10px] font-bold border border-blue-200/80 pointer-events-none select-none">
+                ID
+              </span>
               <input
                 type="text"
-                placeholder="Find by ID..."
+                placeholder="e.g. EDG-0001"
                 value={findIdInput}
                 onChange={(e) => setFindIdInput(e.target.value)}
                 style={{
@@ -149,15 +163,25 @@ export default function EventManagement() {
                   borderColor: COLORS.border,
                   color: COLORS.foreground,
                 }}
-                className="w-full pl-8 pr-20 py-2 border rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                className="w-full pl-11 pr-20 py-2 border rounded-xl text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-2xs hover:border-slate-300"
               />
+              {findIdInput && (
+                <button
+                  type="button"
+                  onClick={() => setFindIdInput('')}
+                  className="absolute right-16 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"
+                  title="Clear ID search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={isFinding || !findIdInput.trim()}
-                className="absolute right-1 top-1 bottom-1 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 border border-slate-200"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-slate-100 hover:bg-[#1E3A8A] hover:text-white text-slate-700 rounded-lg text-[10.5px] font-bold tracking-wider transition-all disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700 disabled:cursor-not-allowed flex items-center gap-1 border border-slate-200 cursor-pointer shadow-2xs active:scale-95"
               >
                 {isFinding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />}
-                FIND
+                <span>FIND</span>
               </button>
             </div>
           </form>
@@ -199,7 +223,7 @@ export default function EventManagement() {
               No Events Found
             </p>
             <p className="text-xs mt-1" style={{ color: COLORS.muted }}>
-              {searchTerm ? 'Try adjusting your search query' : 'Click "Create Event" to schedule your first meeting.'}
+              {searchTerm || findIdInput ? 'Try adjusting your search query' : 'Click "Create Event" to schedule your first meeting.'}
             </p>
           </div>
         ) : (
@@ -219,17 +243,23 @@ export default function EventManagement() {
               <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredEvents.map((e) => (
                   <tr key={e.event_id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4">
-                      <p className="font-bold text-sm flex items-center gap-2" style={{ color: COLORS.foreground }}>
-                        {e.title}
-                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500">#{e.event_id}</span>
-                      </p>
-                      <span className="flex items-start gap-1 text-[11px] text-slate-500 mt-1 max-w-xs truncate">
-                        <AlignLeft className="w-3 h-3 text-slate-400 mt-0.5 shrink-0" />
-                        <span className="truncate">{e.reason}</span>
-                      </span>
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-start gap-3">
+                        <span className="shrink-0 mt-0.5 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 tracking-wider">
+                          {formatEventId(e.event_id)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-sm text-slate-900 leading-snug truncate">
+                            {e.title}
+                          </p>
+                          <span className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1 max-w-md truncate">
+                            <AlignLeft className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span className="truncate">{e.reason}</span>
+                          </span>
+                        </div>
+                      </div>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-700">{e.event_date}</div>
                       {(e.start_time || e.end_time) && (
                         <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
@@ -238,7 +268,7 @@ export default function EventManagement() {
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 space-y-1">
+                    <td className="py-3.5 px-4 space-y-1">
                       {e.assigned_staff ? (
                         <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
                           <User className="w-3.5 h-3.5 text-blue-500" />
@@ -254,7 +284,7 @@ export default function EventManagement() {
                         </div>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-right space-x-1.5">
+                    <td className="py-3.5 px-4 text-right space-x-1.5">
                       <button
                         onClick={() => setDetailEvent(e)}
                         style={{ color: COLORS.muted, borderColor: COLORS.border }}

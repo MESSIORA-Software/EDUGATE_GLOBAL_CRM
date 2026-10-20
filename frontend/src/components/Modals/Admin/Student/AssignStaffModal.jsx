@@ -13,6 +13,10 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
     (state) => state.users ?? {}
   );
 
+  const onlyStaffUsers = React.useMemo(() => {
+    return staffUsers.filter((u) => String(u.role_id || u.role || '').toUpperCase() === 'STAFF');
+  }, [staffUsers]);
+
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -130,7 +134,7 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
                 {selectedStaffId === '' && <Check className="w-4 h-4 text-blue-600" />}
               </button>
 
-              {staffUsers.map((u) => {
+              {onlyStaffUsers.map((u) => {
                 const uId = String(u.user_id || u.id);
                 const isSelected = selectedStaffId === uId;
                 const initials = (u.name || 'ST').substring(0, 2).toUpperCase();

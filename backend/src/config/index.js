@@ -48,4 +48,21 @@ export const config = {
     facebook: {
         appSecret: process.env.FACEBOOK_APP_SECRET || null,
     },
+
+    // WhatsApp Cloud API & Webhook verification
+    whatsapp: {
+        phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || null,
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN || null,
+        verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN || null,
+        appSecret: process.env.WHATSAPP_APP_SECRET || process.env.FACEBOOK_APP_SECRET || null,
+        apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
+    },
+
+    // Gmail Email Channel Config
+    email: {
+        user: process.env.GMAIL_USER || 'messiorasolutions@gmail.com',
+        appPassword: process.env.GMAIL_APP_PASSWORD || '',
+    },
 };
+
+

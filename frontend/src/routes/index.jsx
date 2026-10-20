@@ -15,6 +15,7 @@ import GoogleCallback from '../pages/Media/GoogleCallback';
 import DashboardPage from '../pages/Dashboard/DashboardPage';
 import { getUserRole } from '../utils/roleUtils';
 import EventManagement from '../pages/Admin/EventManagement';
+import NotificationsPage from '../pages/Notifications/NotificationsPage';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -168,6 +169,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <EventManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />
