@@ -4,22 +4,14 @@ import { NavLink } from 'react-router-dom';
 import { fetchRoles } from '../../actions/Admin/roleActions';
 import { fetchBranches } from '../../actions/Admin/branchAction';
 import { fetchUsers } from '../../actions/Admin/userActions';
-import { COLORS } from '../../constants/colors';
 import {
   Shield,
   Building2,
   Users,
-  UserCheck,
   Kanban,
   HardDrive,
   MessageSquare,
-  ArrowRight,
   ShieldCheck,
-  Sparkles,
-  Server,
-  Layers,
-  CheckCircle2,
-  Activity,
   ChevronRight,
 } from 'lucide-react';
 
@@ -28,7 +20,6 @@ export default function SuperAdminDashboard() {
   const { roles } = useSelector((state) => state.roles ?? {});
   const { list: branches } = useSelector((state) => state.branch ?? {});
   const { users } = useSelector((state) => state.users ?? {});
-  const { user } = useSelector((state) => state.auth ?? {});
 
   useEffect(() => {
     dispatch(fetchRoles());
@@ -97,37 +88,6 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="space-y-5 max-w-full mx-auto">
-      {/* Super Admin Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1E3A8A] via-[#1E40AF] to-[#0F172A] p-6 text-white shadow-md border border-blue-900/40">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold bg-white/10 text-blue-200 border border-white/15 backdrop-blur-xs">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Full Governance Scope Active</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
-              Welcome back, {user?.name || 'Super Administrator'}
-            </h1>
-            <p className="text-xs sm:text-sm text-blue-100/90 max-w-xl">
-              Edugate Global CRM Super Admin Command Center. Manage system entities, branches, users, and security definitions.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="bg-white/10 border border-white/20 backdrop-blur-md rounded-xl p-3 text-right">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-300 justify-end">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>All Systems Operational</span>
-              </div>
-              <p className="text-xs text-white/80 font-mono mt-0.5">Role: SUPER_ADMIN</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Decorative background glow */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-      </div>
-
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">

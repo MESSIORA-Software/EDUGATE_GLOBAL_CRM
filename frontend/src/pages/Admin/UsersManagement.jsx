@@ -16,8 +16,6 @@ import {
   AlertCircle,
   Building2,
   ShieldCheck,
-  Server,
-  Sparkles,
   Loader2,
   Filter,
   ChevronDown,
@@ -28,8 +26,6 @@ export default function UsersManagement() {
     filteredUsers,
     apiLoading,
     error,
-    totalCount,
-    activeCount,
     searchQuery,
     setSearchQuery,
     selectedStatus,
@@ -70,88 +66,9 @@ export default function UsersManagement() {
         </div>
       )}
 
-      {/* Clean Corporate Page Header */}
-      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              System User Accounts
-            </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-              {totalCount} Users
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
-            Manage authorized staff accounts, role permissions, and branch assignments.
-          </p>
-        </div>
-
-        {/* Toolbar Controls (Aligned to Right Side) */}
-        <div className="flex items-center justify-end flex-wrap gap-2.5">
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefresh}
-            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
-            title="Refresh Users"
-          >
-            <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
-          </button>
-
-          {/* Add New User Button (Blue Theme Border) */}
-          <button
-            type="button"
-            onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs"
-          >
-            <UserPlus className="w-3.5 h-3.5 text-blue-600" />
-            <span>Add New User</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Users</p>
-            <p className="text-2xl font-extrabold text-blue-900 mt-0.5">
-              {totalCount}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold">
-            <Users className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Active Status</p>
-            <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">
-              {activeCount}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-red-200/80 shadow-2xs hover:border-red-500 transition-all flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">System API</p>
-            <p className="text-xs font-bold text-red-900 mt-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              Users Sync Active
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-center font-bold">
-            <Server className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Toolbar */}
-      <div className="p-3.5 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center">
-        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto flex-1">
+      {/* Filter & Action Toolbar */}
+      <div className="p-3.5 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col lg:flex-row gap-3 justify-between items-center">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto flex-1">
           <div className="relative w-full sm:w-80">
             <Search className="w-3.5 h-3.5 text-blue-500 absolute left-3 top-3" />
             <input
@@ -178,23 +95,44 @@ export default function UsersManagement() {
           </div>
         </div>
 
-        <form onSubmit={handleFindById} className="flex items-center gap-2 w-full md:w-auto">
-          <input
-            type="text"
-            placeholder="User ID (e.g. 1)"
-            value={findIdInput}
-            onChange={(e) => setFindIdInput(e.target.value)}
-            className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-full md:w-36"
-          />
+        <div className="flex items-center justify-end flex-wrap gap-2.5 w-full lg:w-auto">
+          <form onSubmit={handleFindById} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="User ID (e.g. 1)"
+              value={findIdInput}
+              onChange={(e) => setFindIdInput(e.target.value)}
+              className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-32"
+            />
+            <button
+              type="submit"
+              disabled={isFinding || !findIdInput.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
+            >
+              {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
+              <span>Find</span>
+            </button>
+          </form>
+
+          {/* Refresh Button */}
           <button
-            type="submit"
-            disabled={isFinding || !findIdInput.trim()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50"
+            onClick={handleRefresh}
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh Users"
           >
-            {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
-            <span>Find</span>
+            <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
-        </form>
+
+          {/* Add New User Button */}
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
+          >
+            <UserPlus className="w-3.5 h-3.5 text-blue-600" />
+            <span>Add New User</span>
+          </button>
+        </div>
       </div>
 
       {/* Table Container */}

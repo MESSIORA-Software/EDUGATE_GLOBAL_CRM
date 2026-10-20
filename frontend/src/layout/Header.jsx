@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { NavLink } from 'react-router-dom';
+import React from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
 import useNotifications from '../hooks/Notifications/useNotifications';
 import { COLORS } from '../constants/colors';
@@ -28,6 +28,13 @@ export default function Header({ toggleSidebar }) {
   }, [fetchNotifications]);
 
   const handleClose = useCallback(() => setIsNotifOpen(false), []);
+import { Bell, Search, Menu, Sparkles, User, Shield } from 'lucide-react';
+import { getRoleDashboardTitle } from '../utils/roleUtils';
+
+export default function Header({ toggleSidebar }) {
+  const { user } = useAuth();
+  const location = useLocation();
+  const pageTitle = getPageTitle(location.pathname);
 
   return (
     <header
@@ -43,59 +50,14 @@ export default function Header({ toggleSidebar }) {
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="relative hidden sm:block w-64 md:w-72">
-          <Search style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Search CRM modules..."
-            style={{
-              backgroundColor: COLORS.background,
-              borderColor: COLORS.border,
-              color: COLORS.foreground,
-            }}
-            className="w-full pl-9 pr-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] focus:bg-white"
-          />
-        </div>
+        {pageTitle && (
+          <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+            {pageTitle}
+          </h1>
+        )}
       </div>
 
       <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Live System Indicator Badge */}
-        <div
-          style={{
-            backgroundColor: COLORS.primaryLight,
-            borderColor: COLORS.primaryBorder,
-            color: COLORS.primary,
-          }}
-          className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#DC2626]" />
-          <span>Edugate Global CRM</span>
-        </div>
-
-        {/* Notification Bell */}
-        <NotificationDropdown
-          isOpen={isNotifOpen}
-          onOpen={handleOpen}
-          onClose={handleClose}
-          unreadCount={unreadCount}
-          notifications={notifications}
-          loading={loading}
-          onMarkAsRead={markAsRead}
-          onMarkAllAsRead={markAllAsRead}
-        />
-        {/* Logged User Role Dashboard Badge */}
-        <div
-          style={{
-            backgroundColor: '#EFF6FF',
-            borderColor: '#BFDBFE',
-            color: '#1E3A8A',
-          }}
-          className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-2xs"
-        >
-          <Shield className="w-3.5 h-3.5 text-blue-600" />
-          <span>{dashboardTitle}</span>
-        </div>
-
         {/* Notification bell */}
         <button
           style={{ color: COLORS.muted }}
