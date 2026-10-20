@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import useMedia from '../../hooks/Media/useMedia';
 import UploadMediaModal from '../../components/Modals/Media/UploadMediaModal';
 import StudentMediaView from './StudentMediaView';
+import { COLORS } from '../../constants/colors';
+import { TYPOGRAPHY } from '../../constants/typography';
 
 import {
   HardDrive,
@@ -80,7 +82,6 @@ const getMimeBadgeDetails = (mimeType = '') => {
   return { label: 'FILE', bg: 'bg-slate-100 text-slate-700 border-slate-200/70', iconColor: 'text-slate-600 bg-slate-100 border-slate-200/60' };
 };
 
-
 const getFileIcon = (mimeType = '') => {
   if (mimeType.startsWith('image/')) return ImageIcon;
   if (mimeType.startsWith('video/')) return Video;
@@ -93,11 +94,11 @@ const MIME_OPTIONS = [
   { label: 'All Types', value: '' },
   { label: 'Images', value: 'image/' },
   { label: 'PDFs', value: 'application/pdf' },
-  { label: 'Word', value: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
-  { label: 'Excel', value: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  { label: 'Word (DOCX)', value: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
+  { label: 'Excel (XLSX)', value: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
   { label: 'Videos', value: 'video/mp4' },
   { label: 'Audio', value: 'audio/mpeg' },
-  { label: 'ZIP', value: 'application/zip' },
+  { label: 'ZIP Archives', value: 'application/zip' },
 ];
 
 export default function MediaManagement() {
@@ -133,7 +134,7 @@ export default function MediaManagement() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'student'
 
-  const hasActiveFilters = mimeFilter || dateFrom || dateTo || uploadedByFilter;
+  const hasActiveFilters = Boolean(mimeFilter || dateFrom || dateTo || providerFilter || uploadedByFilter);
 
   return (
     <div className="space-y-4 max-w-full mx-auto">
@@ -171,7 +172,7 @@ export default function MediaManagement() {
           </p>
         </div>
 
-        {/* Toolbar Controls (Aligned to Right Side) */}
+        {/* Toolbar Controls */}
         <div className="flex items-center justify-end flex-wrap gap-2.5">
           {/* Refresh Button */}
           <button
@@ -182,7 +183,7 @@ export default function MediaManagement() {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
 
-          {/* Upload Button (Blue Theme Border) */}
+          {/* Upload Button */}
           <button
             type="button"
             onClick={() => setIsUploadOpen(true)}
@@ -273,44 +274,28 @@ export default function MediaManagement() {
             </div>
           </div>
 
-      {/* Search & Filter Toolbar */}
-      <div
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="p-3.5 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center"
-      >
-        <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-blue-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search file by name or extension..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="w-full pl-10 pr-9 py-2 border rounded-xl text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100 transition-colors"
-                title="Clear search"
           {/* Search & Filter Toolbar */}
-          <div className="p-3.5 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center">
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-80">
-                <Search className="w-3.5 h-3.5 text-blue-500 absolute left-3 top-3" />
+          <div
+            style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
+            className="p-3.5 rounded-2xl border shadow-sm flex flex-col md:flex-row gap-3 justify-between items-center"
+          >
+            <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 text-blue-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search file by name..."
+                  placeholder="Search file by name or extension..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-8 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
+                  className="w-full pl-10 pr-9 py-2 border rounded-xl text-xs font-medium placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-xs"
                 />
                 {searchQuery && (
                   <button
+                    type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-md hover:bg-slate-100 transition-colors"
+                    title="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -320,99 +305,29 @@ export default function MediaManagement() {
               <button
                 type="button"
                 onClick={() => setShowFilters((prev) => !prev)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                  hasActiveFilters
-                    ? 'border-blue-600 bg-blue-50 text-blue-900'
-                    : 'border-blue-200 bg-white text-slate-700 hover:border-blue-400'
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all shadow-xs cursor-pointer ${
+                  hasActiveFilters || showFilters
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
-                <Filter className="w-3.5 h-3.5 text-blue-600" />
-                <span>Filters {hasActiveFilters ? `(${[mimeFilter, dateFrom, dateTo].filter(Boolean).length})` : ''}</span>
+                <Filter className={`w-3.5 h-3.5 ${hasActiveFilters ? 'text-blue-600' : 'text-slate-500'}`} />
+                <span>Filters</span>
+                {hasActiveFilters && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-600 text-white leading-tight">
+                    {[mimeFilter, dateFrom, dateTo, providerFilter, uploadedByFilter].filter(Boolean).length}
+                  </span>
+                )}
               </button>
-            )}
-          </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setShowFilters((prev) => !prev)}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all shadow-xs ${
-              hasActiveFilters || showFilters
-                ? 'bg-blue-50 border-blue-200 text-blue-700'
-                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <Filter className={`w-3.5 h-3.5 ${hasActiveFilters ? 'text-blue-600' : 'text-slate-500'}`} />
-            <span>Filters</span>
-            {hasActiveFilters && (
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-blue-600 text-white leading-tight">
-                {[mimeFilter, dateFrom, dateTo, uploadedByFilter].filter(Boolean).length}
+            {/* Right side status / counter */}
+            <div className="flex items-center gap-2 self-end md:self-auto">
+              <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 font-mono text-[11px] text-slate-600 flex items-center gap-1.5 shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                Showing <strong className="text-slate-800">{mediaList.length}</strong> of{' '}
+                <strong className="text-slate-800">{totalCount}</strong> files
               </span>
-            )}
-          </button>
-        </div>
-
-        {/* Right side status / counter */}
-        <div className="flex items-center gap-2 self-end md:self-auto">
-          <span className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80 font-mono text-[11px] text-slate-600 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-            Showing <strong className="text-slate-800">{mediaList.length}</strong> of{' '}
-            <strong className="text-slate-800">{totalCount}</strong> files
-          </span>
-        </div>
-      </div>
-
-      {/* Expandable Filter Box */}
-      {showFilters && (
-        <div
-          style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-          className="p-4 rounded-2xl border shadow-sm flex flex-wrap gap-4 items-end"
-        >
-          <div className="flex flex-col gap-1">
-            <label className={TYPOGRAPHY.label}>File Type</label>
-            <select
-              value={mimeFilter}
-              onChange={(e) => setMimeFilter(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            >
-              {MIME_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className={TYPOGRAPHY.label}>From Date</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className={TYPOGRAPHY.label}>To Date</label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className={TYPOGRAPHY.label}>Uploader ID</label>
-            <input
-              type="number"
-              placeholder="User ID (Admin)"
-              value={uploadedByFilter}
-              onChange={(e) => setUploadedByFilter(e.target.value)}
-              style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-              className="px-3 py-1.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A] w-32"
-            />
             </div>
           </div>
 
@@ -420,7 +335,7 @@ export default function MediaManagement() {
           {showFilters && (
             <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-wrap gap-4 items-end animate-in fade-in duration-150">
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-500 uppercase">File Type</label>
+                <label className={TYPOGRAPHY.label}>File Type</label>
                 <select
                   value={mimeFilter}
                   onChange={(e) => setMimeFilter(e.target.value)}
@@ -433,7 +348,7 @@ export default function MediaManagement() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-500 uppercase">From Date</label>
+                <label className={TYPOGRAPHY.label}>From Date</label>
                 <input
                   type="date"
                   value={dateFrom}
@@ -443,7 +358,7 @@ export default function MediaManagement() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-500 uppercase">To Date</label>
+                <label className={TYPOGRAPHY.label}>To Date</label>
                 <input
                   type="date"
                   value={dateTo}
@@ -453,7 +368,7 @@ export default function MediaManagement() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-500 uppercase">Storage Provider</label>
+                <label className={TYPOGRAPHY.label}>Storage Provider</label>
                 <select
                   value={providerFilter}
                   onChange={(e) => setProviderFilter(e.target.value)}
@@ -466,13 +381,13 @@ export default function MediaManagement() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-slate-500 uppercase">Uploader ID</label>
+                <label className={TYPOGRAPHY.label}>Uploader ID</label>
                 <input
                   type="number"
-                  placeholder="User ID"
+                  placeholder="User ID (Admin)"
                   value={uploadedByFilter}
                   onChange={(e) => setUploadedByFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-28"
+                  className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-32"
                 />
               </div>
 
@@ -504,133 +419,25 @@ export default function MediaManagement() {
               </div>
             )}
 
-        {loading && mediaList.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: COLORS.muted }}>
-            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: COLORS.primary }} />
-            <p className="font-semibold text-xs">Loading Media Files...</p>
-          </div>
-        ) : mediaList.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: COLORS.placeholder }}>
-            <HardDrive className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-            <p className="font-bold text-sm" style={{ color: COLORS.foreground }}>No Media Files Found</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr
-                  style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-                  className="border-b text-[11px] font-bold uppercase tracking-wider text-slate-500"
-                >
-                  <th className="py-3 px-4">File</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Size</th>
-                  <th className="py-3 px-4">Uploaded By</th>
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {mediaList.map((m) => {
-                  const Icon = getFileIcon(m.mime_type);
-                  const badgeInfo = getMimeBadgeDetails(m.mime_type);
-                  return (
-                    <tr key={m.media_id} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${badgeInfo.iconColor} shadow-2xs`}>
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-slate-800 text-xs truncate max-w-[240px] group-hover:text-blue-600 transition-colors" title={m.original_name}>
-                              {m.original_name}
-                            </p>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 border border-slate-200/80">
-                                {formatMediaId(m.media_id)}
-                              </span>
-                              {m.provider === 'google_drive' && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/80" title="Google Drive Storage">
-                                  <Cloud className="w-2.5 h-2.5 text-sky-600" />
-                                  Drive
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono tracking-wide border shadow-2xs ${badgeInfo.bg}`}>
-                          {badgeInfo.label}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-700 text-xs">
-                        {formatFileSize(m.file_size)}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        {m.uploader ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0 border border-blue-200/60">
-                              {(m.uploader.name || m.uploader.email || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-bold text-slate-700 truncate max-w-[130px]">
-                                {m.uploader.name || 'User'}
-                              </p>
-                              <p className="text-[10px] text-slate-400 truncate max-w-[130px]">
-                                {m.uploader.email}
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 font-mono text-xs">—</span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap font-medium">
-                        {new Date(m.created_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })}
-                      </td>
-
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => openMediaUrl(m.media_id, m.provider)}
-                            className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition-all shadow-xs"
-                            title="View / Download"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => deleteMedia(m.media_id, m.provider)}
-                            className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 transition-all shadow-xs"
-                            title="Delete File"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
             {loading && mediaList.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
-                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
+              <div className="p-8 text-center" style={{ color: COLORS.muted }}>
+                <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" style={{ color: COLORS.primary }} />
                 <p className="font-semibold text-xs">Loading Media Files...</p>
               </div>
             ) : mediaList.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">
+              <div className="p-8 text-center" style={{ color: COLORS.placeholder }}>
                 <HardDrive className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-                <p className="font-bold text-sm text-slate-700">No Media Files Found</p>
+                <p className="font-bold text-sm" style={{ color: COLORS.foreground }}>No Media Files Found</p>
+                <p className="text-xs text-slate-400 mt-1">Upload a file or try adjusting your search filters.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <tr
+                      style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
+                      className="border-b text-[11px] font-bold uppercase tracking-wider text-slate-500"
+                    >
                       <th className="py-3.5 px-4">File</th>
                       <th className="py-3.5 px-4">Type</th>
                       <th className="py-3.5 px-4">Provider</th>
@@ -643,83 +450,109 @@ export default function MediaManagement() {
                   <tbody className="divide-y divide-slate-100 text-xs">
                     {mediaList.map((m) => {
                       const Icon = getFileIcon(m.mime_type);
+                      const badgeInfo = getMimeBadgeDetails(m.mime_type);
                       return (
-                        <tr key={m.media_id} className="hover:bg-slate-50/70 transition-colors">
+                        <tr key={m.media_id} className="hover:bg-slate-50/80 transition-colors group">
+                          {/* File Details */}
                           <td className="py-3.5 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 shrink-0">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${badgeInfo.iconColor} shadow-2xs`}>
                                 <Icon className="w-4 h-4" />
                               </div>
-                              <div>
-                                <p className="font-bold max-w-[220px] truncate text-slate-800" title={m.original_name}>
+                              <div className="min-w-0">
+                                <p className="font-bold text-slate-800 text-xs truncate max-w-[220px] group-hover:text-blue-600 transition-colors" title={m.original_name}>
                                   {m.original_name}
                                 </p>
-                                <p className="text-[10px] font-mono text-slate-400">
-                                  #{String(m.media_id).substring(0, 8)}
-                                </p>
+                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-100 text-slate-600 border border-slate-200/80">
+                                    {formatMediaId(m.media_id)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </td>
 
+                          {/* MIME Type Badge */}
                           <td className="py-3.5 px-4">
-                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 font-mono font-bold border border-blue-200">
-                              {m.mime_type}
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold font-mono tracking-wide border shadow-2xs ${badgeInfo.bg}`}>
+                              {badgeInfo.label}
                             </span>
                           </td>
 
+                          {/* Storage Provider */}
                           <td className="py-3.5 px-4">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold border ${m.provider === 'google_drive' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                              {m.provider === 'google_drive' ? 'Google Drive' : 'Supabase'}
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
+                              m.provider === 'google_drive'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                : 'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}>
+                              {m.provider === 'google_drive' ? (
+                                <>
+                                  <Cloud className="w-3 h-3 text-emerald-600" />
+                                  Drive
+                                </>
+                              ) : (
+                                <>
+                                  <Server className="w-3 h-3 text-slate-500" />
+                                  Supabase
+                                </>
+                              )}
                             </span>
                           </td>
 
-                          <td className="py-3.5 px-4 font-mono font-semibold text-slate-600">
-                            {(m.file_size / 1024 / 1024).toFixed(2)} MB
+                          {/* File Size */}
+                          <td className="py-3.5 px-4 font-mono font-semibold text-slate-700 text-xs">
+                            {formatFileSize(m.file_size)}
                           </td>
 
+                          {/* Uploader */}
                           <td className="py-3.5 px-4">
                             {m.uploader ? (
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0 border border-blue-200/60">
                                   {(m.uploader.name || m.uploader.email || 'U').charAt(0).toUpperCase()}
                                 </div>
-                                <div>
-                                  <p className="text-xs font-bold text-slate-700 truncate max-w-[120px]">
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-slate-700 truncate max-w-[130px]">
                                     {m.uploader.name || 'User'}
                                   </p>
-                                  <p className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                                  <p className="text-[10px] text-slate-400 truncate max-w-[130px]">
                                     {m.uploader.email}
                                   </p>
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-slate-400 text-xs">-</span>
+                              <span className="text-slate-400 font-mono text-xs">—</span>
                             )}
                           </td>
 
-                          <td className="py-3.5 px-4 text-slate-500 text-xs">
-                            {new Date(m.created_at).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: 'short',
+                          {/* Date */}
+                          <td className="py-3.5 px-4 text-slate-500 text-xs whitespace-nowrap font-medium">
+                            {new Date(m.created_at).toLocaleDateString('en-US', {
                               year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
                             })}
                           </td>
 
-                          <td className="py-3.5 px-4 text-right space-x-1.5">
-                            <button
-                              onClick={() => openMediaUrl(m.media_id, m.provider)}
-                              className="p-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer"
-                              title="View / Download"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => deleteMedia(m.media_id, m.provider)}
-                              className="p-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer"
-                              title="Delete File"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => openMediaUrl(m.media_id, m.provider)}
+                                className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition-all shadow-xs cursor-pointer"
+                                title="View / Download"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => deleteMedia(m.media_id, m.provider)}
+                                className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 transition-all shadow-xs cursor-pointer"
+                                title="Delete File"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

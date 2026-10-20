@@ -49,39 +49,30 @@ export const WebhookController = {
                 for (const webhookEvent of entry.messaging || []) {
                     if (!webhookEvent) continue;
 
-                const senderPsid = webhookEvent.sender?.id;
-                const incomingMessage = webhookEvent.message;
-            if (body?.object === 'page' && Array.isArray(body.entry)) {
-                for (const entry of body.entry) {
-                    for (const webhookEvent of entry.messaging || []) {
-                        if (!webhookEvent) continue;
+                    const senderPsid = webhookEvent.sender?.id;
+                    const incomingMessage = webhookEvent.message;
 
-                        const senderPsid = webhookEvent.sender?.id;
-                        const incomingMessage = webhookEvent.message;
+                    // Delivery/read events and page echoes are not customer messages.
+                    if (!incomingMessage || incomingMessage.is_echo || !senderPsid) continue;
 
-                        // Delivery/read events and page echoes are not customer messages.
-                        if (!incomingMessage || incomingMessage.is_echo || !senderPsid) continue;
+                    const messageText = incomingMessage.text || '';
+                    const attachment = incomingMessage.attachments?.[0];
+                    const messageType = attachment?.type || 'text';
+                    const mediaUrl = attachment?.payload?.url || null;
 
-                        const messageText = incomingMessage.text || '';
-                        const attachment = incomingMessage.attachments?.[0];
-                        const messageType = attachment?.type || 'text';
-                        const mediaUrl = attachment?.payload?.url || null;
-
-                        try {
-                            const profile = await FacebookMessengerService.getUserProfile(senderPsid);
-                            await ConversationService.handleInboundCommunication({
-                                channel: 'messenger',
-                                channelClientId: senderPsid,
-                                clientName: profile?.name || `Facebook User (${senderPsid})`,
-                                content: messageText || (mediaUrl ? `[Sent ${messageType}]` : ''),
-                                messageType,
-                                media_url: mediaUrl
-                            });
-                        } catch (error) {
-                            console.error('Error handling Facebook inbound message:', error);
-                        }
+                    try {
+                        const profile = await FacebookMessengerService.getUserProfile(senderPsid);
+                        await ConversationService.handleInboundCommunication({
+                            channel: 'messenger',
+                            channelClientId: senderPsid,
+                            clientName: profile?.name || `Facebook User (${senderPsid})`,
+                            content: messageText || (mediaUrl ? `[Sent ${messageType}]` : ''),
+                            messageType,
+                            media_url: mediaUrl
+                        });
+                    } catch (error) {
+                        console.error('Error handling Facebook inbound message:', error);
                     }
-                }
                 }
             }
         } catch (error) {
@@ -114,9 +105,6 @@ export const WebhookController = {
 
         if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
             return res.sendStatus(401);
-            }
-        } catch (err) {
-            console.error('Error processing Facebook webhook payload:', err);
         }
 
         // Acknowledge before doing processing, as required by Meta.
