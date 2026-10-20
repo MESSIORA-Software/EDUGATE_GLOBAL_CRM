@@ -18,8 +18,6 @@ import {
   MapPin,
   CheckCircle2,
   AlertCircle,
-  Server,
-  Sparkles,
   Loader2,
 } from 'lucide-react';
 
@@ -28,8 +26,6 @@ export default function BranchesManagement() {
     filteredBranches,
     apiLoading,
     error,
-    totalCount,
-    activeCount,
     searchTerm,
     setSearchTerm,
     findIdInput,
@@ -72,86 +68,7 @@ export default function BranchesManagement() {
         </div>
       )}
 
-      {/* Clean Corporate Page Header */}
-      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Branch Locations Management
-            </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-              {totalCount} Branches
-            </span>
-          </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
-            Manage regional CRM branch entities, contact points, and localized staff allocations.
-          </p>
-        </div>
-
-        {/* Toolbar Controls (Aligned to Right Side) */}
-        <div className="flex items-center justify-end flex-wrap gap-2.5">
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefresh}
-            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
-            title="Refresh Branches"
-          >
-            <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
-          </button>
-
-          {/* Add New Branch Button (Blue Theme Border) */}
-          <button
-            type="button"
-            onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs"
-          >
-            <Plus className="w-3.5 h-3.5 text-blue-600" />
-            <span>Add New Branch</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Branches</p>
-            <p className="text-2xl font-extrabold text-blue-900 mt-0.5">
-              {totalCount}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold">
-            <Building2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Active Operational</p>
-            <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">
-              {activeCount}
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-red-200/80 shadow-2xs hover:border-red-500 transition-all flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Branches API</p>
-            <p className="text-xs font-bold text-red-900 mt-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              Live Sync Enabled
-            </p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-center font-bold">
-            <Server className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Toolbar */}
+      {/* Filter & Action Toolbar */}
       <div className="p-3.5 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center">
         <div className="relative w-full md:w-80">
           <Search className="w-3.5 h-3.5 text-blue-500 absolute left-3 top-3" />
@@ -164,23 +81,44 @@ export default function BranchesManagement() {
           />
         </div>
 
-        <form onSubmit={handleFindById} className="flex items-center gap-2 w-full md:w-auto">
-          <input
-            type="text"
-            placeholder="Branch ID (e.g. 1)"
-            value={findIdInput}
-            onChange={(e) => setFindIdInput(e.target.value)}
-            className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-full md:w-48"
-          />
+        <div className="flex items-center justify-end flex-wrap gap-2.5 w-full md:w-auto">
+          <form onSubmit={handleFindById} className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Branch ID (e.g. 1)"
+              value={findIdInput}
+              onChange={(e) => setFindIdInput(e.target.value)}
+              className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-36"
+            />
+            <button
+              type="submit"
+              disabled={isFinding || !findIdInput.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
+            >
+              {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
+              <span>Find</span>
+            </button>
+          </form>
+
+          {/* Refresh Button */}
           <button
-            type="submit"
-            disabled={isFinding || !findIdInput.trim()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50"
+            onClick={handleRefresh}
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh Branches"
           >
-            {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
-            <span>Find</span>
+            <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
-        </form>
+
+          {/* Add New Branch Button */}
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 text-blue-600" />
+            <span>Add New Branch</span>
+          </button>
+        </div>
       </div>
 
       {/* Table Container */}
@@ -224,7 +162,7 @@ export default function BranchesManagement() {
                     <tr key={b.branch_id || index} className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold">
                         <span className="px-2 py-0.5 rounded-md border border-blue-200 bg-blue-50/50 text-blue-800 text-[11px]">
-                          #{badge}
+                          {badge}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
@@ -236,62 +174,62 @@ export default function BranchesManagement() {
                           </p>
                         )}
                       </td>
-                    <td className="py-3.5 px-4 text-slate-600">
-                      {b.phone ? (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-600 font-medium">
-                          <Phone className="w-3 h-3 text-slate-400" />
-                          {b.phone}
+                      <td className="py-3.5 px-4 text-slate-600">
+                        {b.phone ? (
+                          <span className="flex items-center gap-1 text-[11px] text-slate-600 font-medium">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            {b.phone}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">No phone</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            b.status === 'ACTIVE'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          <CheckCircle2 className="w-3 h-3" />
+                          {b.status || 'ACTIVE'}
                         </span>
-                      ) : (
-                        <span className="text-slate-400 text-[11px]">No phone</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                          b.status === 'ACTIVE'
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-slate-100 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        <CheckCircle2 className="w-3 h-3" />
-                        {b.status || 'ACTIVE'}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-1.5">
-                      <button
-                        onClick={() => handleViewBranchUsers(b)}
-                        className="p-1.5 rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 transition-colors cursor-pointer"
-                        title="View Branch Users"
-                      >
-                        <Users className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setDetailBranch(b)}
-                        className="p-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer"
-                        title="View Details"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setEditingBranch(b)}
-                        className="p-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-400 transition-colors cursor-pointer"
-                        title="Edit Branch"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteBranch(branchId)}
-                        className="p-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer"
-                        title="Delete Branch"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
+                      </td>
+                      <td className="py-3.5 px-4 text-right space-x-1.5">
+                        <button
+                          onClick={() => handleViewBranchUsers(b)}
+                          className="p-1.5 rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 transition-colors cursor-pointer"
+                          title="View Branch Users"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDetailBranch(b)}
+                          className="p-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer"
+                          title="View Details"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setEditingBranch(b)}
+                          className="p-1.5 rounded-lg border border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-400 transition-colors cursor-pointer"
+                          title="Edit Branch"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBranch(branchId)}
+                          className="p-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer"
+                          title="Delete Branch"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
         )}
