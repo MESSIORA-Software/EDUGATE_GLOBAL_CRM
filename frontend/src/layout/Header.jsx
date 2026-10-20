@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
+import useNotifications from '../hooks/Notifications/useNotifications';
 import { COLORS } from '../constants/colors';
 import edugateLogo from '../assets/edugate_logo.jpeg';
+import { Search, Menu, Sparkles } from 'lucide-react';
+import NotificationDropdown from '../components/Notifications/NotificationDropdown';
+
+export default function Header({ toggleSidebar }) {
+  const { user } = useAuth();
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+  const {
+    unreadCount,
+    notifications,
+    loading,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+  } = useNotifications();
+
+  const handleOpen = useCallback(() => {
+    setIsNotifOpen(true);
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleClose = useCallback(() => setIsNotifOpen(false), []);
 import { Bell, Search, Menu, Sparkles, User, Shield } from 'lucide-react';
 import { getRoleDashboardTitle } from '../utils/roleUtils';
 
@@ -12,10 +35,7 @@ export default function Header({ toggleSidebar }) {
 
   return (
     <header
-      style={{
-        backgroundColor: COLORS.surface,
-        borderColor: COLORS.border,
-      }}
+      style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
       className="h-14 border-b px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-sm"
     >
       <div className="flex items-center gap-3">
@@ -56,6 +76,17 @@ export default function Header({ toggleSidebar }) {
           <span>Edugate Global CRM</span>
         </div>
 
+        {/* Notification Bell */}
+        <NotificationDropdown
+          isOpen={isNotifOpen}
+          onOpen={handleOpen}
+          onClose={handleClose}
+          unreadCount={unreadCount}
+          notifications={notifications}
+          loading={loading}
+          onMarkAsRead={markAsRead}
+          onMarkAllAsRead={markAllAsRead}
+        />
         {/* Logged User Role Dashboard Badge */}
         <div
           style={{
@@ -83,12 +114,8 @@ export default function Header({ toggleSidebar }) {
 
         <div style={{ backgroundColor: COLORS.border }} className="h-5 w-px mx-0.5" />
 
-        {/* User Profile Quick Link */}
-        <NavLink
-          to="/profile"
-          className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
-          title="View My Profile"
-        >
+        {/* User Avatar */}
+        <NavLink to="/profile" className="flex items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer" title="View My Profile">
           <div
             style={{
               backgroundColor: COLORS.primaryLight,
@@ -101,13 +128,9 @@ export default function Header({ toggleSidebar }) {
           </div>
         </NavLink>
 
-        {/* Logo Badge */}
+        {/* Logo */}
         <div className="flex items-center gap-2">
-          <img
-            src={edugateLogo}
-            alt="Edugate Logo"
-            className="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-sm"
-          />
+          <img src={edugateLogo} alt="Edugate Logo" className="w-8 h-8 rounded-lg object-cover border border-slate-200 shadow-sm" />
         </div>
       </div>
     </header>

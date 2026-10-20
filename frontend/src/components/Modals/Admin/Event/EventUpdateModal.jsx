@@ -3,6 +3,7 @@ import { X, Calendar as CalendarIcon, Clock, Type, AlignLeft, User, UserCheck, E
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
+import { formatEventId } from '../../../../hooks/Admin/Event/useEvent';
 
 export default function EventUpdateModal({ isOpen, event, onClose, onSuccess, handleUpdateEvent, submitting }) {
   const [formData, setFormData] = useState({
@@ -92,7 +93,7 @@ export default function EventUpdateModal({ isOpen, event, onClose, onSuccess, ha
                 Edit Event
               </h2>
               <p className={TYPOGRAPHY.label} style={{ color: COLORS.muted }}>
-                Update details for #{event.event_id}
+                Update details for {formatEventId(event.event_id)}
               </p>
             </div>
           </div>
