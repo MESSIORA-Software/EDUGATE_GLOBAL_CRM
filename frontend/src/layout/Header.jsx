@@ -4,12 +4,14 @@ import useAuth from '../hooks/Auth/useAuth';
 import useNotifications from '../hooks/Notifications/useNotifications';
 import { COLORS } from '../constants/colors';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Search, Menu, Sparkles } from 'lucide-react';
+import { Bell, Search, Menu, Sparkles, User, Shield } from 'lucide-react';
 import NotificationDropdown from '../components/Notifications/NotificationDropdown';
+import { getRoleDashboardTitle } from '../utils/roleUtils';
 
 export default function Header({ toggleSidebar }) {
   const { user } = useAuth();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const dashboardTitle = getRoleDashboardTitle(user);
 
   const {
     unreadCount,
