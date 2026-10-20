@@ -22,8 +22,9 @@ export const MessageController = {
     async sendMessage(req, res, next) {
         try {
             const { id } = req.params;
-            const { content, media_url, media_source, message_type } = req.body;
-            const message = await MessageService.sendMessage(id, req.user, { content, media_url, media_source, message_type });
+            const { content, media_url, media_source, message_type, subject, cc, bcc, to } = req.body;
+            const message = await MessageService.sendMessage(id, req.user, { content, media_url, media_source, message_type, subject, cc, bcc, to });
+
             res.status(201).json({
                 status: 'success',
                 message: 'Message sent successfully',

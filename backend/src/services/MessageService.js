@@ -1,7 +1,10 @@
 import { MessageRepository } from '../repositories/MessageRepository.js';
 import { ConversationRepository } from '../repositories/ConversationRepository.js';
 import { FacebookMessengerService } from './FacebookMessengerService.js';
+import { WhatsAppService } from './WhatsAppService.js';
+import { EmailService } from './EmailService.js';
 import { supabase } from '../database/supabaseClient.js';
+
 
 export const MessageService = {
     // 1. Get messages for a conversation
@@ -9,8 +12,8 @@ export const MessageService = {
         return await MessageRepository.getMessagesByConversationId(conversationId, limit, offset);
     },
 
-    // 2. Send outgoing message (WhatsApp & Messenger)
-    async sendMessage(conversationId, staffUser, { content, media_url, media_source, message_type = 'text' }) {
+    // 2. Send outgoing message (WhatsApp & Messenger & Email)
+    async sendMessage(conversationId, staffUser, { content, media_url, media_source, message_type = 'text', subject, cc, bcc, to }) {
         if (!content?.trim() && !media_url) {
             const error = new Error('Message content or media is required');
             error.statusCode = 400;
@@ -44,17 +47,62 @@ export const MessageService = {
             }
         }
 
-        // 2. Save message record in database
+        // 2. If WhatsApp, send via Meta WhatsApp Cloud API
+        if (conversation.channel === 'whatsapp') {
+            if (content?.trim() && !media_url) {
+                await WhatsAppService.sendMessage(conversation.channel_client_id, { content: content.trim() });
+            } else if (media_url) {
+                await WhatsAppService.sendMessage(conversation.channel_client_id, {
+                    content: content?.trim(),
+                    media_url,
+                    message_type
+                });
+            }
+        }
+
+        // 3. If Email, send via Gmail SMTP
+        if (conversation.channel === 'email') {
+            await EmailService.sendEmail({
+                to: to || conversation.channel_client_id,
+                cc,
+                bcc,
+                subject: subject || 'Message from Edugate Global CRM',
+                content: content?.trim(),
+                media_url
+            });
+        }
+
+        let resolvedMessageType = 'text';
+        if (media_url) {
+            if (message_type === 'image' || message_type === 'video' || message_type === 'audio') {
+                resolvedMessageType = message_type;
+            } else {
+                resolvedMessageType = 'document';
+            }
+        }
+
+        let resolvedMediaSource = null;
+        if (media_url) {
+            resolvedMediaSource = (media_source === 'device_upload' || media_source === 'system_storage')
+                ? media_source
+                : 'system_storage';
+        }
+
+        const formattedContent = subject ? `[Subject: ${subject}]\n\n${content || ''}` : content;
+
+        // 4. Save message record in database
         const message = await MessageRepository.createMessage({
             conversation_id: conversationId,
             sender_type: 'staff',
             sender_id: staffUser.user_id,
-            message_type: media_url ? (message_type || 'image') : 'text',
-            content: content,
-            media_url: media_url,
-            media_source: media_source,
+            message_type: resolvedMessageType,
+            content: formattedContent,
+            media_url: media_url || null,
+            media_source: resolvedMediaSource,
             delivery_status: 'sent'
         });
+
+
 
         return message;
     },

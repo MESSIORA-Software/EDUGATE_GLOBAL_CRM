@@ -31,6 +31,10 @@ export default function CreateOpportunityModal({ isOpen, client, onClose, onSucc
   const { list: registeredClients = [] } = useSelector((state) => state.client ?? {});
   const { users: staffUsers = [] } = useSelector((state) => state.users ?? {});
 
+  const availableStaffUsers = React.useMemo(() => {
+    return staffUsers.filter((u) => String(u.role_id || u.role || '').toUpperCase() === 'STAFF');
+  }, [staffUsers]);
+
   const existingOppClientIds = React.useMemo(() => {
     return new Set(opportunities.map((o) => Number(o.client_id)));
   }, [opportunities]);
@@ -258,7 +262,7 @@ export default function CreateOpportunityModal({ isOpen, client, onClose, onSucc
                 className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
               >
                 <option value="">-- Unassigned (None) --</option>
-                {staffUsers.map((u) => {
+                {availableStaffUsers.map((u) => {
                   const uId = u.user_id || u.id;
                   return (
                     <option key={uId} value={uId}>

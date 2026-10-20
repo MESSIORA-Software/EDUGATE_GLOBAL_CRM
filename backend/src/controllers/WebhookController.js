@@ -29,10 +29,6 @@ export const WebhookController = {
 
     async handleFacebookWebhook(req, res) {
         const body = req.body;
-        // Acknowledge before doing network/database work, as required by Meta.
-        res.status(200).send('EVENT_RECEIVED');
-
-        if (body?.object !== 'page') return;
         // Verify the Meta signature BEFORE trusting the payload (fail closed).
         const appSecret = config.facebook.appSecret;
         if (!appSecret) {
@@ -43,16 +39,16 @@ export const WebhookController = {
             return res.sendStatus(401);
         }
 
-        const body = req.body;
+        // Acknowledge before doing network/database work, as required by Meta.
+        res.status(200).send('EVENT_RECEIVED');
+
+        if (body?.object !== 'page') return;
 
         try {
-        if (body.object === 'page' && Array.isArray(body.entry)) {
-            for (const entry of body.entry) {
-              for (const webhookEvent of entry.messaging || []) {
-                if (!webhookEvent) continue;
+            for (const entry of body.entry || []) {
+                for (const webhookEvent of entry.messaging || []) {
+                    if (!webhookEvent) continue;
 
-        for (const entry of body.entry || []) {
-            for (const webhookEvent of entry.messaging || []) {
                 const senderPsid = webhookEvent.sender?.id;
                 const incomingMessage = webhookEvent.message;
 
@@ -77,15 +73,104 @@ export const WebhookController = {
                 } catch (error) {
                     console.error('Error handling Facebook inbound message:', error);
                 }
-              }
+                }
             }
+        } catch (error) {
+            console.error('Error processing Facebook webhook payload:', error);
         }
-        } catch (err) {
-            console.error('Error processing Facebook webhook payload:', err);
+    },
+
+    verifyWhatsAppWebhook(req, res) {
+        const mode = req.query['hub.mode'];
+        const token = req.query['hub.verify_token'];
+        const challenge = req.query['hub.challenge'];
+        const expectedToken = config.whatsapp?.verifyToken || process.env.WHATSAPP_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN;
+
+        if (mode === 'subscribe' && token && token === expectedToken) {
+            console.log('WhatsApp Webhook Verified successfully');
+            return res.status(200).send(challenge);
         }
 
-        // Respond after processing: on serverless, work after the response may be frozen.
-        // Signature is verified, so this only acknowledges authentic Meta traffic.
-        return res.status(200).send('EVENT_RECEIVED');
+        return res.sendStatus(mode && token ? 403 : 400);
+    },
+
+    async handleWhatsAppWebhook(req, res) {
+        const body = req.body;
+        const appSecret = config.whatsapp?.appSecret || config.facebook?.appSecret || process.env.WHATSAPP_APP_SECRET || process.env.FACEBOOK_APP_SECRET;
+
+        if (!appSecret) {
+            console.error('WhatsApp/Facebook app secret is not configured; rejecting webhook.');
+            return res.sendStatus(503);
+        }
+
+        if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
+            return res.sendStatus(401);
+        }
+
+        // Acknowledge before doing processing, as required by Meta.
+        res.status(200).send('EVENT_RECEIVED');
+
+        if (body?.object !== 'whatsapp_business_account') return;
+
+        try {
+            for (const entry of body.entry || []) {
+                for (const change of entry.changes || []) {
+                    if (change.field !== 'messages') continue;
+                    const value = change.value;
+                    if (!value || !value.messages) continue;
+
+                    // Build contacts name map
+                    const contactsMap = {};
+                    for (const contact of value.contacts || []) {
+                        if (contact?.wa_id) {
+                            contactsMap[contact.wa_id] = contact.profile?.name;
+                        }
+                    }
+
+                    for (const incomingMessage of value.messages) {
+                        if (!incomingMessage || !incomingMessage.from) continue;
+                        const senderPhone = incomingMessage.from; // e.g. "94771234567"
+                        const clientName = contactsMap[senderPhone] || `WhatsApp User (+${senderPhone})`;
+                        const msgType = incomingMessage.type || 'text';
+
+                        let content = '';
+                        let mediaUrl = null;
+
+                        if (msgType === 'text') {
+                            content = incomingMessage.text?.body || '';
+                        } else if (msgType === 'image') {
+                            content = incomingMessage.image?.caption || '[Sent image]';
+                        } else if (msgType === 'document') {
+                            content = incomingMessage.document?.caption || incomingMessage.document?.filename || '[Sent document]';
+                        } else if (msgType === 'audio') {
+                            content = '[Voice note / Audio]';
+                        } else if (msgType === 'video') {
+                            content = incomingMessage.video?.caption || '[Sent video]';
+                        } else if (msgType === 'location') {
+                            content = `[Location: ${incomingMessage.location?.name || ''} ${incomingMessage.location?.address || ''} (${incomingMessage.location?.latitude}, ${incomingMessage.location?.longitude})]`.trim();
+                        } else if (msgType === 'button' || msgType === 'interactive') {
+                            content = incomingMessage.interactive?.button_reply?.title || incomingMessage.interactive?.list_reply?.title || incomingMessage.button?.text || '[Button reply]';
+                        } else {
+                            content = `[${msgType} message]`;
+                        }
+
+                        try {
+                            await ConversationService.handleInboundCommunication({
+                                channel: 'whatsapp',
+                                channelClientId: senderPhone,
+                                clientName: clientName,
+                                content: content,
+                                messageType: msgType,
+                                media_url: mediaUrl
+                            });
+                        } catch (inboundError) {
+                            console.error('Error handling WhatsApp inbound message:', inboundError);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error processing WhatsApp webhook payload:', error);
+        }
     }
 };

@@ -6,7 +6,7 @@ export const OppertunityController = {
         try {
             // created_by / updated_by come from the authenticated user (JWT), not the body
             const { client_id, assigned_staff_id, status_id, note_id, is_archived } = req.body;   
-            const actorId = req.user.user_id;
+            const actorId = req.user?.user_id || null;
             const newOppertunity = await OppertunityService.createOppertunity({ client_id, assigned_staff_id, status_id, note_id, is_archived, created_by: actorId, updated_by: actorId });
             res.status(201).json({
                 status: 'success',
@@ -33,7 +33,7 @@ export const OppertunityController = {
                 });
             }
             // created_by is immutable; updated_by is the authenticated user
-            const updatedOppertunity = await OppertunityService.updateOppertunity(opportunity_id, { client_id, assigned_staff_id, status_id, note_id, is_archived, updated_by: req.user.user_id });
+            const updatedOppertunity = await OppertunityService.updateOppertunity(opportunity_id, { client_id, assigned_staff_id, status_id, note_id, is_archived, updated_by: req.user?.user_id || null });
             res.status(200).json({
                 status: 'success',
                 message: 'Oppertunity updated successfully',

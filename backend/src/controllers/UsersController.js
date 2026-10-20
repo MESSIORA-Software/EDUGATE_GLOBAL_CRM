@@ -3,7 +3,26 @@ import { userService } from '../services/UsersService.js';
 export const usersController = {
     async getAll(req, res, next) {
         try {
-            const users = await userService.getAllUsers();
+            const { role_id, role } = req.query;
+            let users = await userService.getAllUsers();
+            if (role_id || role) {
+                const targetRole = String(role_id || role).toUpperCase();
+                users = (users || []).filter(u => String(u.role_id || '').toUpperCase() === targetRole);
+            }
+            res.status(200).json({
+                status: 'success',
+                count: users.length,
+                data: users,
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async getUsersByRole(req, res, next) {
+        try {
+            const role_id = req.params.role_id || req.query.role_id;
+            const users = await userService.getUsersByRole(role_id);
             res.status(200).json({
                 status: 'success',
                 count: users.length,

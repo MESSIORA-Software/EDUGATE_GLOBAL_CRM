@@ -3,6 +3,8 @@ import { usersController } from '../controllers/UsersController.js';
 
 const router = Router();
 
+router.get('/role/:role_id', usersController.getUsersByRole);
+router.get('/role', usersController.getUsersByRole);
 router.get('/', usersController.getAll);
 router.get('/user', usersController.getUserById);
 router.post('/', usersController.createuser);
