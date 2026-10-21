@@ -37,7 +37,7 @@ export default function LoginPage() {
             <img
               src={edugateLogo}
               alt="Edugate Global"
-              className="w-16 h-16 rounded-xl object-cover border border-slate-200 shadow-sm mx-auto mb-3"
+              className="h-16 w-auto max-w-[220px] object-contain mx-auto mb-3"
             />
             <div
               style={{
