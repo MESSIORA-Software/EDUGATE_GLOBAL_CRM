@@ -6,7 +6,7 @@ import { COLORS } from '../constants/colors';
 import edugateLogo from '../assets/edugate_logo.jpeg';
 import { Menu, Shield, ChevronDown } from 'lucide-react';
 import NotificationDropdown from '../components/Notifications/NotificationDropdown';
-import { getRoleDashboardTitle } from '../utils/roleUtils';
+import { getRoleDashboardTitle, getUserRole } from '../utils/roleUtils';
 
 const getPageTitle = (pathname) => {
   if (!pathname) return '';
