@@ -14,10 +14,40 @@ if (error) throw error;
 
 },
 
-async getAllClients() {
-    const { data, error } = await supabase
-        .from('clients')
-        .select('*');
+async getAllClients(currentUser = null) {
+    let query = supabase.from('clients').select('*');
+
+    const isAdmin = currentUser && (
+        String(currentUser.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
+        String(currentUser.role_id || '').toUpperCase() === 'ADMIN' ||
+        String(currentUser.role_name || '').toLowerCase() === 'admin' ||
+        String(currentUser.role_name || '').toLowerCase() === 'super admin'
+    );
+
+    if (currentUser && !isAdmin) {
+        // Find all client_ids assigned to this staff member from opportunities and conversations
+        const { data: opps } = await supabase
+            .from('opportunities')
+            .select('client_id')
+            .eq('assigned_staff_id', currentUser.user_id);
+
+        const { data: convs } = await supabase
+            .from('conversations')
+            .select('client_id')
+            .eq('assigned_staff_id', currentUser.user_id);
+
+        const assignedClientIds = Array.from(new Set([
+            ...(opps || []).map(o => o.client_id),
+            ...(convs || []).map(c => c.client_id)
+        ])).filter(Boolean);
+
+        if (assignedClientIds.length === 0) {
+            return [];
+        }
+        query = query.in('client_id', assignedClientIds);
+    }
+
+    const { data, error } = await query.order('client_id', { ascending: false });
     if (error) throw error;
     return data;
 },

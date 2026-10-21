@@ -8,8 +8,14 @@ import {
   getClientById,
 } from '../../../actions/Admin/clientAction';
 
+import useAuth from '../../Auth/useAuth';
+import { getUserRole } from '../../../utils/roleUtils';
+
 export default function useClients() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const isSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
 
   const {
     list: clients = [],
@@ -19,6 +25,28 @@ export default function useClients() {
     deleting = false,
     error = null,
   } = useSelector((state) => state.client ?? {});
+
+  const { opportunities = [] } = useSelector((state) => state.pipeline ?? {});
+
+  const assignedClientIds = useMemo(() => {
+    if (isSuperAdmin) return null;
+    const ids = new Set();
+    opportunities.forEach((o) => {
+      if (Number(o.assigned_staff_id) === Number(user?.user_id) && o.client_id) {
+        ids.add(Number(o.client_id));
+      }
+    });
+    return ids;
+  }, [isSuperAdmin, opportunities, user?.user_id]);
+
+  const baseClients = useMemo(() => {
+    // If backend already filtered or if admin, return clients directly
+    if (isSuperAdmin) return clients;
+    if (assignedClientIds && assignedClientIds.size > 0) {
+      return clients.filter((c) => assignedClientIds.has(Number(c.client_id || c.id)));
+    }
+    return clients;
+  }, [clients, isSuperAdmin, assignedClientIds]);
 
   const submitting = adding || updating || deleting;
 
@@ -101,22 +129,22 @@ export default function useClients() {
     return res;
   };
 
-  const totalCount = clients.length;
+  const totalCount = baseClients.length;
 
   const filteredClients = useMemo(() => {
-    if (!searchTerm.trim()) return [...clients];
+    if (!searchTerm.trim()) return [...baseClients];
     const q = searchTerm.toLowerCase().trim();
-    return clients.filter((c) =>
+    return baseClients.filter((c) =>
       String(c?.client_id ?? c?.id ?? '').includes(q) ||
       (c?.name   ?? '').toLowerCase().includes(q) ||
       (c?.email  ?? '').toLowerCase().includes(q) ||
       (c?.source ?? '').toLowerCase().includes(q) ||
       (c?.dob    ?? '').toLowerCase().includes(q)
     );
-  }, [clients, searchTerm]);
+  }, [baseClients, searchTerm]);
 
   return {
-    clients,
+    clients: baseClients,
     filteredClients,
     apiLoading,
     adding,

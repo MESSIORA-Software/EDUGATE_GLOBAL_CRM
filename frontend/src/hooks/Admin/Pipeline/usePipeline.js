@@ -1,9 +1,14 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPipelineData, moveOpportunityStatus } from '../../../actions/Admin/pipelineAction';
+import useAuth from '../../Auth/useAuth';
+import { getUserRole } from '../../../utils/roleUtils';
 
 export default function usePipeline() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const isSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
 
   const {
     statuses = [],
@@ -13,6 +18,11 @@ export default function usePipeline() {
     movingStudent = false,
     error = null,
   } = useSelector((state) => state.pipeline ?? {});
+
+  const baseOpportunities = useMemo(() => {
+    if (isSuperAdmin) return opportunities;
+    return opportunities.filter((opp) => Number(opp.assigned_staff_id) === Number(user?.user_id));
+  }, [opportunities, isSuperAdmin, user?.user_id]);
 
   // Local filtering state
   const [searchTerm, setSearchTerm]         = useState('');
@@ -129,12 +139,12 @@ export default function usePipeline() {
   // Unique program/courses or sources list from opportunities
   const programOptions = useMemo(() => {
     const set = new Set();
-    opportunities.forEach((opp) => {
+    baseOpportunities.forEach((opp) => {
       const src = opp.client?.source;
       if (src) set.add(src);
     });
     return Array.from(set);
-  }, [opportunities]);
+  }, [baseOpportunities]);
 
   // Group ONLY created opportunities by status (respecting focused status if set)
   const columnsData = useMemo(() => {
@@ -146,7 +156,7 @@ export default function usePipeline() {
       : statuses;
 
     return activeStatuses.map((status) => {
-      const statusOpps = opportunities.filter((opp) => opp.status_id === status.status_id);
+      const statusOpps = baseOpportunities.filter((opp) => opp.status_id === status.status_id);
 
       const filtered = statusOpps.filter((opp) => {
         const client = opp.client || {};
@@ -176,12 +186,12 @@ export default function usePipeline() {
         count: filtered.length,
       };
     });
-  }, [statuses, opportunities, searchTerm, programFilter, focusedStatusId]);
+  }, [statuses, baseOpportunities, searchTerm, programFilter, focusedStatusId]);
 
   return {
     statuses,
     clients,
-    opportunities,
+    opportunities: baseOpportunities,
     columnsData,
     apiLoading,
     movingStudent,

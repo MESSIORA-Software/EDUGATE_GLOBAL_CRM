@@ -37,8 +37,8 @@ export const OppertunityService = {
         return await OppertunityRepository.getOppertunityById(opportunity_id);
     },
 
-    async getOppertunitiesbyoppertunityStatus(status_id) {
-        return await OppertunityRepository.getOppertunitiesbyoppertunityStatus(status_id);
+    async getOppertunitiesbyoppertunityStatus(status_id, staffId = null) {
+        return await OppertunityRepository.getOppertunitiesbyoppertunityStatus(status_id, staffId);
     }
 
 };  
