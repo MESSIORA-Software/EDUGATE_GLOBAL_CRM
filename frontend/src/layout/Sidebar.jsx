@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
 import { getUserRole } from '../utils/roleUtils';
 import { COLORS } from '../constants/colors';
-import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
 import { useSelector } from 'react-redux';
 import {
@@ -18,7 +17,6 @@ import {
   Kanban,
   MessageSquare,
   Calendar,
-  Bell,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -27,10 +25,17 @@ export default function Sidebar({ isOpen, onClose }) {
   const userRole = getUserRole(user);
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
+  const formatRoleLabel = (role) => {
+    if (!role) return 'Staff';
+    if (role === 'SUPER_ADMIN') return 'Super Admin';
+    if (role === 'ADMIN') return 'Branch Admin';
+    if (role === 'STAFF') return 'Staff Member';
+    return role.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   const navItems = isSuperAdmin
     ? [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
         { name: 'System Roles', path: '/roles', icon: Shield },
         { name: 'Branch Locations', path: '/branches', icon: Building2 },
         { name: 'User Accounts', path: '/users', icon: Users },
@@ -44,7 +49,6 @@ export default function Sidebar({ isOpen, onClose }) {
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
@@ -73,36 +77,18 @@ export default function Sidebar({ isOpen, onClose }) {
       >
         <div>
           {/* Brand Header */}
-          <div
-            style={{ borderColor: COLORS.border }}
-            className="h-14 flex items-center gap-3 px-5 border-b"
-          >
-            <img
-              src={edugateLogo}
-              alt="EDUGATE Global"
-              className="w-9 h-9 rounded-lg object-cover border border-slate-200 shadow-sm shrink-0"
-            />
-            <div>
-              <h2
-                style={{ color: COLORS.primary }}
-                className="font-extrabold text-xs tracking-wider leading-none"
-              >
-                EDUGATE GLOBAL
-              </h2>
-              <span
-                style={{ color: COLORS.secondary }}
-                className="text-[9px] font-bold tracking-widest uppercase mt-0.5 block"
-              >
-                CRM Portal
-              </span>
-            </div>
+          <div className="h-16 flex items-center px-5 border-b border-slate-200/80 bg-white">
+            <NavLink to="/dashboard" className="flex items-center min-w-0" title="EduGate Global">
+              <img
+                src={edugateLogo}
+                alt="EduGate Srilanka"
+                className="h-11 w-auto max-w-[175px] object-contain shrink-0"
+              />
+            </NavLink>
           </div>
 
           {/* Navigation Items */}
           <nav className="p-3 space-y-1">
-            <p className={`${TYPOGRAPHY.label} px-2 mb-1`}>
-              Main Navigation
-            </p>
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -140,39 +126,35 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* User Info & Logout Footer */}
-        <div style={{ borderColor: COLORS.border }} className="p-3 border-t space-y-2">
+        <div className="p-3 border-t border-slate-200/80 space-y-2 bg-white">
           {user && (
             <NavLink
               to="/profile"
               onClick={onClose}
-              style={{
-                backgroundColor: COLORS.background,
-                borderColor: COLORS.border,
-              }}
-              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl border hover:bg-slate-100 transition-all cursor-pointer block"
+              className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/70 hover:bg-white hover:border-blue-300 hover:shadow-xs transition-all cursor-pointer group"
               title="Click to view full profile"
             >
-              <div
-                style={{
-                  backgroundColor: COLORS.primaryLight,
-                  color: COLORS.primary,
-                }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-xs border border-blue-200"
-              >
-                {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+              {/* Avatar with gradient & online dot */}
+              <div className="relative shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-xs group-hover:scale-105 transition-transform">
+                  {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white ring-1 ring-emerald-400/20" />
               </div>
-              <div className="overflow-hidden text-left flex-1">
-                <p style={{ color: COLORS.foreground }} className="text-xs font-bold truncate">
-                  {user.name || user.email || 'Logged In User'}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-blue-50 text-blue-800 border border-blue-200">
-                    {userRole}
+
+              {/* User text details */}
+              <div className="overflow-hidden text-left flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-1.5 min-w-0">
+                  <span className="text-xs font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                    {user.name || user.email?.split('@')[0] || 'User'}
                   </span>
-                  <span style={{ color: COLORS.muted }} className="text-[10px] truncate">
-                    {user.email}
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 shrink-0 leading-none">
+                    {formatRoleLabel(userRole)}
                   </span>
                 </div>
+                <p className="text-[11px] text-slate-500 truncate mt-1 font-medium leading-tight">
+                  {user.email || 'user@edugate.lk'}
+                </p>
               </div>
             </NavLink>
           )}
@@ -180,14 +162,9 @@ export default function Sidebar({ isOpen, onClose }) {
           {/* Logout Button */}
           <button
             onClick={() => handleLogout(onClose)}
-            style={{
-              borderColor: COLORS.secondaryBorder,
-              color: COLORS.secondary,
-              backgroundColor: COLORS.secondaryLight,
-            }}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold border transition-all hover:bg-red-100 active:scale-98 cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50/80 border border-rose-200/70 hover:bg-rose-100 hover:border-rose-300 transition-all active:scale-[0.99] cursor-pointer"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5 text-rose-500" />
             <span>Sign Out</span>
           </button>
         </div>

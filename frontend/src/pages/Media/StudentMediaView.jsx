@@ -5,6 +5,7 @@ import UploadStudentMediaModal from '../../components/Modals/Media/UploadStudent
 import {
   UserCircle,
   Search,
+  Eye,
   Upload,
   RefreshCw,
   Trash2,
@@ -74,46 +75,47 @@ export default function StudentMediaView() {
 
   return (
     <div className="space-y-4">
-      {/* Student Selector Card */}
-      <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center shrink-0 font-bold">
-            <UserCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-slate-800">Student Profile Media Vault</h2>
-            <p className="text-xs text-slate-500">Search and attach passports, transcript certificates, and offer letters</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleFindStudent} className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-blue-500" />
+      {/* Student Selector Toolbar */}
+      <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center">
+        <form onSubmit={handleFindStudent} className="flex items-center gap-2.5 w-full md:w-auto flex-1">
+          <div className="relative w-full sm:w-80 group">
+            <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Enter Student ID (e.g. 1)"
               value={studentIdInput}
               onChange={(e) => setStudentIdInput(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 border border-blue-200 bg-white rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full pl-9 pr-9 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 placeholder:text-slate-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-xs"
             />
-            {activeStudentId && (
+            {studentIdInput && (
               <button
                 type="button"
                 onClick={clearStudent}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-red-500 cursor-pointer"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1 rounded-md transition-all cursor-pointer"
+                title="Clear search"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
           <button
             type="submit"
             disabled={!studentIdInput.trim() || activeStudentId === studentIdInput.trim()}
-            className="flex items-center gap-1 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
           >
-            Find
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
+            <span>Find Student</span>
           </button>
         </form>
+
+        {activeStudentId && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="font-semibold text-slate-500">Active Student:</span>
+            <span className="font-mono font-bold text-blue-900 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+              STD-{activeStudentId}
+            </span>
+          </div>
+        )}
       </div>
 
       {!activeStudentId ? (
