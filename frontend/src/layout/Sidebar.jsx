@@ -1,40 +1,36 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
+import { getUserRole } from '../utils/roleUtils';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
 import { useSelector } from 'react-redux';
-
+import {
+  Shield,
+  Building2,
+  Users,
+  UserCheck,
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  HardDrive,
+  Kanban,
+  MessageSquare,
+  Calendar,
+  Bell,
+} from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
   const unreadCount = useSelector((state) => state.notifications?.unreadCount ?? 0);
-
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
-    { name: 'System Roles', path: '/roles', icon: Shield },
-    { name: 'Branch Locations', path: '/branches', icon: Building2 },
-    { name: 'User Accounts', path: '/users', icon: Users },
-    { name: 'Students / Clients', path: '/clients', icon: UserCheck },
-    { name: 'Media Storage', path: '/media', icon: HardDrive },
-    { name: 'Events', path: '/events', icon: Calendar },
-    { name: 'My Profile', path: '/profile', icon: UserCheck },
-    { name: 'Settings', path: '/settings', icon: Settings },
-  ];
-import { getUserRole } from '../utils/roleUtils';
-import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut, HardDrive, Kanban, MessageSquare,Calendar } from 'lucide-react';
-
-
-export default function Sidebar({ isOpen, onClose }) {
-  const { user, handleLogout } = useAuth();
   const userRole = getUserRole(user);
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
   const navItems = isSuperAdmin
     ? [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
         { name: 'System Roles', path: '/roles', icon: Shield },
         { name: 'Branch Locations', path: '/branches', icon: Building2 },
         { name: 'User Accounts', path: '/users', icon: Users },
@@ -42,13 +38,17 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
+        { name: 'Events', path: '/events', icon: Calendar },
         { name: 'My Profile', path: '/profile', icon: UserCheck },
         { name: 'Settings', path: '/settings', icon: Settings },
-        { name: 'Events', path: '/events', icon: Calendar },
-         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
+        { name: 'Students / Clients', path: '/clients', icon: UserCheck },
+        { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Conversations', path: '/conversations', icon: MessageSquare },
+        { name: 'Events', path: '/events', icon: Calendar },
         { name: 'My Profile', path: '/profile', icon: UserCheck },
       ];
 
