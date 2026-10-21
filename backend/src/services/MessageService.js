@@ -20,7 +20,26 @@ export const MessageService = {
             throw error;
         }
 
-        const conversation = await ConversationRepository.getConversationById(conversationId);
+        let conversation = null;
+        if (conversationId && conversationId !== 'new' && conversationId !== '0') {
+            conversation = await ConversationRepository.getConversationById(conversationId);
+        }
+
+        // If conversation not found or new compose with recipient `to`
+        if (!conversation && to) {
+            const cleanTo = to.trim().toLowerCase();
+            conversation = await ConversationRepository.findByChannelAndClientId('email', cleanTo);
+            if (!conversation) {
+                let { data: client } = await supabase.from('clients').select('client_id').eq('email', cleanTo).maybeSingle();
+                conversation = await ConversationRepository.createConversation({
+                    client_id: client?.client_id || null,
+                    channel: 'email',
+                    channel_client_id: cleanTo,
+                    status: 'open'
+                });
+            }
+        }
+
         if (!conversation) {
             const error = new Error('Conversation not found');
             error.statusCode = 404;
@@ -92,7 +111,7 @@ export const MessageService = {
 
         // 4. Save message record in database
         const message = await MessageRepository.createMessage({
-            conversation_id: conversationId,
+            conversation_id: conversation.conversation_id,
             sender_type: 'staff',
             sender_id: staffUser.user_id,
             message_type: resolvedMessageType,

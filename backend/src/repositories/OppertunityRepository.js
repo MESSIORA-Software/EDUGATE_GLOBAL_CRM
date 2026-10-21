@@ -39,11 +39,17 @@ export const OppertunityRepository = {
 
         return data;
     },
-    async getOppertunitiesbyoppertunityStatus(status_id) {
-        const { data, error } = await supabase
+    async getOppertunitiesbyoppertunityStatus(status_id, staffId = null) {
+        let query = supabase
             .from('opportunities')
             .select('*')
             .eq('status_id', status_id);
+
+        if (staffId) {
+            query = query.eq('assigned_staff_id', staffId);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
             throw new Error(`Error fetching opportunities: ${error.message}`);

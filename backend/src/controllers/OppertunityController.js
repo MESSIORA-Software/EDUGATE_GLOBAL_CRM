@@ -69,7 +69,15 @@ export const OppertunityController = {
     async getOppertunitiesbyoppertunityStatus(req, res) {
         try {
             const status_id = req.body?.status_id || req.query?.status_id || req.params?.status_id;
-            const opportunities = await OppertunityService.getOppertunitiesbyoppertunityStatus(status_id);
+            const actor = req.user;
+            const isAdmin = actor && (
+                String(actor.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
+                String(actor.role_id || '').toUpperCase() === 'ADMIN' ||
+                String(actor.role_name || '').toLowerCase() === 'admin' ||
+                String(actor.role_name || '').toLowerCase() === 'super admin'
+            );
+            const staffId = (!isAdmin && actor?.user_id) ? actor.user_id : null;
+            const opportunities = await OppertunityService.getOppertunitiesbyoppertunityStatus(status_id, staffId);
             res.status(200).json({
                 status: 'success',
                 message: 'Opportunities fetched successfully',

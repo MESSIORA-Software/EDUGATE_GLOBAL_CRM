@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import conversationService from '../../services/Conversation/conversationService';
 import AddOpportunityModal from '../../components/Modals/Admin/Student/AddOpportunityModal';
+import useAuth from '../../hooks/Auth/useAuth';
+import { getUserRole } from '../../utils/roleUtils';
 
 const channelConfig = {
   messenger: { label: 'Messenger', color: 'bg-[#1877F2]' },
@@ -43,11 +45,12 @@ const parseEmailContent = (rawContent) => {
   return { subject: '', body: rawContent };
 };
 
-function ConversationList({ conversations, selectedId, onSelect, search, channel }) {
+function ConversationList({ conversations, selectedId, onSelect, search, channel, emailFolder }) {
   const isWhatsApp = channel === 'whatsapp';
   const isEmail = channel === 'email';
+  const isSentFolder = isEmail && emailFolder === 'sent';
   const defaultLabel = isWhatsApp ? 'WhatsApp User' : isEmail ? 'Email Contact' : 'Facebook user';
-  const channelLabel = isWhatsApp ? 'WhatsApp' : isEmail ? 'Email' : 'Messenger';
+  const channelLabel = isWhatsApp ? 'WhatsApp' : isEmail ? (isSentFolder ? 'sent email' : 'inbox email') : 'Messenger';
 
   const filtered = conversations.filter((item) => {
     const name = item.clients?.name || (item.channel_client_id ? (isWhatsApp ? `+${item.channel_client_id}` : item.channel_client_id) : defaultLabel);
@@ -75,8 +78,11 @@ function ConversationList({ conversations, selectedId, onSelect, search, channel
         const avatarColor = isWhatsApp
           ? 'bg-emerald-100 text-emerald-700'
           : isEmail
-          ? 'bg-violet-100 text-violet-700'
+          ? isSentFolder ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'
           : 'bg-blue-100 text-blue-700';
+
+        const parsedLast = isEmail ? parseEmailContent(item.last_message) : null;
+        const lastSubject = parsedLast?.subject;
 
         return (
           <button
@@ -87,18 +93,24 @@ function ConversationList({ conversations, selectedId, onSelect, search, channel
           >
             <div className="flex items-start gap-3">
               <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${avatarColor}`}>
-                {isEmail ? <Mail className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
+                {isEmail ? (
+                  isSentFolder ? <Send className="h-4 w-4" /> : <Mail className="h-5 w-5" />
+                ) : (
+                  <UserRound className="h-5 w-5" />
+                )}
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="truncate text-sm font-semibold text-slate-900">{name}</p>
+                  <p className="truncate text-sm font-semibold text-slate-900">
+                    {isSentFolder ? `To: ${name}` : name}
+                  </p>
                   <time className="shrink-0 text-[10px] text-slate-400">
                     {item.last_message_at ? new Date(item.last_message_at).toLocaleDateString() : ''}
                   </time>
                 </div>
                 <p className="mt-1 truncate text-xs text-slate-500">
-                  {item.status === 'open' ? 'Open conversation' : item.status}
+                  {lastSubject ? lastSubject : (item.status === 'open' ? (isSentFolder ? 'Sent email' : 'Open conversation') : item.status)}
                 </p>
               </div>
             </div>
@@ -403,6 +415,10 @@ function EmailComposeModal({
 }
 
 export default function ConversationsPage() {
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const isSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+
   const [activeChannel, setActiveChannel] = useState('messenger');
   const [conversations, setConversations] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -419,6 +435,7 @@ export default function ConversationsPage() {
 
   // Email specific states
   const [emailFolder, setEmailFolder] = useState('inbox'); // 'inbox' | 'sent' | 'draft'
+  const [showFullThreadInSent, setShowFullThreadInSent] = useState(false);
   const [emailStatus, setEmailStatus] = useState({ connected: true, email: 'messiorasolutions@gmail.com' });
   const [emailSyncing, setEmailSyncing] = useState(false);
   const [isComposeOpen, setIsComposeOpen] = useState(false);
@@ -590,25 +607,66 @@ export default function ConversationsPage() {
     }
   }, [activeChannel, loadConversations]);
 
+  // Scope conversations for staff users
+  const scopedConversations = useMemo(() => {
+    if (isSuperAdmin) return conversations;
+    return conversations.filter((c) => {
+      const isAssignedStaff = Number(c.assigned_staff_id) === Number(user?.user_id);
+      const isOppAssigned = c.opportunity && Number(c.opportunity.assigned_staff_id) === Number(user?.user_id);
+      return isAssignedStaff || isOppAssigned;
+    });
+  }, [conversations, isSuperAdmin, user?.user_id]);
+
   // Categorize conversations for Email filters
   const inboxConversations = useMemo(() => {
-    return conversations;
-  }, [conversations]);
+    if (activeChannel !== 'email') return scopedConversations;
+    return scopedConversations.filter((conv) => {
+      if (Array.isArray(conv.messages) && conv.messages.length > 0) {
+        return conv.messages.some((m) => m.sender_type === 'client');
+      }
+      return true; // Default fallback for inbound email threads
+    });
+  }, [scopedConversations, activeChannel]);
 
   const sentConversations = useMemo(() => {
-    // Show conversations where staff replies or outbound messages were logged
-    return conversations;
-  }, [conversations]);
+    if (activeChannel !== 'email') return scopedConversations;
+    return scopedConversations.filter((conv) => {
+      if (Array.isArray(conv.messages) && conv.messages.length > 0) {
+        return conv.messages.some((m) => m.sender_type === 'staff');
+      }
+      return false;
+    });
+  }, [scopedConversations, activeChannel]);
 
   const displayedConversations = useMemo(() => {
-    if (activeChannel !== 'email') return conversations;
+    if (activeChannel !== 'email') return scopedConversations;
     if (emailFolder === 'sent') return sentConversations;
-    return inboxConversations;
-  }, [activeChannel, emailFolder, conversations, sentConversations, inboxConversations]);
+    if (emailFolder === 'inbox') return inboxConversations;
+    return scopedConversations;
+  }, [activeChannel, emailFolder, scopedConversations, sentConversations, inboxConversations]);
 
   const counts = useMemo(() => ({
-    current: conversations.length,
-  }), [conversations]);
+    current: activeChannel === 'email'
+      ? (emailFolder === 'sent' ? sentConversations.length : inboxConversations.length)
+      : scopedConversations.length,
+    inbox: inboxConversations.length,
+    sent: sentConversations.length,
+    draft: draftsList.length,
+  }), [activeChannel, emailFolder, scopedConversations.length, inboxConversations.length, sentConversations.length, draftsList.length]);
+
+  const handleSelectEmailFolder = (folder) => {
+    setEmailFolder(folder);
+    setShowFullThreadInSent(false);
+    if (folder === 'inbox') {
+      if (!inboxConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
+        setSelected(inboxConversations[0] || null);
+      }
+    } else if (folder === 'sent') {
+      if (!sentConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
+        setSelected(sentConversations[0] || null);
+      }
+    }
+  };
 
   // Send message via Chat Bubble bar (WhatsApp / Messenger / Quick Email)
   const send = async (event) => {
@@ -657,10 +715,7 @@ export default function ConversationsPage() {
       messageType = attachment.type.startsWith('image/') ? 'image' : 'document';
     }
 
-    const convId = conversationId || selected?.conversation_id;
-    if (!convId) {
-      throw new Error('Please select an active conversation thread to send an email.');
-    }
+    const convId = conversationId || selected?.conversation_id || 'new';
 
     await conversationService.sendMessage(convId, {
       to,
@@ -673,10 +728,12 @@ export default function ConversationsPage() {
       message_type: messageType,
     });
 
-    if (selected?.conversation_id === convId) {
+    if (selected?.conversation_id && selected.conversation_id === convId) {
       await loadMessages(selected);
     }
     await loadConversations('email');
+    // Switch to sent folder so user can see their sent email immediately
+    setEmailFolder('sent');
   };
 
   const handleOpenComposeNew = () => {
@@ -755,7 +812,9 @@ export default function ConversationsPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-slate-900">Conversations</h1>
             <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${badgeBgClass}`}>
-              {counts.current} {config.label}
+              {isEmail
+                ? `${emailFolder === 'sent' ? sentConversations.length : inboxConversations.length} ${emailFolder === 'sent' ? 'Sent' : 'Inbox'} Email${(emailFolder === 'sent' ? sentConversations.length : inboxConversations.length) === 1 ? '' : 's'}`
+                : `${counts.current} ${config.label}`}
             </span>
             {isWhatsAppConnected && waPhoneNumber && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
@@ -952,7 +1011,7 @@ export default function ConversationsPage() {
                 <div className="mt-2.5 flex items-center gap-1">
                   <button
                     type="button"
-                    onClick={() => setEmailFolder('inbox')}
+                    onClick={() => handleSelectEmailFolder('inbox')}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition ${
                       emailFolder === 'inbox'
                         ? 'bg-violet-100 text-violet-800 border border-violet-200 shadow-xs'
@@ -968,7 +1027,7 @@ export default function ConversationsPage() {
 
                   <button
                     type="button"
-                    onClick={() => setEmailFolder('sent')}
+                    onClick={() => handleSelectEmailFolder('sent')}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition ${
                       emailFolder === 'sent'
                         ? 'bg-violet-100 text-violet-800 border border-violet-200 shadow-xs'
@@ -984,7 +1043,7 @@ export default function ConversationsPage() {
 
                   <button
                     type="button"
-                    onClick={() => setEmailFolder('draft')}
+                    onClick={() => handleSelectEmailFolder('draft')}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition ${
                       emailFolder === 'draft'
                         ? 'bg-violet-100 text-violet-800 border border-violet-200 shadow-xs'
@@ -1068,6 +1127,7 @@ export default function ConversationsPage() {
                   onSelect={setSelected}
                   search={search}
                   channel={activeChannel}
+                  emailFolder={emailFolder}
                 />
               )}
             </div>
@@ -1104,8 +1164,12 @@ export default function ConversationsPage() {
                             {isEmail ? (threadSubject || clientDisplayName) : clientDisplayName}
                           </h2>
                           {isEmail && (
-                            <span className="rounded bg-slate-200/80 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
-                              Inbox
+                            <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
+                              emailFolder === 'sent'
+                                ? 'bg-violet-100 text-violet-700 border border-violet-200'
+                                : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                              {emailFolder === 'sent' ? 'Sent' : 'Inbox'}
                             </span>
                           )}
                         </div>
@@ -1168,7 +1232,28 @@ export default function ConversationsPage() {
                   ) : isEmail ? (
                     /* Actual Gmail Right Dashboard Layout */
                     <div className="space-y-4 min-w-0 max-w-full">
-                      {messages.map((message) => {
+                      {/* Sent Folder toggle banner if full thread has client messages too */}
+                      {emailFolder === 'sent' && messages.some((m) => m.sender_type === 'client') && (
+                        <div className="flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-2 text-xs text-violet-800">
+                          <span>
+                            {showFullThreadInSent
+                              ? `Viewing full thread (${messages.length} total messages)`
+                              : `Showing sent emails only (${messages.filter((m) => m.sender_type === 'staff').length})`}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowFullThreadInSent((prev) => !prev)}
+                            className="font-semibold underline hover:text-violet-900 transition"
+                          >
+                            {showFullThreadInSent ? 'Show sent only' : 'View full thread with replies'}
+                          </button>
+                        </div>
+                      )}
+
+                      {(emailFolder === 'sent' && !showFullThreadInSent
+                        ? messages.filter((m) => m.sender_type === 'staff')
+                        : messages
+                      ).map((message) => {
                         const isStaff = message.sender_type === 'staff';
                         const parsed = parseEmailContent(message.content);
                         const senderName = isStaff ? 'Edugate Global CRM' : (selected.clients?.name || selected.channel_client_id);
@@ -1191,6 +1276,11 @@ export default function ConversationsPage() {
                                   <div className="flex items-center gap-2 truncate">
                                     <span className="text-sm font-bold text-slate-900 truncate">{senderName}</span>
                                     <span className="text-xs text-slate-500 truncate">&lt;{senderEmail}&gt;</span>
+                                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                                      isStaff ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'
+                                    }`}>
+                                      {isStaff ? 'Sent' : 'Received'}
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-1 text-xs text-slate-400">
                                     <span>to {isStaff ? selected.channel_client_id : 'me'}</span>
@@ -1332,59 +1422,57 @@ export default function ConversationsPage() {
                   <div ref={messagesEnd} />
                 </div>
 
-                {/* Bottom Quick Reply Bar */}
-                <form onSubmit={send} className="border-t border-slate-100 p-3 bg-white">
-                  {attachment && (
-                    <div className="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                      <span className="truncate">{attachment.name}</span>
-                      <button type="button" onClick={() => setAttachment(null)}><X className="h-4 w-4" /></button>
+                {/* Bottom Quick Reply Bar (WhatsApp & Messenger only - Email replies via Compose/Reply modal) */}
+                {!isEmail && (
+                  <form onSubmit={send} className="border-t border-slate-100 p-3 bg-white">
+                    {attachment && (
+                      <div className="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                        <span className="truncate">{attachment.name}</span>
+                        <button type="button" onClick={() => setAttachment(null)}><X className="h-4 w-4" /></button>
+                      </div>
+                    )}
+                    <div className="flex items-end gap-2">
+                      <input
+                        ref={fileInput}
+                        type="file"
+                        accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                        hidden
+                        onChange={(event) => setAttachment(event.target.files?.[0] || null)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInput.current?.click()}
+                        className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100"
+                        title="Attach media"
+                      >
+                        <ImagePlus className="h-5 w-5" />
+                      </button>
+                      <textarea
+                        value={draft}
+                        onChange={(event) => setDraft(event.target.value)}
+                        rows="1"
+                        placeholder={`Write a ${config.label} reply...`}
+                        className={`max-h-28 min-h-[42px] flex-1 resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none ${
+                          isWhatsApp
+                            ? 'focus:border-emerald-500'
+                            : 'focus:border-blue-500'
+                        }`}
+                      />
+                      <button
+                        type="submit"
+                        disabled={sending || (!draft.trim() && !attachment)}
+                        className={`rounded-xl p-2.5 text-white disabled:cursor-not-allowed disabled:opacity-50 transition ${
+                          isWhatsApp
+                            ? 'bg-emerald-600 hover:bg-emerald-700'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        }`}
+                        title="Send"
+                      >
+                        <Send className="h-5 w-5" />
+                      </button>
                     </div>
-                  )}
-                  <div className="flex items-end gap-2">
-                    <input
-                      ref={fileInput}
-                      type="file"
-                      accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
-                      hidden
-                      onChange={(event) => setAttachment(event.target.files?.[0] || null)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fileInput.current?.click()}
-                      className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100"
-                      title="Attach media"
-                    >
-                      <ImagePlus className="h-5 w-5" />
-                    </button>
-                    <textarea
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      rows="1"
-                      placeholder={`Write ${isEmail ? 'an email' : `a ${config.label}`} reply...`}
-                      className={`max-h-28 min-h-[42px] flex-1 resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none ${
-                        isWhatsApp
-                          ? 'focus:border-emerald-500'
-                          : isEmail
-                          ? 'focus:border-violet-500'
-                          : 'focus:border-blue-500'
-                      }`}
-                    />
-                    <button
-                      type="submit"
-                      disabled={sending || (!draft.trim() && !attachment)}
-                      className={`rounded-xl p-2.5 text-white disabled:cursor-not-allowed disabled:opacity-50 transition ${
-                        isWhatsApp
-                          ? 'bg-emerald-600 hover:bg-emerald-700'
-                          : isEmail
-                          ? 'bg-violet-600 hover:bg-violet-700'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                      title="Send"
-                    >
-                      <Send className="h-5 w-5" />
-                    </button>
-                  </div>
-                </form>
+                  </form>
+                )}
               </>
             )}
           </section>

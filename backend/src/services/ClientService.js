@@ -15,8 +15,8 @@ async createClient({ name, email, dob, source, created_by = null }) {
     return await ClientRepository.createClient(clientData);
 },
 
-async getAllClients() {
-    return await ClientRepository.getAllClients();
+async getAllClients(currentUser = null) {
+    return await ClientRepository.getAllClients(currentUser);
 },
 
 async getClientById(client_id) {

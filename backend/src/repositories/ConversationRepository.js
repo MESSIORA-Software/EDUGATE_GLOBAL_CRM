@@ -8,7 +8,8 @@ export const ConversationRepository = {
             .select(`
                 *,
                 clients:client_id (client_id, name, email, dob, source),
-                assigned_staff:assigned_staff_id (user_id, name, email)
+                assigned_staff:assigned_staff_id (user_id, name, email),
+                messages:messages(message_id, sender_type, created_at, content)
             `)
             .order('last_message_at', { ascending: false });
 
@@ -29,15 +30,29 @@ export const ConversationRepository = {
 
     // 2. Get conversations assigned to a specific staff member (for Staff)
     async getConversationsByStaff(staffId, filters = {}) {
+        // Step 1: Find all client_ids assigned to this staff member in opportunities
+        const { data: opps } = await supabase
+            .from('opportunities')
+            .select('client_id')
+            .eq('assigned_staff_id', staffId);
+
+        const assignedClientIds = (opps || []).map(o => o.client_id).filter(Boolean);
+
         let query = supabase
             .from('conversations')
             .select(`
                 *,
                 clients:client_id (client_id, name, email, dob, source),
-                assigned_staff:assigned_staff_id (user_id, name, email)
+                assigned_staff:assigned_staff_id (user_id, name, email),
+                messages:messages(message_id, sender_type, created_at, content)
             `)
-            .eq('assigned_staff_id', staffId)
             .order('last_message_at', { ascending: false });
+
+        if (assignedClientIds.length > 0) {
+            query = query.or(`assigned_staff_id.eq.${staffId},client_id.in.(${assignedClientIds.join(',')})`);
+        } else {
+            query = query.eq('assigned_staff_id', staffId);
+        }
 
         if (filters.channel) {
             query = query.eq('channel', filters.channel.toLowerCase());

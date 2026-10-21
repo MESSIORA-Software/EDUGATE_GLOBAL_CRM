@@ -18,7 +18,7 @@ async createClient(req, res, next) {
 
 async getAllClients(req, res, next) {
     try {
-        const clients = await ClientService.getAllClients();
+        const clients = await ClientService.getAllClients(req.user);
         res.status(200).json({
             status: 'success',
             data: clients,

@@ -98,9 +98,7 @@ function AppRoutes() {
         path="/clients"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <ClientsManagement />
-            </SuperAdminRoute>
+            <ClientsManagement />
           </ProtectedRoute>
         }
       />
@@ -108,9 +106,7 @@ function AppRoutes() {
         path="/students"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <ClientsManagement />
-            </SuperAdminRoute>
+            <ClientsManagement />
           </ProtectedRoute>
         }
       />
@@ -118,9 +114,7 @@ function AppRoutes() {
         path="/pipeline"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <StudentPipeline />
-            </SuperAdminRoute>
+            <StudentPipeline />
           </ProtectedRoute>
         }
       />
@@ -128,9 +122,7 @@ function AppRoutes() {
         path="/student-pipeline"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <StudentPipeline />
-            </SuperAdminRoute>
+            <StudentPipeline />
           </ProtectedRoute>
         }
       />
@@ -138,9 +130,15 @@ function AppRoutes() {
         path="/conversations"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <ConversationsPage />
-            </SuperAdminRoute>
+            <ConversationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/conversations/:id"
+        element={
+          <ProtectedRoute>
+            <ConversationsPage />
           </ProtectedRoute>
         }
       />
