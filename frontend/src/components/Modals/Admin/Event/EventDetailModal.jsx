@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { X, Calendar as CalendarIcon, Clock, AlignLeft, User, UserCheck, Edit2 } from 'lucide-react';
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
@@ -6,7 +7,16 @@ import Button from '../../../ui/Button';
 import { formatEventId } from '../../../../hooks/Admin/Event/useEvent';
 
 export default function EventDetailModal({ isOpen, event, onClose, onEdit }) {
+  const users = useSelector((state) => state.users?.users || []);
+  const clients = useSelector((state) => state.client?.list || []);
+
   if (!isOpen || !event) return null;
+
+  const matchedStaff = users.find((u) => String(u.user_id || u.id) === String(event.assigned_staff_id));
+  const staffDisplayName = event.assigned_staff?.name || event.assigned_staff?.email || matchedStaff?.name || (event.assigned_staff_id ? `Staff #${event.assigned_staff_id}` : null);
+
+  const matchedClient = clients.find((c) => String(c.client_id || c.id) === String(event.client_id));
+  const clientDisplayName = event.client?.name || matchedClient?.name || (event.client_id ? `Client #${event.client_id}` : null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -79,11 +89,11 @@ export default function EventDetailModal({ isOpen, event, onClose, onEdit }) {
           <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Assigned Staff</p>
-              {event.assigned_staff ? (
+              {staffDisplayName ? (
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
                   <User className="w-3.5 h-3.5 text-indigo-500" />
-                  {event.assigned_staff.name || event.assigned_staff.email}
-                  <span className="text-[10px] text-slate-400">({event.assigned_staff_id})</span>
+                  <span>{staffDisplayName}</span>
+                  {event.assigned_staff_id && <span className="text-[10px] text-slate-400">(#{event.assigned_staff_id})</span>}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 italic">No staff assigned</p>
@@ -92,11 +102,11 @@ export default function EventDetailModal({ isOpen, event, onClose, onEdit }) {
 
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Linked Client</p>
-              {event.client ? (
+              {clientDisplayName ? (
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-700">
                   <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-                  {event.client.name || event.client.email}
-                  <span className="text-[10px] text-slate-400">({event.client_id})</span>
+                  <span>{clientDisplayName}</span>
+                  {event.client_id && <span className="text-[10px] text-slate-400">(#{event.client_id})</span>}
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 italic">No client linked</p>

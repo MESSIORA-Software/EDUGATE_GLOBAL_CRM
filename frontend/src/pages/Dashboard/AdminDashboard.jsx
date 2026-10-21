@@ -14,6 +14,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-5 max-w-full mx-auto">
+            {/* Page Header */}
+      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Branch Dashboard
+            </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Branch administration metrics, student allocations, and daily staff activities.
+          </p>
+        </div>
+      </div>
+
       {/* Scope / Restriction Notice */}
       <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs">
         <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />

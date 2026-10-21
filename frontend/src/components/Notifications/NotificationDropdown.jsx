@@ -9,67 +9,158 @@ import {
   Check,
   TrendingUp,
   MessageSquare,
+  MessageCircle,
   UserCheck,
+  UserPlus,
   Calendar,
-  RefreshCw,
+  Mail,
 } from 'lucide-react';
 import { COLORS } from '../../constants/colors';
 
-const TYPE_CONFIG = {
-  NEW_LEAD: {
-    icon: TrendingUp,
-    color: '#2563EB',
-    bg: '#EFF6FF',
-    label: 'Lead',
-  },
-  NEW_MESSAGE: {
-    icon: MessageSquare,
-    color: '#059669',
-    bg: '#ECFDF5',
-    label: 'Message',
-  },
-  STAFF_ASSIGNMENT: {
-    icon: UserCheck,
-    color: '#D97706',
-    bg: '#FFFBEB',
-    label: 'Assignment',
-  },
-  CALENDAR_EVENT: {
-    icon: Calendar,
-    color: '#7C3AED',
-    bg: '#F5F3FF',
-    label: 'Calendar',
-  },
-  STATUS_CHANGE: {
-    icon: RefreshCw,
-    color: '#DC2626',
-    bg: '#FEF2F2',
-    label: 'Status',
-  },
-};
-
-const getTypeMeta = (type) =>
-  TYPE_CONFIG[type] || {
-    icon: Bell,
-    color: COLORS.primary,
-    bg: COLORS.primaryLight,
-    label: type || 'Alert',
-  };
-
-const formatRelativeTime = (isoString) => {
+const formatNotificationTime = (isoString) => {
   if (!isoString) return '';
-  const diff = Math.max(0, Date.now() - new Date(isoString).getTime());
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(isoString).toLocaleDateString('en-US', {
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const isYesterday =
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toDateString() ===
+    date.toDateString();
+
+  const timeStr = date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  if (isToday) return timeStr;
+  if (isYesterday) return `Yesterday, ${timeStr}`;
+  return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
   });
+};
+
+const formatFullTooltip = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+};
+
+// Clean Professional Notification Titles (NO '#' or raw codes)
+const getNotificationTitle = (notif) => {
+  const { type, payload = {} } = notif;
+  const channel = (payload.channel || '').toLowerCase();
+
+  switch (type) {
+    case 'NEW_MESSAGE':
+      if (channel === 'email') return 'New Email Message';
+      if (channel === 'whatsapp') return 'New WhatsApp Message';
+      return 'New Client Message';
+
+    case 'STATUS_CHANGE':
+      return 'Opportunity Status Updated';
+
+    case 'NEW_LEAD':
+      return 'New Student Lead Inquiry';
+
+    case 'CALENDAR_EVENT':
+      return 'Calendar Meeting Scheduled';
+
+    case 'STAFF_ASSIGNMENT':
+      return 'New Staff Assignment';
+
+    default: {
+      const raw = notif.title || 'System Notification';
+      return raw.replace(/#/g, '').trim();
+    }
+  }
+};
+
+// Accurate contextual icons & colors
+const getNotificationVisuals = (notif) => {
+  const { type, payload = {} } = notif;
+  const channel = (payload.channel || '').toLowerCase();
+
+  switch (type) {
+    case 'NEW_MESSAGE':
+      if (channel === 'email') {
+        return {
+          icon: Mail,
+          iconBg: 'bg-blue-50 text-blue-600 border-blue-200/70',
+          badgeText: 'Email',
+          badgeBg: 'bg-blue-50 text-blue-700 border-blue-200/60',
+        };
+      }
+      if (channel === 'whatsapp') {
+        return {
+          icon: MessageCircle,
+          iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-200/70',
+          badgeText: 'WhatsApp',
+          badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+        };
+      }
+      return {
+        icon: MessageSquare,
+        iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-200/70',
+        badgeText: 'Message',
+        badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200/60',
+      };
+
+    case 'NEW_LEAD':
+      return {
+        icon: UserPlus,
+        iconBg: 'bg-teal-50 text-teal-600 border-teal-200/70',
+        badgeText: 'Lead',
+        badgeBg: 'bg-teal-50 text-teal-700 border-teal-200/60',
+      };
+
+    case 'CALENDAR_EVENT':
+      return {
+        icon: Calendar,
+        iconBg: 'bg-purple-50 text-purple-600 border-purple-200/70',
+        badgeText: 'Calendar',
+        badgeBg: 'bg-purple-50 text-purple-700 border-purple-200/60',
+      };
+
+    case 'STATUS_CHANGE':
+      return {
+        icon: TrendingUp,
+        iconBg: 'bg-amber-50 text-amber-600 border-amber-200/70',
+        badgeText: 'Pipeline',
+        badgeBg: 'bg-amber-50 text-amber-700 border-amber-200/60',
+      };
+
+    case 'STAFF_ASSIGNMENT':
+      return {
+        icon: UserCheck,
+        iconBg: 'bg-rose-50 text-rose-600 border-rose-200/70',
+        badgeText: 'Assignment',
+        badgeBg: 'bg-rose-50 text-rose-700 border-rose-200/60',
+      };
+
+    default:
+      return {
+        icon: Bell,
+        iconBg: 'bg-slate-100 text-slate-600 border-slate-200/70',
+        badgeText: 'Alert',
+        badgeBg: 'bg-slate-100 text-slate-700 border-slate-200/60',
+      };
+  }
 };
 
 export default function NotificationDropdown({
@@ -169,7 +260,7 @@ export default function NotificationDropdown({
             backgroundColor: COLORS.surface,
             borderColor: COLORS.border,
           }}
-          className="absolute right-0 top-full mt-2 w-80 sm:w-88 rounded-2xl border shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+          className="absolute right-0 top-full mt-2 w-84 sm:w-92 rounded-2xl border shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150"
         >
           {/* Header */}
           <div
@@ -180,17 +271,14 @@ export default function NotificationDropdown({
             className="px-4 py-3 border-b flex items-center justify-between gap-2"
           >
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xs text-slate-800">Notifications</span>
-              {unreadCount > 0 && (
-                <span
-                  style={{
-                    backgroundColor: COLORS.primaryLight,
-                    color: COLORS.primary,
-                    borderColor: COLORS.primaryBorder,
-                  }}
-                  className="px-2 py-0.5 text-[10px] font-extrabold rounded-full border"
-                >
+              <span className="font-bold text-xs text-slate-900">Notifications</span>
+              {unreadCount > 0 ? (
+                <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-rose-50 text-rose-700 border border-rose-200">
                   {unreadCount} new
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                  All read
                 </span>
               )}
             </div>
@@ -199,8 +287,7 @@ export default function NotificationDropdown({
               <button
                 type="button"
                 onClick={onMarkAllAsRead}
-                style={{ color: COLORS.accent }}
-                className="text-[11px] font-semibold hover:underline flex items-center gap-1 cursor-pointer transition-colors"
+                className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition-colors"
                 title="Mark all notifications as read"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
@@ -210,10 +297,10 @@ export default function NotificationDropdown({
           </div>
 
           {/* List Content */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
+          <div className="max-h-84 overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
-                <Loader2 className="w-5 h-5 animate-spin text-[#1E3A8A]" />
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
                 <span className="text-xs">Loading notifications...</span>
               </div>
             ) : previewItems.length === 0 ? (
@@ -226,88 +313,85 @@ export default function NotificationDropdown({
                 </div>
                 <p className="text-xs font-bold text-slate-700">No notifications yet</p>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  We will notify you when new events or messages arrive.
+                  We will notify you when new messages or events arrive.
                 </p>
               </div>
             ) : (
               previewItems.map((notif) => {
-                const meta = getTypeMeta(notif.type);
-                const IconComponent = meta.icon;
+                const visuals = getNotificationVisuals(notif);
+                const IconComponent = visuals.icon;
+                const isUnread = !notif.is_read;
+                const title = getNotificationTitle(notif);
 
                 return (
                   <div
                     key={notif.notification_id}
                     onClick={() => handleNotificationClick(notif)}
-                    className={`group relative flex items-start gap-3 p-3 transition-colors cursor-pointer ${
-                      notif.is_read
-                        ? 'hover:bg-slate-50'
-                        : 'bg-blue-50/40 hover:bg-blue-50/70'
+                    className={`group relative flex items-center gap-3 px-3.5 py-3 transition-colors cursor-pointer ${
+                      isUnread
+                        ? 'bg-blue-50/20 hover:bg-blue-50/50'
+                        : 'hover:bg-slate-50/80'
                     }`}
                   >
-                    {/* Type Icon Badge */}
+                    {/* Unread Indicator Dot */}
+                    <div className="shrink-0 flex items-center justify-center w-1.5">
+                      {isUnread ? (
+                        <span className="block w-1.5 h-1.5 rounded-full bg-blue-600" title="Unread" />
+                      ) : (
+                        <span className="block w-1.5 h-1.5 rounded-full bg-transparent" />
+                      )}
+                    </div>
+
+                    {/* Specific Contextual Icon */}
                     <div
-                      style={{
-                        backgroundColor: meta.bg,
-                        color: meta.color,
-                      }}
-                      className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${visuals.iconBg} shadow-2xs`}
                     >
-                      <IconComponent className="w-4 h-4" />
+                      <IconComponent className="w-4 h-4" strokeWidth={2} />
                     </div>
 
                     {/* Notification Details */}
-                    <div className="flex-1 min-w-0 pr-4">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span
-                          style={{ color: meta.color }}
-                          className="text-[9px] font-extrabold uppercase tracking-wide"
+                    <div className="flex-1 min-w-0 pr-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <p
+                          className={`text-xs truncate ${
+                            isUnread ? 'text-slate-900 font-bold' : 'text-slate-700 font-medium'
+                          }`}
                         >
-                          {meta.label}
-                        </span>
-                        {notif.payload?.channel && (
-                          <span className="px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded text-[9px] font-semibold uppercase">
-                            {notif.payload.channel}
-                          </span>
-                        )}
-                        {notif.payload?.action && (
-                          <span className="px-1.5 py-0.2 bg-purple-50 text-purple-700 rounded text-[9px] font-bold">
-                            {notif.payload.action}
+                          {title}
+                        </p>
+                        {visuals.badgeText && (
+                          <span
+                            className={`px-1.5 py-0.2 rounded text-[9px] font-semibold tracking-wide border shrink-0 ${visuals.badgeBg}`}
+                          >
+                            {visuals.badgeText}
                           </span>
                         )}
                       </div>
 
-                      <p
-                        className={`text-xs mt-0.5 line-clamp-2 ${
-                          notif.is_read ? 'text-slate-600 font-normal' : 'text-slate-900 font-semibold'
-                        }`}
+                      <span
+                        title={formatFullTooltip(notif.created_at)}
+                        className="text-[10px] text-slate-400 block mt-0.5 font-medium cursor-help"
                       >
-                        {notif.title}
-                      </p>
-
-                      <span className="text-[10px] text-slate-400 block mt-1">
-                        {formatRelativeTime(notif.created_at)}
+                        {formatNotificationTime(notif.created_at)}
                       </span>
                     </div>
 
-                    {/* Unread Indicator & Mark Single Button */}
-                    <div className="shrink-0 flex items-center mt-1">
-                      {!notif.is_read ? (
+                    {/* Quick Mark Read Button & Chevron */}
+                    <div className="shrink-0 flex items-center gap-0.5">
+                      {isUnread && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (onMarkAsRead) onMarkAsRead(notif.notification_id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-100 rounded text-blue-600 transition-opacity"
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-blue-100 rounded text-blue-600 transition-opacity cursor-pointer"
                           title="Mark as read"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>
-                      ) : null}
-
-                      {!notif.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 ml-1 group-hover:hidden" />
                       )}
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors" />
                     </div>
                   </div>
                 );
@@ -330,8 +414,7 @@ export default function NotificationDropdown({
                 onClose();
                 navigate('/notifications');
               }}
-              style={{ color: COLORS.accent }}
-              className="w-full py-2 px-3 rounded-xl text-xs font-bold hover:bg-blue-50 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              className="w-full py-2 px-3 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
               <span>View all notifications</span>
               <ChevronRight className="w-3.5 h-3.5" />

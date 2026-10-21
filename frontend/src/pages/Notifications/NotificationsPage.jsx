@@ -8,71 +8,19 @@ import {
   Loader2,
   TrendingUp,
   MessageSquare,
+  MessageCircle,
   UserCheck,
+  UserPlus,
   Calendar,
   RefreshCw,
   ChevronRight,
+  ChevronDown,
   Filter,
-  ArrowRight,
   Clock,
-  CalendarDays,
+  Mail,
+  Layers,
 } from 'lucide-react';
-import { COLORS } from '../../constants/colors';
 import useNotifications from '../../hooks/Notifications/useNotifications';
-import { formatEventId } from '../../hooks/Admin/Event/useEvent';
-
-const TYPE_CONFIG = {
-  NEW_LEAD: {
-    icon: TrendingUp,
-    color: '#2563EB',
-    bg: '#EFF6FF',
-    badgeBg: '#DBEAFE',
-    badgeText: '#1E40AF',
-    label: 'New Lead',
-  },
-  NEW_MESSAGE: {
-    icon: MessageSquare,
-    color: '#059669',
-    bg: '#ECFDF5',
-    badgeBg: '#D1FAE5',
-    badgeText: '#065F46',
-    label: 'New Message',
-  },
-  STAFF_ASSIGNMENT: {
-    icon: UserCheck,
-    color: '#D97706',
-    bg: '#FFFBEB',
-    badgeBg: '#FEF3C7',
-    badgeText: '#92400E',
-    label: 'Assignment',
-  },
-  CALENDAR_EVENT: {
-    icon: Calendar,
-    color: '#7C3AED',
-    bg: '#F5F3FF',
-    badgeBg: '#EDE9FE',
-    badgeText: '#5B21B6',
-    label: 'Calendar Event',
-  },
-  STATUS_CHANGE: {
-    icon: RefreshCw,
-    color: '#DC2626',
-    bg: '#FEF2F2',
-    badgeBg: '#FEE2E2',
-    badgeText: '#991B1B',
-    label: 'Status Change',
-  },
-};
-
-const getTypeMeta = (type) =>
-  TYPE_CONFIG[type] || {
-    icon: Bell,
-    color: COLORS.primary,
-    bg: COLORS.primaryLight,
-    badgeBg: COLORS.primaryLight,
-    badgeText: COLORS.primary,
-    label: type || 'Alert',
-  };
 
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
@@ -80,29 +28,51 @@ const STATUS_TABS = [
   { key: 'read', label: 'Read' },
 ];
 
-const TYPE_FILTERS = [
-  { key: 'ALL', label: 'All Types' },
-  { key: 'NEW_LEAD', label: 'Leads' },
-  { key: 'NEW_MESSAGE', label: 'Messages' },
-  { key: 'STAFF_ASSIGNMENT', label: 'Assignments' },
-  { key: 'CALENDAR_EVENT', label: 'Calendar' },
-  { key: 'STATUS_CHANGE', label: 'Status Updates' },
-];
-
-const formatRelativeTime = (isoString) => {
+const formatNotificationTime = (isoString) => {
   if (!isoString) return '';
-  const diff = Math.max(0, Date.now() - new Date(isoString).getTime());
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(isoString).toLocaleDateString('en-US', {
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+
+  const now = new Date();
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  const isYesterday =
+    new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toDateString() ===
+    date.toDateString();
+
+  const timeStr = date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  if (isToday) {
+    return timeStr;
+  }
+  if (isYesterday) {
+    return `Yesterday, ${timeStr}`;
+  }
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const formatFullTooltip = (isoString) => {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-US', {
+    weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
   });
 };
 
@@ -117,6 +87,178 @@ const formatTimeOnly = (timeStr) => {
     return `${formattedHours}:${minutes} ${ampm}`;
   }
   return timeStr;
+};
+
+// Clean Professional Notification Titles (NO '#' or raw technical codes)
+const getNotificationTitle = (notif) => {
+  const { type, payload = {} } = notif;
+  const channel = (payload.channel || '').toLowerCase();
+
+  switch (type) {
+    case 'NEW_MESSAGE':
+      if (channel === 'email') return 'New Email Message';
+      if (channel === 'whatsapp') return 'New WhatsApp Message';
+      return 'New Client Message';
+
+    case 'STATUS_CHANGE':
+      return 'Opportunity Status Updated';
+
+    case 'NEW_LEAD':
+      return 'New Student Lead Inquiry';
+
+    case 'CALENDAR_EVENT':
+      return 'Calendar Meeting Scheduled';
+
+    case 'STAFF_ASSIGNMENT':
+      return 'New Staff Assignment';
+
+    default: {
+      const raw = notif.title || 'System Notification';
+      return raw.replace(/#/g, '').trim();
+    }
+  }
+};
+
+// Genuine Business Context Note (Concise, natural, no AI boilerplate)
+const getNotificationContext = (notif) => {
+  const { type, payload = {} } = notif;
+  const channel = (payload.channel || '').toLowerCase();
+
+  switch (type) {
+    case 'NEW_MESSAGE':
+      if (channel === 'email') return 'Incoming student email awaiting counselor response';
+      if (channel === 'whatsapp') return 'WhatsApp inquiry received from prospective client';
+      return 'Client message received in communication queue';
+
+    case 'STATUS_CHANGE':
+      if (payload.from_status && payload.to_status) {
+        return `Pipeline stage moved from ${payload.from_status} to ${payload.to_status}`;
+      }
+      return 'Student application stage updated in CRM pipeline';
+
+    case 'NEW_LEAD':
+      return 'New prospective student registered for counselor evaluation';
+
+    case 'CALENDAR_EVENT':
+      if (payload.event_date) {
+        return `Appointment scheduled for ${payload.event_date}${payload.start_time ? ` at ${formatTimeOnly(payload.start_time)}` : ''}`;
+      }
+      return 'Upcoming meeting or event added to your calendar';
+
+    case 'STAFF_ASSIGNMENT':
+      return 'New student profile allocated to your counselor account';
+
+    default:
+      return 'Activity update recorded in CRM';
+  }
+};
+
+// Accurate contextual icons & colors
+const getNotificationVisuals = (notif) => {
+  const { type, payload = {} } = notif;
+  const channel = (payload.channel || '').toLowerCase();
+
+  switch (type) {
+    case 'NEW_MESSAGE':
+      if (channel === 'email') {
+        return {
+          icon: Mail,
+          iconBg: 'bg-blue-50 text-blue-600 border-blue-200/70',
+          badgeText: 'Email',
+          badgeBg: 'bg-blue-50 text-blue-700 border-blue-200/60',
+        };
+      }
+      if (channel === 'whatsapp') {
+        return {
+          icon: MessageCircle,
+          iconBg: 'bg-emerald-50 text-emerald-600 border-emerald-200/70',
+          badgeText: 'WhatsApp',
+          badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
+        };
+      }
+      return {
+        icon: MessageSquare,
+        iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-200/70',
+        badgeText: 'Message',
+        badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200/60',
+      };
+
+    case 'NEW_LEAD':
+      return {
+        icon: UserPlus,
+        iconBg: 'bg-teal-50 text-teal-600 border-teal-200/70',
+        badgeText: 'Lead',
+        badgeBg: 'bg-teal-50 text-teal-700 border-teal-200/60',
+      };
+
+    case 'CALENDAR_EVENT':
+      return {
+        icon: Calendar,
+        iconBg: 'bg-purple-50 text-purple-600 border-purple-200/70',
+        badgeText: 'Calendar',
+        badgeBg: 'bg-purple-50 text-purple-700 border-purple-200/60',
+      };
+
+    case 'STATUS_CHANGE':
+      return {
+        icon: TrendingUp,
+        iconBg: 'bg-amber-50 text-amber-600 border-amber-200/70',
+        badgeText: 'Pipeline',
+        badgeBg: 'bg-amber-50 text-amber-700 border-amber-200/60',
+      };
+
+    case 'STAFF_ASSIGNMENT':
+      return {
+        icon: UserCheck,
+        iconBg: 'bg-rose-50 text-rose-600 border-rose-200/70',
+        badgeText: 'Assignment',
+        badgeBg: 'bg-rose-50 text-rose-700 border-rose-200/60',
+      };
+
+    default:
+      return {
+        icon: Bell,
+        iconBg: 'bg-slate-100 text-slate-600 border-slate-200/70',
+        badgeText: 'Alert',
+        badgeBg: 'bg-slate-100 text-slate-700 border-slate-200/60',
+      };
+  }
+};
+
+// Client-side Date Grouping (Today, Yesterday, Earlier this week, Earlier)
+const groupNotificationsByDate = (items) => {
+  if (!items || items.length === 0) return [];
+  const groups = {
+    Today: [],
+    Yesterday: [],
+    'Earlier this week': [],
+    Earlier: [],
+  };
+
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfYesterday = startOfToday - 86400000;
+  const startOfWeek = startOfToday - 6 * 86400000;
+
+  items.forEach((notif) => {
+    const itemDate = new Date(notif.created_at);
+    const itemTime = itemDate.getTime();
+
+    if (itemTime >= startOfToday) {
+      groups.Today.push(notif);
+    } else if (itemTime >= startOfYesterday) {
+      groups.Yesterday.push(notif);
+    } else if (itemTime >= startOfWeek) {
+      groups['Earlier this week'].push(notif);
+    } else {
+      groups.Earlier.push(notif);
+    }
+  });
+
+  const order = ['Today', 'Yesterday', 'Earlier this week', 'Earlier'];
+  return order
+    .filter((key) => groups[key] && groups[key].length > 0)
+    .map((key) => ({ label: key, items: groups[key] }));
 };
 
 export default function NotificationsPage() {
@@ -155,9 +297,9 @@ export default function NotificationsPage() {
       markAsRead(notif.notification_id);
     }
 
-    const { entity_type, payload, entity_id, type } = notif;
+    const { entity_type, payload = {}, entity_id, type } = notif;
     if (entity_type === 'conversation' || entity_type === 'message' || type === 'NEW_MESSAGE') {
-      const targetId = payload?.conversation_id || entity_id;
+      const targetId = payload.conversation_id || entity_id;
       navigate(targetId ? `/conversations/${targetId}` : '/clients');
     } else if (entity_type === 'calendar_event' || type === 'CALENDAR_EVENT') {
       navigate('/events');
@@ -177,316 +319,245 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 pb-12">
-      {/* Top Banner Header */}
-      <div
-        style={{
-          backgroundColor: COLORS.surface,
-          borderColor: COLORS.border,
-        }}
-        className="rounded-2xl border p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
-      >
-        <div className="flex items-center gap-4">
-          <div
-            style={{
-              backgroundColor: COLORS.primaryLight,
-              color: COLORS.primary,
-            }}
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border border-blue-100"
-          >
-            <Bell className="w-6 h-6" strokeWidth={2.2} />
+    <div className="max-w-4xl mx-auto space-y-4 pb-16 px-2 sm:px-0">
+      {/* Header Bar */}
+      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Notifications
+            </h1>
+            {unreadCount > 0 ? (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                {unreadCount} unread
+              </span>
+            ) : (
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                All read
+              </span>
+            )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-slate-800 leading-tight">
-                Activity & Notifications
-              </h1>
-              {unreadCount > 0 && (
-                <span
-                  style={{
-                    backgroundColor: COLORS.secondary,
-                  }}
-                  className="px-2 py-0.5 text-[10px] font-extrabold text-white rounded-full leading-none"
-                >
-                  {unreadCount} unread
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Real-time activity feed for leads, client messages, team assignments, and calendar events.
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            Real-time updates on client conversations, leads, and calendar appointments.
+          </p>
         </div>
 
-        {unreadCount > 0 && (
+        {/* Header Actions */}
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
           <button
             type="button"
-            onClick={markAllAsRead}
-            style={{
-              backgroundColor: COLORS.primaryLight,
-              borderColor: COLORS.primaryBorder,
-              color: COLORS.primary,
-            }}
-            className="w-full sm:w-auto px-4 py-2 border rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-blue-100 transition-all cursor-pointer shadow-xs active:scale-98"
+            onClick={loadFiltered}
+            className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer shadow-2xs"
+            title="Refresh Feed"
           >
-            <CheckCheck className="w-4 h-4 text-[#DC2626]" />
-            <span>Mark all as read</span>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
           </button>
-        )}
+
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              onClick={markAllAsRead}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+            >
+              <CheckCheck className="w-4 h-4 text-slate-500" />
+              <span>Mark all as read</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Bar */}
-      <div
-        style={{
-          backgroundColor: COLORS.surface,
-          borderColor: COLORS.border,
-        }}
-        className="rounded-2xl border p-3 sm:p-4 shadow-sm space-y-3"
-      >
-        {/* Status Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl">
-            {STATUS_TABS.map((tab) => (
+      <div className="p-2.5 sm:p-3 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        {/* Status Segmented Tabs */}
+        <div className="inline-flex items-center bg-slate-100/90 p-1 rounded-xl self-start">
+          {STATUS_TABS.map((tab) => {
+            const isSelected = activeStatus === tab.key;
+            return (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveStatus(tab.key)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  activeStatus === tab.key
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-white text-slate-900 shadow-2xs'
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 {tab.label}
               </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Filter by Type
-            </span>
-          </div>
-        </div>
-
-        {/* Type Badges */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {TYPE_FILTERS.map((typeFilter) => {
-            const isSelected = activeType === typeFilter.key;
-            return (
-              <button
-                key={typeFilter.key}
-                type="button"
-                onClick={() => setActiveType(typeFilter.key)}
-                style={{
-                  backgroundColor: isSelected ? COLORS.primary : COLORS.background,
-                  color: isSelected ? '#ffffff' : COLORS.muted,
-                  borderColor: isSelected ? COLORS.primary : COLORS.border,
-                }}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  isSelected ? 'shadow-xs font-bold' : 'hover:bg-slate-100 hover:text-slate-800'
-                }`}
-              >
-                {typeFilter.label}
-              </button>
             );
           })}
         </div>
+
+        {/* Category Filter Dropdown */}
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Filter className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <select
+              value={activeType}
+              onChange={(e) => setActiveType(e.target.value)}
+              className="pl-8 pr-8 py-1.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all cursor-pointer shadow-2xs appearance-none"
+            >
+              <option value="ALL">All Categories</option>
+              <option value="NEW_MESSAGE">Messages</option>
+              <option value="NEW_LEAD">Leads</option>
+              <option value="CALENDAR_EVENT">Calendar</option>
+              <option value="STATUS_CHANGE">Pipeline Updates</option>
+              <option value="STAFF_ASSIGNMENT">Assignments</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
       </div>
 
-      {/* Notifications Feed */}
-      <div
-        style={{
-          backgroundColor: COLORS.surface,
-          borderColor: COLORS.border,
-        }}
-        className="rounded-2xl border shadow-sm overflow-hidden"
-      >
+      {/* Grouped Enterprise Notification Feed */}
+      <div className="space-y-4">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-            <Loader2 className="w-7 h-7 animate-spin text-[#1E3A8A]" />
-            <p className="text-xs font-semibold">Fetching your notifications...</p>
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-12 flex flex-col items-center justify-center gap-2.5 text-slate-400">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-600" />
+            <p className="text-xs font-medium text-slate-500">Loading notifications...</p>
           </div>
         ) : error ? (
-          <div className="py-14 px-6 text-center">
-            <p className="text-xs text-red-600 font-semibold mb-2">{error}</p>
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-8 text-center">
+            <p className="text-xs text-rose-600 font-medium mb-2">{error}</p>
             <button
               type="button"
               onClick={loadFiltered}
-              className="px-4 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              className="px-3.5 py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer"
             >
               Retry
             </button>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div
-              style={{ backgroundColor: COLORS.background }}
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3 border border-slate-100"
-            >
-              <BellOff className="w-6 h-6 text-slate-400" />
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-2.5 border border-slate-200/60">
+              <BellOff className="w-5 h-5 text-slate-400" />
             </div>
-            <h3 className="text-sm font-bold text-slate-800">No notifications found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mt-1">
+            <h3 className="text-sm font-semibold text-slate-800">No notifications</h3>
+            <p className="text-xs text-slate-400 max-w-sm mt-0.5">
               {activeStatus === 'unread'
-                ? 'You are all caught up! No unread notifications.'
-                : 'No notification records match your active filter selection.'}
+                ? 'You have zero unread notifications.'
+                : 'No notifications match your active filter.'}
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
-            {notifications.map((notif) => {
-              const meta = getTypeMeta(notif.type);
-              const Icon = meta.icon;
-              const payload = notif.payload || {};
+          groupNotificationsByDate(notifications).map((group) => (
+            <div key={group.label} className="space-y-2">
+              {/* Group Timeline Header */}
+              <div className="flex items-center gap-2 px-1 pt-1">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  {group.label}
+                </span>
+                <span className="px-2 py-0.2 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200/60">
+                  {group.items.length}
+                </span>
+                <div className="flex-1 h-px bg-slate-200/60 ml-2" />
+              </div>
 
-              return (
-                <div
-                  key={notif.notification_id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`group relative p-4 sm:p-5 flex items-start gap-3.5 transition-all cursor-pointer ${
-                    notif.is_read
-                      ? 'hover:bg-slate-50/80'
-                      : 'bg-blue-50/30 hover:bg-blue-50/60 border-l-4 border-l-[#2563EB]'
-                  }`}
-                >
-                  {/* Icon Avatar */}
-                  <div
-                    style={{
-                      backgroundColor: meta.bg,
-                      color: meta.color,
-                    }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs"
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={2.2} />
-                  </div>
+              {/* Group Items with clean small gap */}
+              <div className="space-y-2">
+                {group.items.map((notif) => {
+                  const visuals = getNotificationVisuals(notif);
+                  const Icon = visuals.icon;
+                  const isUnread = !notif.is_read;
+                  const title = getNotificationTitle(notif);
+                  const contextNote = getNotificationContext(notif);
 
-                  {/* Body Details */}
-                  <div className="flex-1 min-w-0 pr-2">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span
-                        style={{
-                          backgroundColor: meta.badgeBg,
-                          color: meta.badgeText,
-                        }}
-                        className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wide"
-                      >
-                        {meta.label}
-                      </span>
-
-                      {/* Message Channel Tag */}
-                      {payload.channel && (
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                          {payload.channel}
-                        </span>
-                      )}
-
-                      {/* Calendar Action Tag */}
-                      {payload.action && (
-                        <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded-md text-[10px] font-bold tracking-wider">
-                          {payload.action}
-                        </span>
-                      )}
-
-                      <span className="text-[11px] text-slate-400 flex items-center gap-1 ml-auto">
-                        <Clock className="w-3 h-3" />
-                        {formatRelativeTime(notif.created_at)}
-                      </span>
-                    </div>
-
-                    <h4
-                      className={`text-xs sm:text-sm leading-snug ${
-                        notif.is_read ? 'text-slate-700 font-medium' : 'text-slate-900 font-bold'
+                  return (
+                    <div
+                      key={notif.notification_id}
+                      onClick={() => handleNotificationClick(notif)}
+                      className={`group relative px-4 sm:px-5 py-3.5 rounded-2xl border transition-all duration-150 cursor-pointer flex items-center gap-3.5 ${
+                        isUnread
+                          ? 'bg-white border-blue-200 shadow-2xs hover:border-blue-400 hover:shadow-xs ring-1 ring-blue-500/10'
+                          : 'bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-2xs'
                       }`}
                     >
-                      {notif.title}
-                    </h4>
-
-                    {/* Rich Payload Context Preview */}
-                    {notif.type === 'CALENDAR_EVENT' && payload.event_date && (
-                      <div className="mt-2 flex items-center gap-3 text-xs text-purple-700 bg-purple-50/60 px-2.5 py-1.5 rounded-lg border border-purple-100 max-w-fit">
-                        <span className="flex items-center gap-1 font-semibold">
-                          <CalendarDays className="w-3.5 h-3.5 text-purple-600" />
-                          {payload.event_date}
-                        </span>
-                        {payload.start_time && (
-                          <span className="text-purple-600 font-medium">
-                            {formatTimeOnly(payload.start_time)}
-                            {payload.end_time ? ` - ${formatTimeOnly(payload.end_time)}` : ''}
-                          </span>
+                      {/* Unread indicator dot */}
+                      <div className="shrink-0 flex items-center justify-center w-2">
+                        {isUnread ? (
+                          <span className="block w-2 h-2 rounded-full bg-blue-600 shadow-2xs" title="Unread" />
+                        ) : (
+                          <span className="block w-2 h-2 rounded-full bg-transparent" />
                         )}
                       </div>
-                    )}
 
-                    {notif.type === 'NEW_MESSAGE' && payload.message_type && (
-                      <div className="mt-1 text-[11px] text-slate-500">
-                        Type: <span className="font-semibold capitalize">{payload.message_type}</span>
-                        {payload.conversation_id ? ` • Conv #${payload.conversation_id}` : ''}
-                      </div>
-                    )}
-
-                    {notif.type === 'NEW_LEAD' && payload.opportunity_id && (
-                      <div className="mt-1 text-[11px] text-blue-600 font-semibold flex items-center gap-1">
-                        <span>Opportunity #{payload.opportunity_id}</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right Action Area */}
-                  <div className="shrink-0 flex items-center gap-2 self-center">
-                    {!notif.is_read ? (
-                      <button
-                        type="button"
-                        onClick={(e) => handleQuickMarkRead(e, notif.notification_id)}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                        title="Mark as read"
+                      {/* Icon */}
+                      <div
+                        className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${visuals.iconBg} shadow-2xs transition-transform group-hover:scale-105`}
                       >
-                        <Check className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 hidden sm:inline-block">Read</span>
-                    )}
+                        <Icon className="w-4.5 h-4.5" strokeWidth={2.1} />
+                      </div>
 
-                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      {/* Text content */}
+                      <div className="flex-1 min-w-0 pr-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p
+                            className={`text-xs sm:text-sm ${
+                              isUnread ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'
+                            }`}
+                          >
+                            {title}
+                          </p>
+                          {visuals.badgeText && (
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold tracking-wide border shrink-0 ${visuals.badgeBg}`}>
+                              {visuals.badgeText}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5 truncate font-normal">
+                          {contextNote}
+                        </p>
+                      </div>
+
+                      {/* Right Action & Timestamp */}
+                      <div className="shrink-0 flex items-center gap-3">
+                        <span
+                          title={formatFullTooltip(notif.created_at)}
+                          className="text-[11px] text-slate-400 whitespace-nowrap font-medium"
+                        >
+                          {formatNotificationTime(notif.created_at)}
+                        </span>
+
+                        {isUnread && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleQuickMarkRead(e, notif.notification_id)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                            title="Mark as read"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 group-hover:text-blue-600 group-hover:bg-blue-50 transition-all">
+                          <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))
         )}
 
         {/* Load More Pagination */}
         {!loading && nextCursor && (
-          <div
-            style={{
-              backgroundColor: COLORS.background,
-              borderColor: COLORS.border,
-            }}
-            className="p-4 border-t text-center"
-          >
+          <div className="p-3 text-center bg-white rounded-2xl border border-slate-200/80 shadow-2xs mt-3">
             <button
               type="button"
               disabled={loadingMore}
               onClick={() => fetchMore()}
-              style={{
-                backgroundColor: COLORS.surface,
-                borderColor: COLORS.border,
-                color: COLORS.primary,
-              }}
-              className="w-full sm:w-auto px-6 py-2.5 border rounded-xl text-xs font-bold hover:bg-slate-50 transition-all cursor-pointer shadow-2xs inline-flex items-center justify-center gap-2 disabled:opacity-50"
+              className="px-5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl transition-all cursor-pointer shadow-2xs inline-flex items-center gap-2 disabled:opacity-50"
             >
               {loadingMore ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E3A8A]" />
-                  <span>Loading older notifications...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600" />
+                  <span>Loading...</span>
                 </>
               ) : (
-                <>
-                  <span>Load more notifications</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </>
+                <span>Load older notifications</span>
               )}
             </button>
           </div>

@@ -3,6 +3,9 @@ import { X, Calendar as CalendarIcon, Clock, Type, AlignLeft, User, UserCheck, E
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
+import StaffPicker from './StaffPicker';
+import TimePicker from './TimePicker';
+
 import { formatEventId } from '../../../../hooks/Admin/Event/useEvent';
 
 export default function EventUpdateModal({ isOpen, event, onClose, onSuccess, handleUpdateEvent, submitting }) {
@@ -177,77 +180,41 @@ export default function EventUpdateModal({ isOpen, event, onClose, onSuccess, ha
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: COLORS.foreground }}>
+                <label className="block text-xs font-bold mb-1.5 text-slate-700">
                   Start Time
                 </label>
-                <div className="relative">
-                  <Clock style={{ color: COLORS.placeholder }} className="w-4 h-4 absolute left-3 top-3" />
-                  <input
-                    type="time"
-                    name="start_time"
-                    value={formData.start_time}
-                    onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-                    style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-                  />
-                </div>
+                <TimePicker
+                  value={formData.start_time}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, start_time: val }))}
+                  placeholder="Start time (Optional)"
+                  disabled={submitting}
+                />
               </div>
 
               <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: COLORS.foreground }}>
+                <label className="block text-xs font-bold mb-1.5 text-slate-700">
                   End Time
                 </label>
-                <div className="relative">
-                  <Clock style={{ color: COLORS.placeholder }} className="w-4 h-4 absolute left-3 top-3" />
-                  <input
-                    type="time"
-                    name="end_time"
-                    value={formData.end_time}
-                    onChange={handleChange}
-                    className="w-full pl-9 pr-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-                    style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-                  />
-                </div>
+                <TimePicker
+                  value={formData.end_time}
+                  onChange={(val) => setFormData((prev) => ({ ...prev, end_time: val }))}
+                  minTime={formData.start_time}
+                  placeholder="End time (Optional)"
+                  disabled={submitting}
+                />
               </div>
             </div>
 
-            {/* Assignments */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: COLORS.foreground }}>
-                  Assign to Staff (ID)
-                </label>
-                <div className="relative">
-                  <User style={{ color: COLORS.placeholder }} className="w-4 h-4 absolute left-3 top-3" />
-                  <input
-                    type="number"
-                    name="assigned_staff_id"
-                    value={formData.assigned_staff_id}
-                    onChange={handleChange}
-                    placeholder="Staff User ID"
-                    className="w-full pl-9 pr-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-                    style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold mb-1.5" style={{ color: COLORS.foreground }}>
-                  Link to Client (ID)
-                </label>
-                <div className="relative">
-                  <UserCheck style={{ color: COLORS.placeholder }} className="w-4 h-4 absolute left-3 top-3" />
-                  <input
-                    type="number"
-                    name="client_id"
-                    value={formData.client_id}
-                    onChange={handleChange}
-                    placeholder="Client ID"
-                    className="w-full pl-9 pr-3 py-2.5 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-                    style={{ backgroundColor: COLORS.background, borderColor: COLORS.border, color: COLORS.foreground }}
-                  />
-                </div>
-              </div>
+            {/* Assign to Staff Member */}
+            <div>
+              <label className="block text-xs font-bold mb-1.5 text-slate-700">
+                Assign to Staff Member
+              </label>
+              <StaffPicker
+                value={formData.assigned_staff_id}
+                onChange={(val) => setFormData((prev) => ({ ...prev, assigned_staff_id: val }))}
+                disabled={submitting}
+              />
             </div>
           </form>
         </div>
