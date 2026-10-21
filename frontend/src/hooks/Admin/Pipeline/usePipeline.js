@@ -9,6 +9,9 @@ export default function usePipeline() {
   const { user } = useAuth();
   const userRole = getUserRole(user);
   const isSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+  const isStaff = userRole === 'STAFF';
+  const canManagePipeline = isSuperAdmin;
+  const canAssignStaff = isSuperAdmin;
 
   const {
     statuses = [],
@@ -107,7 +110,10 @@ export default function usePipeline() {
     if (opp.status_id === targetStatusId) return;
 
     const targetStatus = statuses.find((s) => s.status_id === targetStatusId);
-    const res = await dispatch(moveOpportunityStatus(opp.opportunity_id, opp.client_id, targetStatusId));
+    const staffId = opp.assigned_staff_id ?? opp.staff?.user_id ?? opp.staff?.id ?? null;
+    const res = await dispatch(
+      moveOpportunityStatus(opp.opportunity_id, opp.client_id, targetStatusId, staffId, opp.note_id)
+    );
 
     if (res?.success) {
       const studentName = opp.client?.name || `Student #${opp.client_id}`;
@@ -123,8 +129,19 @@ export default function usePipeline() {
     if (opportunity.status_id === targetStatusId) return;
 
     const targetStatus = statuses.find((s) => s.status_id === targetStatusId);
+    const staffId =
+      opportunity.assigned_staff_id ??
+      opportunity.staff?.user_id ??
+      opportunity.staff?.id ??
+      null;
     const res = await dispatch(
-      moveOpportunityStatus(opportunity.opportunity_id, opportunity.client_id, targetStatusId)
+      moveOpportunityStatus(
+        opportunity.opportunity_id,
+        opportunity.client_id,
+        targetStatusId,
+        staffId,
+        opportunity.note_id
+      )
     );
 
     if (res?.success) {
@@ -228,5 +245,12 @@ export default function usePipeline() {
     toast,
     showToast,
     handleRefresh,
+
+    user,
+    userRole,
+    isSuperAdmin,
+    isStaff,
+    canManagePipeline,
+    canAssignStaff,
   };
 }

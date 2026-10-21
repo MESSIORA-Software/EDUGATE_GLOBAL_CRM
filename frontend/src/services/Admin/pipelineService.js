@@ -96,18 +96,25 @@ const createOpportunity = async (clientId, statusId, assignedStaffId = null, not
 };
 
 // 7. Update Opportunity (change status or staff)
-const updateOpportunity = async (opportunityId, clientId, statusId, assignedStaffId = null, noteId = null) => {
+const updateOpportunity = async (opportunityId, clientId, statusId, assignedStaffId, noteId) => {
+  const payload = {
+    opportunity_id: opportunityId,
+    client_id: clientId,
+    status_id: statusId,
+    is_archived: false,
+  };
+
+  if (assignedStaffId !== undefined) {
+    payload.assigned_staff_id = assignedStaffId;
+  }
+  if (noteId !== undefined) {
+    payload.note_id = noteId;
+  }
+
   return apiRequest({
     method: 'put',
     url: `${BASE_URL}/oppertunity/updateoppertunity`,
-    data: {
-      opportunity_id: opportunityId,
-      client_id: clientId,
-      status_id: statusId,
-      assigned_staff_id: assignedStaffId,
-      note_id: noteId,
-      is_archived: false,
-    },
+    data: payload,
   });
 };
 

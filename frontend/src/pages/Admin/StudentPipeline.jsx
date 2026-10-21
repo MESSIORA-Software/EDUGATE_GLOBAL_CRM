@@ -223,6 +223,11 @@ export default function StudentPipeline() {
     toast,
     showToast,
     handleRefresh,
+
+    user,
+    userRole,
+    isSuperAdmin,
+    isStaff,
   } = usePipeline();
 
   // View Mode: 'card' (Kanban) or 'table'
@@ -452,18 +457,20 @@ export default function StudentPipeline() {
             <span>Add Opportunity</span>
           </button>
 
-          {/* Manage Pipeline Button (Red Theme Border) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsManagePipelineOpen(true);
-            }}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-300 bg-red-50/40 text-red-900 text-xs font-semibold hover:bg-red-50 hover:border-red-600 transition-all cursor-pointer shadow-2xs"
-          >
-            <Sliders className="w-3.5 h-3.5 text-red-600" />
-            <span>Manage Pipeline</span>
-          </button>
+          {/* Manage Pipeline Button (Red Theme Border) - Hidden for Staff */}
+          {!isStaff && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsManagePipelineOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-red-300 bg-red-50/40 text-red-900 text-xs font-semibold hover:bg-red-50 hover:border-red-600 transition-all cursor-pointer shadow-2xs"
+            >
+              <Sliders className="w-3.5 h-3.5 text-red-600" />
+              <span>Manage Pipeline</span>
+            </button>
+          )}
 
           {/* Export As Excel Button */}
           <button
@@ -699,19 +706,35 @@ export default function StudentPipeline() {
                         {/* Assigned Staff */}
                         <td className="py-3 px-4">
                           {staffInitials ? (
-                            <button
-                              type="button"
-                              onClick={() => setAssignStaffOpp(opp)}
-                              className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all cursor-pointer"
-                              title={`Assigned to ${assignedStaff?.name}. Click to change.`}
-                            >
-                              <div className="w-5 h-5 rounded-full bg-slate-800 text-white font-medium text-[9px] flex items-center justify-center shrink-0">
-                                {staffInitials}
+                            isStaff ? (
+                              <div
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200/80"
+                                title={`Assigned to ${assignedStaff?.name}`}
+                              >
+                                <div className="w-5 h-5 rounded-full bg-slate-800 text-white font-medium text-[9px] flex items-center justify-center shrink-0">
+                                  {staffInitials}
+                                </div>
+                                <span className="font-medium text-slate-700 text-xs truncate max-w-[100px]">
+                                  {assignedStaff?.name}
+                                </span>
                               </div>
-                              <span className="font-medium text-slate-700 text-xs truncate max-w-[100px]">
-                                {assignedStaff?.name}
-                              </span>
-                            </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setAssignStaffOpp(opp)}
+                                className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200/80 hover:bg-slate-100 transition-all cursor-pointer"
+                                title={`Assigned to ${assignedStaff?.name}. Click to change.`}
+                              >
+                                <div className="w-5 h-5 rounded-full bg-slate-800 text-white font-medium text-[9px] flex items-center justify-center shrink-0">
+                                  {staffInitials}
+                                </div>
+                                <span className="font-medium text-slate-700 text-xs truncate max-w-[100px]">
+                                  {assignedStaff?.name}
+                                </span>
+                              </button>
+                            )
+                          ) : isStaff ? (
+                            <span className="text-xs text-slate-400 font-medium">Unassigned</span>
                           ) : (
                             <button
                               type="button"
@@ -798,14 +821,16 @@ export default function StudentPipeline() {
                             >
                               <StickyNote className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              type="button"
-                              onClick={() => setAssignStaffOpp(opp)}
-                              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                              title="Assign Staff"
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                            </button>
+                            {!isStaff && (
+                              <button
+                                type="button"
+                                onClick={() => setAssignStaffOpp(opp)}
+                                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                                title="Assign Staff"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -831,13 +856,15 @@ export default function StudentPipeline() {
               <p className="text-xs text-slate-400 max-w-sm">
                 Use "Manage Pipeline" to configure your sales and admission stages.
               </p>
-              <button
-                type="button"
-                onClick={() => setIsManagePipelineOpen(true)}
-                className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all cursor-pointer shadow-2xs"
-              >
-                Configure Pipeline
-              </button>
+              {!isStaff && (
+                <button
+                  type="button"
+                  onClick={() => setIsManagePipelineOpen(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-all cursor-pointer shadow-2xs"
+                >
+                  Configure Pipeline
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex gap-4 items-start min-w-max">
@@ -947,18 +974,27 @@ export default function StudentPipeline() {
                                   </div>
                                 </div>
 
-                                {/* Right: Staff initials or + button & Menu */}
+                                {/* Right: Staff initials (badge for staff, button for admin) & Menu */}
                                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                   {staffInitials ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => setAssignStaffOpp(opp)}
-                                      className="w-6 h-6 rounded-full bg-blue-900 text-white font-medium text-[9px] flex items-center justify-center hover:bg-blue-800 border border-blue-700 shadow-2xs transition-all cursor-pointer"
-                                      title={`Assigned Staff: ${assignedStaff?.name}`}
-                                    >
-                                      {staffInitials}
-                                    </button>
-                                  ) : (
+                                    isStaff ? (
+                                      <div
+                                        className="w-6 h-6 rounded-full bg-blue-900 text-white font-medium text-[9px] flex items-center justify-center border border-blue-700 shadow-2xs select-none"
+                                        title={`Assigned Staff: ${assignedStaff?.name}`}
+                                      >
+                                        {staffInitials}
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => setAssignStaffOpp(opp)}
+                                        className="w-6 h-6 rounded-full bg-blue-900 text-white font-medium text-[9px] flex items-center justify-center hover:bg-blue-800 border border-blue-700 shadow-2xs transition-all cursor-pointer"
+                                        title={`Assigned Staff: ${assignedStaff?.name}. Click to change.`}
+                                      >
+                                        {staffInitials}
+                                      </button>
+                                    )
+                                  ) : !isStaff ? (
                                     <button
                                       type="button"
                                       onClick={() => setAssignStaffOpp(opp)}
@@ -967,7 +1003,7 @@ export default function StudentPipeline() {
                                     >
                                       <Plus className="w-3 h-3" />
                                     </button>
-                                  )}
+                                  ) : null}
 
                                   {/* Menu */}
                                   <div className="relative">
@@ -1006,17 +1042,19 @@ export default function StudentPipeline() {
                                           <Eye className="w-3.5 h-3.5 text-blue-500" />
                                           View Student Info
                                         </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setAssignStaffOpp(opp);
-                                            setActiveMenuOppId(null);
-                                          }}
-                                          className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 cursor-pointer font-medium"
-                                        >
-                                          <UserCheck className="w-3.5 h-3.5 text-red-500" />
-                                          Assign Staff
-                                        </button>
+                                        {!isStaff && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setAssignStaffOpp(opp);
+                                              setActiveMenuOppId(null);
+                                            }}
+                                            className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 cursor-pointer font-medium"
+                                          >
+                                            <UserCheck className="w-3.5 h-3.5 text-red-500" />
+                                            Assign Staff
+                                          </button>
+                                        )}
                                         <button
                                           type="button"
                                           onClick={() => {
@@ -1151,14 +1189,16 @@ export default function StudentPipeline() {
         onClose={() => setDetailStudent(null)}
       />
 
-      <ManagePipelineModal
-        isOpen={isManagePipelineOpen}
-        onClose={() => setIsManagePipelineOpen(false)}
-        onSuccess={(msg) => {
-          showToast(msg);
-          handleRefresh();
-        }}
-      />
+      {!isStaff && (
+        <ManagePipelineModal
+          isOpen={isManagePipelineOpen}
+          onClose={() => setIsManagePipelineOpen(false)}
+          onSuccess={(msg) => {
+            showToast(msg);
+            handleRefresh();
+          }}
+        />
+      )}
 
       <OpportunityNoteModal
         isOpen={!!noteModalOpp}
@@ -1170,15 +1210,17 @@ export default function StudentPipeline() {
         }}
       />
 
-      <AssignStaffModal
-        isOpen={!!assignStaffOpp}
-        opportunity={assignStaffOpp}
-        onClose={() => setAssignStaffOpp(null)}
-        onSuccess={(msg) => {
-          showToast(msg);
-          handleRefresh();
-        }}
-      />
+      {!isStaff && (
+        <AssignStaffModal
+          isOpen={!!assignStaffOpp}
+          opportunity={assignStaffOpp}
+          onClose={() => setAssignStaffOpp(null)}
+          onSuccess={(msg) => {
+            showToast(msg);
+            handleRefresh();
+          }}
+        />
+      )}
     </div>
   );
 }

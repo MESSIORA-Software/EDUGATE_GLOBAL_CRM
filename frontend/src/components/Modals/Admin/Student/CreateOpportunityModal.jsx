@@ -5,6 +5,8 @@ import { fetchClients } from '../../../../actions/Admin/clientAction';
 import { fetchUsers } from '../../../../actions/Admin/userActions';
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
+import useAuth from '../../../../hooks/Auth/useAuth';
+import { getUserRole } from '../../../../utils/roleUtils';
 import Button from '../../../ui/Button';
 import {
   X,
@@ -26,6 +28,9 @@ const getInitialStatusId = (statusesList) => {
 
 export default function CreateOpportunityModal({ isOpen, client, onClose, onSuccess }) {
   const dispatch = useDispatch();
+  const { user } = useAuth();
+  const userRole = getUserRole(user);
+  const isStaff = userRole === 'STAFF';
 
   const { statuses = [], opportunities = [], creatingOpportunity = false } = useSelector((state) => state.pipeline ?? {});
   const { list: registeredClients = [] } = useSelector((state) => state.client ?? {});
@@ -65,11 +70,11 @@ export default function CreateOpportunityModal({ isOpen, client, onClose, onSucc
       const initialClientId = client?.client_id || client?.id || '';
       setSelectedClientId(initialClientId);
       setStatusId(getInitialStatusId(statuses));
-      setAssignedStaffId('');
+      setAssignedStaffId(isStaff && user?.user_id ? String(user.user_id) : '');
       setNote('');
       setSubmitError('');
     }
-  }, [isOpen, client, dispatch, statuses]);
+  }, [isOpen, client, dispatch, statuses, isStaff, user?.user_id]);
 
   useEffect(() => {
     if (statuses.length > 0) {
@@ -246,33 +251,35 @@ export default function CreateOpportunityModal({ isOpen, client, onClose, onSucc
             </p>
           </div>
 
-          {/* Assign Staff */}
-          <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>Assign Staff Member</label>
-            <div className="relative">
-              <User style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
-              <select
-                value={assignedStaffId}
-                onChange={(e) => setAssignedStaffId(e.target.value)}
-                style={{
-                  backgroundColor: COLORS.background,
-                  borderColor: COLORS.border,
-                  color: COLORS.foreground,
-                }}
-                className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-              >
-                <option value="">-- Unassigned (None) --</option>
-                {availableStaffUsers.map((u) => {
-                  const uId = u.user_id || u.id;
-                  return (
-                    <option key={uId} value={uId}>
-                      {u.name || u.email} {u.role ? `(${u.role})` : ''} - #{uId}
-                    </option>
-                  );
-                })}
-              </select>
+          {/* Assign Staff (Hidden for Staff Users) */}
+          {!isStaff && (
+            <div>
+              <label className={`${TYPOGRAPHY.label} block mb-1`}>Assign Staff Member</label>
+              <div className="relative">
+                <User style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
+                <select
+                  value={assignedStaffId}
+                  onChange={(e) => setAssignedStaffId(e.target.value)}
+                  style={{
+                    backgroundColor: COLORS.background,
+                    borderColor: COLORS.border,
+                    color: COLORS.foreground,
+                  }}
+                  className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+                >
+                  <option value="">-- Unassigned (None) --</option>
+                  {availableStaffUsers.map((u) => {
+                    const uId = u.user_id || u.id;
+                    return (
+                      <option key={uId} value={uId}>
+                        {u.name || u.email} {u.role ? `(${u.role})` : ''} - #{uId}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Add Opportunity Note */}
           <div>

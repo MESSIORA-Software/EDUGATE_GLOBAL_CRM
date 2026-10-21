@@ -44,9 +44,11 @@ export const config = {
         retryMaxSeconds: 3600,
     },
 
-    // Messenger webhook signature verification (X-Hub-Signature-256)
+    // Messenger webhook signature verification (X-Hub-Signature-256) & API credentials
     facebook: {
         appSecret: process.env.FACEBOOK_APP_SECRET || null,
+        pageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN || null,
+        verifyToken: process.env.FACEBOOK_VERIFY_TOKEN || null,
     },
 
     // WhatsApp Cloud API & Webhook verification

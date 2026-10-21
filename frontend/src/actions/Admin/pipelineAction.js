@@ -173,7 +173,13 @@ export const fetchPipelineData = () => {
 };
 
 // 3. Move Opportunity to new status (Drag & Drop or menu selection)
-export const moveOpportunityStatus = (opportunityId, clientId, newStatusId) => {
+export const moveOpportunityStatus = (
+  opportunityId,
+  clientId,
+  newStatusId,
+  assignedStaffId,
+  noteId
+) => {
   return async (dispatch, getState) => {
     const opportunities = getState().pipeline?.opportunities || [];
     const targetOpp = opportunities.find((o) => o.opportunity_id === opportunityId);
@@ -183,23 +189,44 @@ export const moveOpportunityStatus = (opportunityId, clientId, newStatusId) => {
       return { success: true };
     }
 
+    // Preserve existing staff assignment and note
+    const resolvedStaffId =
+      assignedStaffId !== undefined
+        ? assignedStaffId
+        : targetOpp?.assigned_staff_id !== undefined
+        ? targetOpp.assigned_staff_id
+        : targetOpp?.staff?.user_id ?? targetOpp?.staff?.id ?? null;
+
+    const resolvedNoteId =
+      noteId !== undefined ? noteId : targetOpp?.note_id ?? null;
+
+    const resolvedClientId = clientId || targetOpp?.client_id;
+
     // 1. Optimistic Update in Redux
     dispatch({
       type: PIPELINE_STUDENT_MOVE_OPTIMISTIC,
       payload: {
         opportunityId,
         statusId: newStatusId,
+        assignedStaffId: resolvedStaffId,
       },
     });
 
     try {
-      await PipelineService.updateOpportunity(opportunityId, clientId, newStatusId);
+      await PipelineService.updateOpportunity(
+        opportunityId,
+        resolvedClientId,
+        newStatusId,
+        resolvedStaffId,
+        resolvedNoteId
+      );
 
       dispatch({
         type: PIPELINE_STUDENT_MOVE_SUCCESS,
         payload: {
           opportunityId,
           statusId: newStatusId,
+          assignedStaffId: resolvedStaffId,
         },
       });
 

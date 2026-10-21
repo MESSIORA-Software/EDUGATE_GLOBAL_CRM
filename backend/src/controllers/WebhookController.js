@@ -28,13 +28,17 @@ export const WebhookController = {
     },
 
     async handleFacebookWebhook(req, res) {
-        // Verify the Meta signature BEFORE trusting the payload (fail closed).
+        // Verify the Meta signature BEFORE trusting the payload (fail closed in production).
         const appSecret = config.facebook?.appSecret || process.env.FACEBOOK_APP_SECRET;
         if (!appSecret) {
-            console.error('FACEBOOK_APP_SECRET is not configured; rejecting webhook.');
-            return res.sendStatus(503);
-        }
-        if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[WebhookController] Warning: FACEBOOK_APP_SECRET is not configured in .env. Skipping signature verification in development.');
+            } else {
+                console.error('FACEBOOK_APP_SECRET is not configured; rejecting webhook.');
+                return res.sendStatus(503);
+            }
+        } else if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
+            console.warn('[WebhookController] Rejecting webhook: Invalid X-Hub-Signature-256 signature.');
             return res.sendStatus(401);
         }
 
@@ -100,11 +104,14 @@ export const WebhookController = {
         const appSecret = config.whatsapp?.appSecret || config.facebook?.appSecret || process.env.WHATSAPP_APP_SECRET || process.env.FACEBOOK_APP_SECRET;
 
         if (!appSecret) {
-            console.error('WhatsApp/Facebook app secret is not configured; rejecting webhook.');
-            return res.sendStatus(503);
-        }
-
-        if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
+            if (process.env.NODE_ENV === 'development') {
+                console.warn('[WebhookController] Warning: WhatsApp/Facebook app secret is not configured. Skipping signature verification in development.');
+            } else {
+                console.error('WhatsApp/Facebook app secret is not configured; rejecting webhook.');
+                return res.sendStatus(503);
+            }
+        } else if (!verifyMetaSignature(req.rawBody, req.headers['x-hub-signature-256'], appSecret)) {
+            console.warn('[WebhookController] Rejecting webhook: Invalid WhatsApp X-Hub-Signature-256 signature.');
             return res.sendStatus(401);
         }
 

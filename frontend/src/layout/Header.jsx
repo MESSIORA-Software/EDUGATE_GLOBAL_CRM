@@ -34,6 +34,9 @@ const getPageTitle = (pathname) => {
   if (pathname.startsWith('/pipeline') || pathname.startsWith('/student-pipeline')) {
     return 'Student Pipeline';
   }
+  if (pathname.startsWith('/referrers')) {
+    return 'Referrers Management';
+  }
   if (pathname.startsWith('/conversations')) {
     return 'Conversations';
   }

@@ -16,6 +16,7 @@ import DashboardPage from '../pages/Dashboard/DashboardPage';
 import { getUserRole } from '../utils/roleUtils';
 import EventManagement from '../pages/Admin/EventManagement';
 import NotificationsPage from '../pages/Notifications/NotificationsPage';
+import ReferrersManagement from '../pages/Admin/ReferrersManagement';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -29,6 +30,15 @@ function SuperAdminRoute({ children }) {
   const { user } = useAuth();
   const role = getUserRole(user);
   if (role !== 'SUPER_ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user } = useAuth();
+  const role = getUserRole(user);
+  if (role !== 'SUPER_ADMIN' && role !== 'ADMIN') {
     return <Navigate to="/dashboard" replace />;
   }
   return children;
@@ -123,6 +133,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <StudentPipeline />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/referrers"
+        element={
+          <ProtectedRoute>
+            <AdminRoute>
+              <ReferrersManagement />
+            </AdminRoute>
           </ProtectedRoute>
         }
       />
