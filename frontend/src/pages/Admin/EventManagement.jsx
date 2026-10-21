@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import useEvent, { formatEventId } from '../../hooks/Admin/Event/useEvent';
 import EventAddModal from '../../components/Modals/Admin/Event/EventAddModal';
 import EventUpdateModal from '../../components/Modals/Admin/Event/EventUpdateModal';
@@ -21,6 +22,7 @@ import {
   Loader2,
   Clock,
   User,
+  UserCheck,
   AlignLeft,
   X,
 } from 'lucide-react';
@@ -51,6 +53,8 @@ export default function EventManagement() {
     handleUpdateEvent,
     handleDeleteEvent,
   } = useEvent();
+  const usersList = useSelector((state) => state.users?.users || []);
+  const clientsList = useSelector((state) => state.client?.list || []);
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -75,14 +79,9 @@ export default function EventManagement() {
       {/* Page Header */}
       <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               Events Management
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-              {totalCount || 0} Events
-            </span>
-          </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
             Manage meetings, tasks, and calendar events for staff and clients.
           </p>
@@ -265,20 +264,31 @@ export default function EventManagement() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 space-y-1">
-                      {e.assigned_staff ? (
-                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
-                          <User className="w-3.5 h-3.5 text-blue-500" />
-                          {e.assigned_staff.name || e.assigned_staff.email}
-                        </div>
-                      ) : (
-                        <div className="text-[11px] text-slate-400 italic">Unassigned Staff</div>
-                      )}
-                      {e.client && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
-                          <User className="w-3.5 h-3.5 text-emerald-500" />
-                          Client: {e.client.name}
-                        </div>
-                      )}
+                      {(() => {
+                        const matchedStaff = usersList.find((u) => String(u.user_id || u.id) === String(e.assigned_staff_id));
+                        const staffName = e.assigned_staff?.name || e.assigned_staff?.email || matchedStaff?.name || (e.assigned_staff_id ? `Staff #${e.assigned_staff_id}` : null);
+                        const matchedClient = clientsList.find((c) => String(c.client_id || c.id) === String(e.client_id));
+                        const clientName = e.client?.name || matchedClient?.name || (e.client_id ? `Client #${e.client_id}` : null);
+
+                        return (
+                          <>
+                            {staffName ? (
+                              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
+                                <User className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                <span className="truncate">{staffName}</span>
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-400 italic">Unassigned Staff</div>
+                            )}
+                            {clientName && (
+                              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
+                                <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                                <span className="truncate">Client: {clientName}</span>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-1.5">
                       <button

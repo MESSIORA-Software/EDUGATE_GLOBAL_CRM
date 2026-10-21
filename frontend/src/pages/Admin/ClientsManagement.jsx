@@ -83,14 +83,9 @@ export default function ClientsManagement() {
             {/* Page Header */}
       <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               Students & Clients
             </h1>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-              {filteredClients?.length || 0} Students
-            </span>
-          </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
             Manage student client profiles, study abroad inquiries, and academic application records.
           </p>

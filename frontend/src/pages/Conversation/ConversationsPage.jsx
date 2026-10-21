@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCheck, CheckCircle2, ChevronDown, Download, FileText, Forward, ImagePlus, Inbox,
-  LoaderCircle, Mail, Maximize2, MessageCircle, Minimize2, Paperclip, Plus,
+  LoaderCircle, Mail, Maximize2, MessageCircle, Minimize2, Paperclip, PhoneCall, Plus,
   QrCode, RefreshCw, Reply, Search, Send, Star, Target, Trash2, UserRound, X,
 } from 'lucide-react';
 import conversationService from '../../services/Conversation/conversationService';
@@ -10,10 +10,62 @@ import useAuth from '../../hooks/Auth/useAuth';
 import { getUserRole } from '../../utils/roleUtils';
 
 const channelConfig = {
-  messenger: { label: 'Messenger', color: 'bg-[#1877F2]' },
-  whatsapp: { label: 'WhatsApp', color: 'bg-[#25D366]' },
-  email: { label: 'Email', color: 'bg-violet-600' },
-  sms: { label: 'Messages & calls', color: 'bg-red-500' },
+  messenger: { label: 'Messenger', activeClass: 'border-blue-500 bg-blue-50/80 text-blue-800' },
+  whatsapp: { label: 'WhatsApp', activeClass: 'border-emerald-500 bg-emerald-50/80 text-emerald-800' },
+  email: { label: 'Email', activeClass: 'border-violet-500 bg-violet-50/80 text-violet-800' },
+  sms: { label: 'Messages & calls', activeClass: 'border-rose-500 bg-rose-50/80 text-rose-800' },
+};
+
+const renderChannelIcon = (channelId, className = 'h-4 w-4 shrink-0') => {
+  switch (channelId) {
+    case 'messenger':
+      return (
+        <svg className={className} viewBox="0 0 24 24">
+          <defs>
+            <linearGradient id="channelMessengerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#00B2FF" />
+              <stop offset="50%" stopColor="#006AFF" />
+              <stop offset="100%" stopColor="#A033FF" />
+            </linearGradient>
+          </defs>
+          <path
+            fill="url(#channelMessengerGrad)"
+            d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.2 5.43 3.19 7.07.16.13.26.33.26.54l-.07 1.7c-.03.74.77 1.25 1.41.87l1.91-1.12c.16-.1.35-.13.54-.1.87.23 1.79.35 2.76.35 5.64 0 10-4.13 10-9.7S17.64 2 12 2z"
+          />
+          <path
+            fill="#ffffff"
+            d="M13.06 15.06l-2.58-2.75-5.04 2.75 5.54-5.88 2.65 2.75 4.97-2.75-5.54 5.88z"
+          />
+        </svg>
+      );
+    case 'whatsapp':
+      return (
+        <svg className={className} viewBox="0 0 24 24">
+          <path
+            fill="#25D366"
+            d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2z"
+          />
+          <path
+            fill="#ffffff"
+            d="M17.82 16.07c-.24.68-1.2 1.25-1.95 1.34-.51.06-1.17.09-3.39-.83-2.84-1.18-4.66-4.08-4.8-4.27-.14-.19-1.15-1.53-1.15-2.92 0-1.39.73-2.07 1-2.35.24-.25.53-.31.71-.31.18 0 .35 0 .5.01.16.01.37-.06.58.44.22.52.74 1.8.8 1.93.07.13.11.28.02.46-.09.18-.14.28-.27.44-.13.16-.28.35-.4.47-.13.13-.27.28-.12.54.16.26.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.17 1.34.27.13.43.11.59-.07.16-.18.68-.79.86-1.06.18-.27.36-.22.61-.13.25.09 1.59.75 1.86.88.27.13.45.2.52.31.06.11.06.64-.18 1.32z"
+          />
+        </svg>
+      );
+    case 'email':
+      return (
+        <svg className={className} viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M44 11.2V38c0 2.2-1.8 4-4 4H34V18.7L24 26.2 14 18.7V42H8c-2.2 0-4-1.8-4-4V11.2c0-2.8 3.1-4.4 5.4-2.7L24 19.8l14.6-11.3c2.3-1.7 5.4-.1 5.4 2.7z" />
+          <path fill="#34A853" d="M34 42h6c2.2 0 4-1.8 4-4V18.7L34 26.2V42z" />
+          <path fill="#EA4335" d="M14 18.7V42H8c-2.2 0-4-1.8-4-4V18.7l10 7.5V18.7z" />
+          <path fill="#FBBC05" d="M4 11.2c0-2.8 3.1-4.4 5.4-2.7L24 19.8 4 11.2z" />
+          <path fill="#C5221F" d="M44 11.2c0-2.8-3.1-4.4-5.4-2.7L24 19.8l20-8.6V11.2z" />
+        </svg>
+      );
+    case 'sms':
+      return <PhoneCall className={`${className} text-rose-500`} />;
+    default:
+      return null;
+  }
 };
 
 const getErrorMessage = (error) => error?.response?.data?.message || 'Unable to load conversations.';
@@ -811,11 +863,7 @@ export default function ConversationsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Conversations</h1>
-            <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${badgeBgClass}`}>
-              {isEmail
-                ? `${emailFolder === 'sent' ? sentConversations.length : inboxConversations.length} ${emailFolder === 'sent' ? 'Sent' : 'Inbox'} Email${(emailFolder === 'sent' ? sentConversations.length : inboxConversations.length) === 1 ? '' : 's'}`
-                : `${counts.current} ${config.label}`}
-            </span>
+            
             {isWhatsAppConnected && waPhoneNumber && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -879,32 +927,31 @@ export default function ConversationsPage() {
       </header>
 
       {/* Channel Switcher */}
-      <div className="flex gap-2 overflow-x-auto">
-        {Object.entries(channelConfig).map(([id, item]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => {
-              setActiveChannel(id);
-              setSelected(null);
-            }}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
-              activeChannel === id
-                ? id === 'whatsapp'
-                  ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                  : id === 'email'
-                  ? 'border-violet-500 bg-violet-50 text-violet-800'
-                  : 'border-blue-500 bg-blue-50 text-blue-800'
-                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <span className={`h-2.5 w-2.5 rounded-full ${item.color}`} />
-            {item.label}
-            {activeChannel === id && (
-              <span className="text-xs opacity-75">({counts.current})</span>
-            )}
-          </button>
-        ))}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {Object.entries(channelConfig).map(([id, item]) => {
+          const isActive = activeChannel === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setActiveChannel(id);
+                setSelected(null);
+              }}
+              className={`flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition shadow-2xs ${
+                isActive
+                  ? item.activeClass
+                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300'
+              }`}
+            >
+              {renderChannelIcon(id)}
+              <span>{item.label}</span>
+              {isActive && (
+                <span className="text-xs opacity-75 font-medium">({counts.current})</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {successBanner && (
