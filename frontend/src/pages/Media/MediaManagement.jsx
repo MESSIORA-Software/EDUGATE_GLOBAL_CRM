@@ -174,6 +174,41 @@ export default function MediaManagement() {
 
         {/* Toolbar Controls */}
         <div className="flex items-center justify-end flex-wrap gap-2.5">
+          {/* Google Drive Status / Connect Button */}
+          {localStorage.getItem('google_access_token') ? (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50/80 text-emerald-800 text-xs font-semibold shadow-2xs">
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+              </svg>
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Drive Connected
+              </span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={connectGoogleDrive}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 text-xs font-semibold transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+              title="Connect your Google Drive account"
+            >
+              <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+              </svg>
+              <span>Connect Google Drive</span>
+            </button>
+          )}
+
           {/* Refresh Button */}
           <button
             onClick={handleRefresh}
@@ -225,55 +260,6 @@ export default function MediaManagement() {
         <StudentMediaView />
       ) : (
         <>
-          {/* Metrics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Files</p>
-                <p className="text-2xl font-extrabold text-blue-900 mt-0.5">
-                  {totalCount}
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold">
-                <File className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Current Page</p>
-                <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">
-                  {currentPage} / {totalPages || 1}
-                </p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold">
-                <CheckCircle2 className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="p-4 bg-white rounded-2xl border border-red-200/80 shadow-2xs hover:border-red-500 transition-all flex items-center justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Cloud Storage</p>
-                {localStorage.getItem('google_access_token') ? (
-                  <p className="text-xs font-bold text-emerald-700 mt-1 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    Google Drive Connected
-                  </p>
-                ) : (
-                  <button
-                    onClick={connectGoogleDrive}
-                    className="mt-1 text-xs font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
-                  >
-                    Connect Google Drive
-                  </button>
-                )}
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-center font-bold">
-                <Server className="w-5 h-5" />
-              </div>
-            </div>
-          </div>
-
           {/* Search & Filter Toolbar */}
           <div
             style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}

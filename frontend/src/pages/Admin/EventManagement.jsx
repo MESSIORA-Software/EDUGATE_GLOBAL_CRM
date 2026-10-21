@@ -85,12 +85,7 @@ export default function EventManagement() {
             <CalendarIcon className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className={TYPOGRAPHY.h2}>Events Management</h1>
-              <Badge variant="blue" icon={Clock}>
-                Scheduler API
-              </Badge>
-            </div>
+            <h1 className={TYPOGRAPHY.h2}>Events Management</h1>
             <p className={TYPOGRAPHY.subheading}>
               Manage meetings, tasks, and calendar events for staff and clients
             </p>
