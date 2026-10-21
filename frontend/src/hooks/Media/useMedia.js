@@ -51,7 +51,7 @@ export default function useMedia() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchQuery, mimeFilter, dateFrom, dateTo, showToast]);
+  }, [currentPage, searchQuery, mimeFilter, dateFrom, dateTo, providerFilter, uploadedByFilter, showToast]);
 
   useEffect(() => {
     setCurrentPage(1);

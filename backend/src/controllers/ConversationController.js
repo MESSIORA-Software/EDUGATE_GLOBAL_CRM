@@ -1,4 +1,8 @@
 import { ConversationService } from '../services/ConversationService.js';
+import { WhatsAppBaileysService } from '../services/WhatsAppBaileysService.js';
+import { EmailService } from '../services/EmailService.js';
+
+
 
 export const ConversationController = {
     // GET /api/conversations?channel=messenger (or ?channel=whatsapp / ?channel=sms / ?channel=call / ?client_id=1)
@@ -60,7 +64,16 @@ export const ConversationController = {
                     message: 'Field "staff_id" is required.'
                 });
             }
-            const updated = await ConversationService.assignStaff(id, staff_id);
+            const conversationId = Number(id);
+            const staffId = Number(staff_id);
+            if (!Number.isSafeInteger(conversationId) || conversationId <= 0 ||
+                !Number.isSafeInteger(staffId) || staffId <= 0) {
+                return res.status(400).json({
+                    status: 'error',
+                    message: 'Conversation id and "staff_id" must be positive integers.'
+                });
+            }
+            const updated = await ConversationService.assignStaff(conversationId, staffId, req.user);
             res.status(200).json({
                 status: 'success',
                 message: 'Staff assigned successfully',
@@ -87,6 +100,23 @@ export const ConversationController = {
         }
     },
 
+    // POST /api/conversations/:id/opportunity
+    async createOpportunityFromConversation(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { name, email, dob, source, status_id, assigned_staff_id, note } = req.body;
+            const result = await ConversationService.createOpportunityFromConversation(id, req.user, {
+                name, email, dob, source, status_id, assigned_staff_id, note
+            });
+            res.status(201).json({
+                status: 'success',
+                message: 'Student registered and opportunity created successfully',
+                data: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
 
     // POST /api/conversations/inbound
     async handleInbound(req, res, next) {
@@ -100,5 +130,75 @@ export const ConversationController = {
         } catch (error) {
             next(error);
         }
+    },
+
+    // GET /api/conversations/whatsapp/status
+    async getWhatsAppStatus(req, res, next) {
+        try {
+            const status = WhatsAppBaileysService.getStatus();
+            res.status(200).json({
+                status: 'success',
+                data: status
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // POST /api/conversations/whatsapp/connect
+    async connectWhatsApp(req, res, next) {
+        try {
+            const status = await WhatsAppBaileysService.initialize();
+            res.status(200).json({
+                status: 'success',
+                message: 'WhatsApp initialization started',
+                data: status
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // POST /api/conversations/whatsapp/disconnect
+    async disconnectWhatsApp(req, res, next) {
+        try {
+            const result = await WhatsAppBaileysService.logout();
+            res.status(200).json({
+                status: 'success',
+                message: 'WhatsApp disconnected successfully',
+                data: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // GET /api/conversations/email/status
+    async getEmailStatus(req, res, next) {
+        try {
+            const status = await EmailService.testConnection();
+            res.status(200).json({
+                status: 'success',
+                data: status
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // POST /api/conversations/email/sync
+    async syncEmails(req, res, next) {
+        try {
+            const result = await EmailService.syncIncomingEmails();
+            res.status(200).json({
+                status: 'success',
+                message: `Email sync completed. Processed ${result.processedCount} email(s).`,
+                data: result
+            });
+        } catch (error) {
+            next(error);
+        }
     }
 };
+
+

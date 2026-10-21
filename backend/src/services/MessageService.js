@@ -1,7 +1,10 @@
 import { MessageRepository } from '../repositories/MessageRepository.js';
 import { ConversationRepository } from '../repositories/ConversationRepository.js';
 import { FacebookMessengerService } from './FacebookMessengerService.js';
+import { WhatsAppService } from './WhatsAppService.js';
+import { EmailService } from './EmailService.js';
 import { supabase } from '../database/supabaseClient.js';
+
 
 export const MessageService = {
     // 1. Get messages for a conversation
@@ -9,9 +12,34 @@ export const MessageService = {
         return await MessageRepository.getMessagesByConversationId(conversationId, limit, offset);
     },
 
-    // 2. Send outgoing message (WhatsApp & Messenger)
-    async sendMessage(conversationId, staffUser, { content, media_url, media_source, message_type = 'text' }) {
-        const conversation = await ConversationRepository.getConversationById(conversationId);
+    // 2. Send outgoing message (WhatsApp & Messenger & Email)
+    async sendMessage(conversationId, staffUser, { content, media_url, media_source, message_type = 'text', subject, cc, bcc, to }) {
+        if (!content?.trim() && !media_url) {
+            const error = new Error('Message content or media is required');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        let conversation = null;
+        if (conversationId && conversationId !== 'new' && conversationId !== '0') {
+            conversation = await ConversationRepository.getConversationById(conversationId);
+        }
+
+        // If conversation not found or new compose with recipient `to`
+        if (!conversation && to) {
+            const cleanTo = to.trim().toLowerCase();
+            conversation = await ConversationRepository.findByChannelAndClientId('email', cleanTo);
+            if (!conversation) {
+                let { data: client } = await supabase.from('clients').select('client_id').eq('email', cleanTo).maybeSingle();
+                conversation = await ConversationRepository.createConversation({
+                    client_id: client?.client_id || null,
+                    channel: 'email',
+                    channel_client_id: cleanTo,
+                    status: 'open'
+                });
+            }
+        }
+
         if (!conversation) {
             const error = new Error('Conversation not found');
             error.statusCode = 404;
@@ -27,24 +55,73 @@ export const MessageService = {
 
         // 1. If Facebook Messenger, send via Meta Graph API
         if (conversation.channel === 'messenger') {
-            await FacebookMessengerService.sendMessage(conversation.channel_client_id, {
-                content,
-                media_url,
-                message_type
+            if (content?.trim()) {
+                await FacebookMessengerService.sendMessage(conversation.channel_client_id, { content: content.trim() });
+            }
+            if (media_url) {
+                await FacebookMessengerService.sendMessage(conversation.channel_client_id, {
+                    media_url,
+                    message_type
+                });
+            }
+        }
+
+        // 2. If WhatsApp, send via Meta WhatsApp Cloud API
+        if (conversation.channel === 'whatsapp') {
+            if (content?.trim() && !media_url) {
+                await WhatsAppService.sendMessage(conversation.channel_client_id, { content: content.trim() });
+            } else if (media_url) {
+                await WhatsAppService.sendMessage(conversation.channel_client_id, {
+                    content: content?.trim(),
+                    media_url,
+                    message_type
+                });
+            }
+        }
+
+        // 3. If Email, send via Gmail SMTP
+        if (conversation.channel === 'email') {
+            await EmailService.sendEmail({
+                to: to || conversation.channel_client_id,
+                cc,
+                bcc,
+                subject: subject || 'Message from Edugate Global CRM',
+                content: content?.trim(),
+                media_url
             });
         }
 
-        // 2. Save message record in database
+        let resolvedMessageType = 'text';
+        if (media_url) {
+            if (message_type === 'image' || message_type === 'video' || message_type === 'audio') {
+                resolvedMessageType = message_type;
+            } else {
+                resolvedMessageType = 'document';
+            }
+        }
+
+        let resolvedMediaSource = null;
+        if (media_url) {
+            resolvedMediaSource = (media_source === 'device_upload' || media_source === 'system_storage')
+                ? media_source
+                : 'system_storage';
+        }
+
+        const formattedContent = subject ? `[Subject: ${subject}]\n\n${content || ''}` : content;
+
+        // 4. Save message record in database
         const message = await MessageRepository.createMessage({
-            conversation_id: conversationId,
+            conversation_id: conversation.conversation_id,
             sender_type: 'staff',
             sender_id: staffUser.user_id,
-            message_type: media_url ? (message_type || 'image') : 'text',
-            content: content,
-            media_url: media_url,
-            media_source: media_source,
+            message_type: resolvedMessageType,
+            content: formattedContent,
+            media_url: media_url || null,
+            media_source: resolvedMediaSource,
             delivery_status: 'sent'
         });
+
+
 
         return message;
     },

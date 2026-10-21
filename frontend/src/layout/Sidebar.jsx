@@ -1,24 +1,56 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
+import { getUserRole } from '../utils/roleUtils';
 import { COLORS } from '../constants/colors';
 import { TYPOGRAPHY } from '../constants/typography';
 import edugateLogo from '../assets/edugate_logo.jpeg';
-import { Shield, Building2, Users, UserCheck, LayoutDashboard, Settings, LogOut, HardDrive } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import {
+  Shield,
+  Building2,
+  Users,
+  UserCheck,
+  LayoutDashboard,
+  Settings,
+  LogOut,
+  HardDrive,
+  Kanban,
+  MessageSquare,
+  Calendar,
+  Bell,
+} from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
   const { user, handleLogout } = useAuth();
+  const unreadCount = useSelector((state) => state.notifications?.unreadCount ?? 0);
+  const userRole = getUserRole(user);
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { name: 'System Roles', path: '/roles', icon: Shield },
-    { name: 'Branch Locations', path: '/branches', icon: Building2 },
-    { name: 'User Accounts', path: '/users', icon: Users },
-    { name: 'Students / Clients', path: '/clients', icon: UserCheck },
-    { name: 'Media Storage', path: '/media', icon: HardDrive },
-    { name: 'My Profile', path: '/profile', icon: UserCheck },
-    { name: 'Settings', path: '/settings', icon: Settings },
-  ];
+  const navItems = isSuperAdmin
+    ? [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
+        { name: 'System Roles', path: '/roles', icon: Shield },
+        { name: 'Branch Locations', path: '/branches', icon: Building2 },
+        { name: 'User Accounts', path: '/users', icon: Users },
+        { name: 'Students / Clients', path: '/clients', icon: UserCheck },
+        { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Conversations', path: '/conversations', icon: MessageSquare },
+        { name: 'Media Storage', path: '/media', icon: HardDrive },
+        { name: 'Events', path: '/events', icon: Calendar },
+        { name: 'My Profile', path: '/profile', icon: UserCheck },
+        { name: 'Settings', path: '/settings', icon: Settings },
+      ]
+    : [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
+        { name: 'Students / Clients', path: '/clients', icon: UserCheck },
+        { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Conversations', path: '/conversations', icon: MessageSquare },
+        { name: 'Events', path: '/events', icon: Calendar },
+        { name: 'My Profile', path: '/profile', icon: UserCheck },
+      ];
 
 
   return (
@@ -35,7 +67,7 @@ export default function Sidebar({ isOpen, onClose }) {
           backgroundColor: COLORS.surface,
           borderColor: COLORS.sidebarBorder,
         }}
-        className={`fixed top-0 left-0 z-40 h-screen w-60 border-r flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-screen w-60 border-r flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -90,7 +122,17 @@ export default function Sidebar({ isOpen, onClose }) {
                   }
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span>{item.name}</span>
+                  <span className="flex-1">{item.name}</span>
+                  {item.badge > 0 && (
+                    <span
+                      style={{
+                        backgroundColor: COLORS.secondary,
+                      }}
+                      className="px-1.5 py-0.5 text-[9px] font-extrabold text-white rounded-full leading-none shrink-0"
+                    >
+                      {item.badge > 99 ? '99+' : item.badge}
+                    </span>
+                  )}
                 </NavLink>
               );
             })}
@@ -123,9 +165,14 @@ export default function Sidebar({ isOpen, onClose }) {
                 <p style={{ color: COLORS.foreground }} className="text-xs font-bold truncate">
                   {user.name || user.email || 'Logged In User'}
                 </p>
-                <p style={{ color: COLORS.muted }} className="text-[10px] truncate">
-                  {user.email || user.role || 'User'}
-                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.2 rounded bg-blue-50 text-blue-800 border border-blue-200">
+                    {userRole}
+                  </span>
+                  <span style={{ color: COLORS.muted }} className="text-[10px] truncate">
+                    {user.email}
+                  </span>
+                </div>
               </div>
             </NavLink>
           )}

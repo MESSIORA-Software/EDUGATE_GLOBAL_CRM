@@ -4,8 +4,10 @@ export const OppertunityController = {
 
     async createOppertunity(req, res) {
         try {
-            const { client_id, assigned_staff_id, status_id, note_id, is_archived, created_by, updated_by } = req.body;   
-            const newOppertunity = await OppertunityService.createOppertunity({ client_id, assigned_staff_id, status_id, note_id, is_archived, created_by, updated_by });
+            // created_by / updated_by come from the authenticated user (JWT), not the body
+            const { client_id, assigned_staff_id, status_id, note_id, is_archived } = req.body;   
+            const actorId = req.user?.user_id || null;
+            const newOppertunity = await OppertunityService.createOppertunity({ client_id, assigned_staff_id, status_id, note_id, is_archived, created_by: actorId, updated_by: actorId });
             res.status(201).json({
                 status: 'success',
                 message: 'Oppertunity created successfully',
@@ -23,14 +25,15 @@ export const OppertunityController = {
 
     async updateOppertunity(req, res) {
         try {
-            const { opportunity_id, client_id, assigned_staff_id, status_id, note_id, is_archived, created_by, updated_by } = req.body;
+            const { opportunity_id, client_id, assigned_staff_id, status_id, note_id, is_archived } = req.body;
              if (!opportunity_id) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Field "opportunity_id" is required.',
                 });
             }
-            const updatedOppertunity = await OppertunityService.updateOppertunity(opportunity_id, { client_id, assigned_staff_id, status_id, note_id, is_archived, created_by, updated_by });
+            // created_by is immutable; updated_by is the authenticated user
+            const updatedOppertunity = await OppertunityService.updateOppertunity(opportunity_id, { client_id, assigned_staff_id, status_id, note_id, is_archived, updated_by: req.user?.user_id || null });
             res.status(200).json({
                 status: 'success',
                 message: 'Oppertunity updated successfully',
@@ -65,8 +68,16 @@ export const OppertunityController = {
 
     async getOppertunitiesbyoppertunityStatus(req, res) {
         try {
-            const { status_id } = req.body;
-            const opportunities = await OppertunityService.getOppertunitiesbyoppertunityStatus(status_id);
+            const status_id = req.body?.status_id || req.query?.status_id || req.params?.status_id;
+            const actor = req.user;
+            const isAdmin = actor && (
+                String(actor.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
+                String(actor.role_id || '').toUpperCase() === 'ADMIN' ||
+                String(actor.role_name || '').toLowerCase() === 'admin' ||
+                String(actor.role_name || '').toLowerCase() === 'super admin'
+            );
+            const staffId = (!isAdmin && actor?.user_id) ? actor.user_id : null;
+            const opportunities = await OppertunityService.getOppertunitiesbyoppertunityStatus(status_id, staffId);
             res.status(200).json({
                 status: 'success',
                 message: 'Opportunities fetched successfully',

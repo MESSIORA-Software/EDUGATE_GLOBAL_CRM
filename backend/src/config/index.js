@@ -25,4 +25,44 @@ export const config = {
         redirectUri: process.env.GOOGLE_REDIRECT_URI || null,
         driveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID || null,
     },
+
+    // Stable role IDs (user_roles.role_id) treated as administrators.
+    // Never match on display names ("Admin", "Super Administrator", ...).
+    roles: {
+        adminRoleIds: ['MANAGER', 'SUPER_ADMIN'],
+    },
+
+    // Module 11 — Notifications. The worker endpoint is disabled (503) unless
+    // NOTIFICATION_WORKER_SECRET (>= 32 chars) and the service-role key are set.
+    notifications: {
+        workerSecret: process.env.NOTIFICATION_WORKER_SECRET || null,
+        batchSize: Math.min(Math.max(parseInt(process.env.NOTIFICATION_BATCH_SIZE) || 50, 1), 200),
+        maxRoundsPerRun: Math.min(Math.max(parseInt(process.env.NOTIFICATION_MAX_ROUNDS) || 4, 1), 10),
+        timeBudgetMs: parseInt(process.env.NOTIFICATION_TIME_BUDGET_MS) || 8000,
+        leaseSeconds: Math.max(parseInt(process.env.NOTIFICATION_LEASE_SECONDS) || 120, 30),
+        retryBaseSeconds: 30,
+        retryMaxSeconds: 3600,
+    },
+
+    // Messenger webhook signature verification (X-Hub-Signature-256)
+    facebook: {
+        appSecret: process.env.FACEBOOK_APP_SECRET || null,
+    },
+
+    // WhatsApp Cloud API & Webhook verification
+    whatsapp: {
+        phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || null,
+        accessToken: process.env.WHATSAPP_ACCESS_TOKEN || null,
+        verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || process.env.FACEBOOK_VERIFY_TOKEN || null,
+        appSecret: process.env.WHATSAPP_APP_SECRET || process.env.FACEBOOK_APP_SECRET || null,
+        apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
+    },
+
+    // Gmail Email Channel Config
+    email: {
+        user: process.env.GMAIL_USER || 'messiorasolutions@gmail.com',
+        appPassword: process.env.GMAIL_APP_PASSWORD || '',
+    },
 };
+
+

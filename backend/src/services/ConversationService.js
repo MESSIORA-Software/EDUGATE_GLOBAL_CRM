@@ -15,13 +15,46 @@ export const ConversationService = {
             roleName = roleName.toLowerCase();
         }
 
-        const isAdmin = roleName === 'admin' || roleName === 'super admin';
+        const isAdmin = roleName === 'admin' || roleName === 'super admin' ||
+            String(currentUser.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
+            String(currentUser.role_id || '').toUpperCase() === 'ADMIN';
 
+        let conversations = [];
         if (isAdmin) {
-            return await ConversationRepository.getAllConversations(filters);
+            conversations = await ConversationRepository.getAllConversations(filters);
         } else {
-            return await ConversationRepository.getConversationsByStaff(currentUser.user_id, filters);
+            conversations = await ConversationRepository.getConversationsByStaff(currentUser.user_id, filters);
         }
+
+        if (Array.isArray(conversations) && conversations.length > 0) {
+            const clientIds = conversations.map(c => c.client_id).filter(Boolean);
+            let oppMap = new Map();
+            if (clientIds.length > 0) {
+                try {
+                    const { data: opps } = await supabase
+                        .from('opportunities')
+                        .select('opportunity_id, client_id, status_id, assigned_staff_id, is_archived')
+                        .in('client_id', clientIds);
+                    (opps || []).forEach(o => {
+                        if (o.client_id) oppMap.set(o.client_id, o);
+                    });
+                } catch (e) {
+                    console.warn('[ConversationService] Failed to load opportunities for conversations:', e?.message);
+                }
+            }
+
+            conversations.forEach(c => {
+                if (c.client_id && oppMap.has(c.client_id)) {
+                    c.opportunity = oppMap.get(c.client_id);
+                    c.has_opportunity = true;
+                } else {
+                    c.opportunity = null;
+                    c.has_opportunity = false;
+                }
+            });
+        }
+
+        return conversations;
     },
 
     // 2. Get single conversation detail
@@ -36,6 +69,44 @@ export const ConversationService = {
         const role = currentUser.role_name?.toLowerCase() === 'admin' ? 'admin' : 'staff';
         await ConversationRepository.markAsRead(conversationId, role);
 
+        if (conversation.client_id) {
+            try {
+                const { data: opp } = await supabase
+                    .from('opportunities')
+                    .select('opportunity_id, client_id, status_id, assigned_staff_id, is_archived')
+                    .eq('client_id', conversation.client_id)
+                    .maybeSingle();
+                conversation.opportunity = opp || null;
+                conversation.has_opportunity = !!opp;
+            } catch (e) {
+                conversation.opportunity = null;
+                conversation.has_opportunity = false;
+            }
+        } else if (conversation.channel_client_id) {
+            try {
+                const { data: client } = await supabase
+                    .from('clients')
+                    .select('client_id')
+                    .eq('email', conversation.channel_client_id.trim())
+                    .maybeSingle();
+                if (client?.client_id) {
+                    const { data: opp } = await supabase
+                        .from('opportunities')
+                        .select('opportunity_id, client_id, status_id, assigned_staff_id, is_archived')
+                        .eq('client_id', client.client_id)
+                        .maybeSingle();
+                    conversation.opportunity = opp || null;
+                    conversation.has_opportunity = !!opp;
+                } else {
+                    conversation.opportunity = null;
+                    conversation.has_opportunity = false;
+                }
+            } catch (e) {
+                conversation.opportunity = null;
+                conversation.has_opportunity = false;
+            }
+        }
+
         return conversation;
     },
 
@@ -44,9 +115,9 @@ export const ConversationService = {
         return await ConversationRepository.getConversationsByClientId(clientId);
     },
 
-    // 4. Assign Staff member to conversation
-    async assignStaff(conversationId, staffId) {
-        return await ConversationRepository.assignStaff(conversationId, staffId);
+    // 4. Assign Staff member to conversation (actor = authenticated user, from JWT)
+    async assignStaff(conversationId, staffId, currentUser) {
+        return await ConversationRepository.assignStaff(conversationId, staffId, currentUser.user_id);
     },
 
     // 5. Update Client Details (Email, DOB, Source)
@@ -104,5 +175,147 @@ export const ConversationService = {
         });
 
         return { conversation, message, client };
+    },
+
+    // 7. Register/Update Student and Create Opportunity from Conversation
+    async createOpportunityFromConversation(conversationId, currentUser, { name, email, dob, source, status_id, assigned_staff_id, note }) {
+        if (!name || !name.trim()) {
+            const err = new Error('Client / Student name is required.');
+            err.statusCode = 400;
+            throw err;
+        }
+        if (!status_id) {
+            const err = new Error('Opportunity status is required.');
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const conversation = await ConversationRepository.getConversationById(conversationId);
+        if (!conversation) {
+            const err = new Error('Conversation not found');
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const actorId = currentUser?.user_id || null;
+
+        // 1. Register or update Client (Student)
+        let client = null;
+        if (conversation.client_id) {
+            client = await ClientRepository.updateClient(conversation.client_id, {
+                name: name.trim(),
+                email: email?.trim() || null,
+                dob: dob || null,
+                source: source?.trim() || conversation.channel.toUpperCase()
+            });
+        } else {
+            let existingClient = null;
+            if (email && email.trim()) {
+                const { data } = await supabase
+                    .from('clients')
+                    .select('*')
+                    .eq('email', email.trim())
+                    .maybeSingle();
+                existingClient = data;
+            }
+
+            if (existingClient) {
+                client = await ClientRepository.updateClient(existingClient.client_id, {
+                    name: name.trim(),
+                    dob: dob || existingClient.dob,
+                    source: source?.trim() || existingClient.source || conversation.channel.toUpperCase()
+                });
+            } else {
+                client = await ClientRepository.createClient({
+                    name: name.trim(),
+                    email: email?.trim() || null,
+                    dob: dob || null,
+                    source: source?.trim() || conversation.channel.toUpperCase(),
+                    created_by: actorId,
+                    created_at: new Date()
+                });
+            }
+            await supabase
+                .from('conversations')
+                .update({ client_id: client.client_id })
+                .eq('conversation_id', conversationId);
+        }
+
+        // 2. Check existing opportunity or create new for pipeline
+        const { data: existingOpp } = await supabase
+            .from('opportunities')
+            .select('*')
+            .eq('client_id', client.client_id)
+            .maybeSingle();
+
+        let opportunity = null;
+        if (existingOpp) {
+            const { data: updatedOpp, error: updateErr } = await supabase
+                .from('opportunities')
+                .update({
+                    status_id: Number(status_id),
+                    assigned_staff_id: assigned_staff_id ? Number(assigned_staff_id) : null,
+                    is_archived: false,
+                    updated_by: actorId
+                })
+                .eq('opportunity_id', existingOpp.opportunity_id)
+                .select()
+                .single();
+            if (updateErr) throw updateErr;
+            opportunity = updatedOpp || existingOpp;
+        } else {
+            const { data: newOpp, error: createErr } = await supabase
+                .from('opportunities')
+                .insert([{
+                    client_id: client.client_id,
+                    status_id: Number(status_id),
+                    assigned_staff_id: assigned_staff_id ? Number(assigned_staff_id) : null,
+                    is_archived: false,
+                    created_by: actorId,
+                    updated_by: actorId
+                }])
+                .select()
+                .single();
+            if (createErr) throw createErr;
+            opportunity = newOpp;
+        }
+
+        // 3. Add initial opportunity note if provided
+        if (note && note.trim() && opportunity?.opportunity_id) {
+            try {
+                const { data: newNote } = await supabase
+                    .from('OPPORTUNITY_NOTE')
+                    .insert([{
+                        opportunity_id: opportunity.opportunity_id,
+                        note: note.trim(),
+                        created_by: actorId
+                    }])
+                    .select()
+                    .single();
+
+                if (newNote?.note_id) {
+                    await supabase
+                        .from('opportunities')
+                        .update({ note_id: newNote.note_id })
+                        .eq('opportunity_id', opportunity.opportunity_id);
+                }
+            } catch (noteErr) {
+                console.warn('[ConversationService] Could not insert initial opportunity note:', noteErr?.message);
+            }
+        }
+
+        // 4. If assigned_staff_id provided, sync conversation assigned staff
+        if (assigned_staff_id) {
+            try {
+                await ConversationRepository.assignStaff(conversationId, Number(assigned_staff_id), actorId);
+            } catch (e) {
+                await supabase
+                    .from('conversations')
+                    .update({ assigned_staff_id: Number(assigned_staff_id) })
+                    .eq('conversation_id', conversationId);
+            }
+        }
+
+        return { client, opportunity };
     }
 };
