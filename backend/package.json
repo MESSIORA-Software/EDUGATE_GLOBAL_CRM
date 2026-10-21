@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test src/tests/media.test.js src/tests/calendar.test.js src/tests/notifications.test.js src/tests/notifications.db.test.js"
+    "test": "node --test src/tests/media.test.js src/tests/calendar.test.js src/tests/notifications.test.js src/tests/notifications.db.test.js",
+    "reset:notifications": "node src/database/reset_notifications.js"
   },
   "keywords": [
     "crm",
