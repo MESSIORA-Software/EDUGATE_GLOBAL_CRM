@@ -70,33 +70,6 @@ export const WebhookController = {
                         } catch (error) {
                             console.error('Error handling Facebook inbound message:', error);
                         }
-            for (const entry of body.entry || []) {
-                for (const webhookEvent of entry.messaging || []) {
-                    if (!webhookEvent) continue;
-
-                    const senderPsid = webhookEvent.sender?.id;
-                    const incomingMessage = webhookEvent.message;
-
-                    // Delivery/read events and page echoes are not customer messages.
-                    if (!incomingMessage || incomingMessage.is_echo || !senderPsid) continue;
-
-                    const messageText = incomingMessage.text || '';
-                    const attachment = incomingMessage.attachments?.[0];
-                    const messageType = attachment?.type || 'text';
-                    const mediaUrl = attachment?.payload?.url || null;
-
-                    try {
-                        const profile = await FacebookMessengerService.getUserProfile(senderPsid);
-                        await ConversationService.handleInboundCommunication({
-                            channel: 'messenger',
-                            channelClientId: senderPsid,
-                            clientName: profile?.name || `Facebook User (${senderPsid})`,
-                            content: messageText || (mediaUrl ? `[Sent ${messageType}]` : ''),
-                            messageType,
-                            media_url: mediaUrl
-                        });
-                    } catch (error) {
-                        console.error('Error handling Facebook inbound message:', error);
                     }
                 }
             }
