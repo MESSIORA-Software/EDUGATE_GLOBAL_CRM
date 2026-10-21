@@ -1,6 +1,7 @@
 import { ConversationService } from '../services/ConversationService.js';
 import { WhatsAppBaileysService } from '../services/WhatsAppBaileysService.js';
 import { EmailService } from '../services/EmailService.js';
+import { FacebookMessengerService } from '../services/FacebookMessengerService.js';
 
 
 
@@ -194,6 +195,19 @@ export const ConversationController = {
                 status: 'success',
                 message: `Email sync completed. Processed ${result.processedCount} email(s).`,
                 data: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    // GET /api/conversations/messenger/status
+    async getMessengerStatus(req, res, next) {
+        try {
+            const status = await FacebookMessengerService.getStatus();
+            res.status(200).json({
+                status: 'success',
+                data: status
             });
         } catch (error) {
             next(error);

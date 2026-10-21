@@ -14,7 +14,7 @@ import MediaRoutes from './MediaRoutes.js';
 import CalendarRoutes from './CalendarRoutes.js';
 import NotificationRoutes from './NotificationRoutes.js';
 import InternalNotificationRoutes from './InternalNotificationRoutes.js';
-
+import ReferrerRoutes from './ReferrerRoutes.js';
 
 const router = Router();
 
@@ -43,5 +43,6 @@ router.use('/media', MediaRoutes);
 router.use('/calendar', CalendarRoutes);
 router.use('/notifications', NotificationRoutes);
 router.use('/internal/notifications', InternalNotificationRoutes);
+router.use('/referrers', ReferrerRoutes);
 
 export default router;

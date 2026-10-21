@@ -34,6 +34,9 @@ router.post('/whatsapp/disconnect', ConversationController.disconnectWhatsApp);
 router.get('/email/status', ConversationController.getEmailStatus);
 router.post('/email/sync', ConversationController.syncEmails);
 
+// Facebook Messenger Channel status
+router.get('/messenger/status', ConversationController.getMessengerStatus);
+
 // Messages & Call logs
 router.get('/:id/messages', MessageController.getMessages);
 router.post('/:id/messages', MessageController.sendMessage);

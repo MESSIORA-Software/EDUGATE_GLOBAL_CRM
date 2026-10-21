@@ -6,7 +6,49 @@ import { COLORS } from '../constants/colors';
 import edugateLogo from '../assets/edugate_logo.jpeg';
 import { Menu, Shield, ChevronDown } from 'lucide-react';
 import NotificationDropdown from '../components/Notifications/NotificationDropdown';
-import { getRoleDashboardTitle, getUserRole } from '../utils/roleUtils';
+import { getRoleDashboardTitle } from '../utils/roleUtils';
+
+const getPageTitle = (pathname) => {
+  if (!pathname) return '';
+
+  // Exclude media and events as requested
+  if (pathname.startsWith('/media') || pathname.startsWith('/events')) {
+    return '';
+  }
+
+  if (pathname === '/dashboard' || pathname === '/') {
+    return 'Dashboard';
+  }
+  if (pathname.startsWith('/roles')) {
+    return 'System Roles Management';
+  }
+  if (pathname.startsWith('/branches')) {
+    return 'Branch Locations';
+  }
+  if (pathname.startsWith('/users')) {
+    return 'User Accounts';
+  }
+  if (pathname.startsWith('/clients') || pathname.startsWith('/students')) {
+    return 'Students & Clients';
+  }
+  if (pathname.startsWith('/pipeline') || pathname.startsWith('/student-pipeline')) {
+    return 'Student Pipeline';
+  }
+  if (pathname.startsWith('/referrers')) {
+    return 'Referrers Management';
+  }
+  if (pathname.startsWith('/conversations')) {
+    return 'Conversations';
+  }
+  if (pathname.startsWith('/profile')) {
+    return 'User Profile';
+  }
+  if (pathname.startsWith('/settings')) {
+    return 'Settings';
+  }
+
+  return '';
+};
 
 export default function Header({ toggleSidebar }) {
   const { user } = useAuth();

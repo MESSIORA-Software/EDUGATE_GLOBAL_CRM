@@ -17,6 +17,8 @@ import {
   Kanban,
   MessageSquare,
   Calendar,
+  Bell,
+  Award,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -24,6 +26,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const unreadCount = useSelector((state) => state.notifications?.unreadCount ?? 0);
   const userRole = getUserRole(user);
   const isSuperAdmin = userRole === 'SUPER_ADMIN';
+  const isAdmin = userRole === 'ADMIN';
 
   const formatRoleLabel = (role) => {
     if (!role) return 'Staff';
@@ -41,11 +44,23 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'User Accounts', path: '/users', icon: Users },
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Referrers', path: '/referrers', icon: Award },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },
         { name: 'My Profile', path: '/profile', icon: UserCheck },
         { name: 'Settings', path: '/settings', icon: Settings },
+      ]
+    : isAdmin
+    ? [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
+        { name: 'Students / Clients', path: '/clients', icon: UserCheck },
+        { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Referrers', path: '/referrers', icon: Award },
+        { name: 'Conversations', path: '/conversations', icon: MessageSquare },
+        { name: 'Events', path: '/events', icon: Calendar },
+        { name: 'My Profile', path: '/profile', icon: UserCheck },
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },

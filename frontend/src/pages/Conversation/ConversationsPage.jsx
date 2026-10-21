@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CheckCheck, CheckCircle2, ChevronDown, Download, FileText, Forward, ImagePlus, Inbox,
+  AlertCircle, CheckCheck, CheckCircle2, ChevronDown, Download, FileText, Forward, ImagePlus, Inbox,
   LoaderCircle, Mail, Maximize2, MessageCircle, Minimize2, Paperclip, PhoneCall, Plus,
   QrCode, RefreshCw, Reply, Search, Send, Star, Target, Trash2, UserRound, X,
 } from 'lucide-react';
@@ -482,6 +482,7 @@ export default function ConversationsPage() {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [messengerStatus, setMessengerStatus] = useState({ configured: false, connected: false });
   const fileInput = useRef(null);
   const messagesEnd = useRef(null);
 
@@ -658,6 +659,15 @@ export default function ConversationsPage() {
       });
     }
   }, [activeChannel, loadConversations]);
+
+  // Messenger status on active
+  useEffect(() => {
+    if (activeChannel === 'messenger') {
+      conversationService.getMessengerStatus().then((res) => {
+        if (res?.data?.data) setMessengerStatus(res.data.data);
+      }).catch(() => {});
+    }
+  }, [activeChannel]);
 
   // Scope conversations for staff users
   const scopedConversations = useMemo(() => {
@@ -876,6 +886,23 @@ export default function ConversationsPage() {
                 Gmail: {emailStatus.email || 'messiorasolutions@gmail.com'}
               </span>
             )}
+            {activeChannel === 'messenger' && messengerStatus.connected && messengerStatus.pageName && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
+                Page: {messengerStatus.pageName}
+              </span>
+            )}
+            {activeChannel === 'messenger' && messengerStatus.configured && !messengerStatus.connected && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800" title={messengerStatus.error || 'Token expired'}>
+                <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                Token Expired / Reconnect Needed
+              </span>
+            )}
+            {activeChannel === 'messenger' && !messengerStatus.configured && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                Setup Required
+              </span>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
             Manage incoming {config.label} conversations from one workspace.
@@ -961,6 +988,23 @@ export default function ConversationsPage() {
             <span>{successBanner}</span>
           </div>
           <button type="button" onClick={() => setSuccessBanner('')}><X className="h-4 w-4" /></button>
+        </div>
+      )}
+
+      {activeChannel === 'messenger' && messengerStatus.configured && !messengerStatus.connected && (
+        <div className="flex items-start justify-between rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-xs">
+          <div className="flex gap-2.5">
+            <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-amber-950">Facebook Messenger Needs Reconnection (Access Token Expired)</p>
+              <p className="mt-0.5 text-amber-800">
+                {messengerStatus.error || 'The Facebook Page Access Token configured in backend/.env has expired or was revoked by Facebook.'}
+              </p>
+              <p className="mt-1 font-medium text-amber-700">
+                To fix: Open Meta for Developers &rarr; Graph API Explorer / Page Access Tokens, generate a fresh Page Access Token, and set <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">FACEBOOK_PAGE_ACCESS_TOKEN</code> in <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">backend/.env</code>.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

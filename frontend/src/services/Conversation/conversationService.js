@@ -41,6 +41,8 @@ const disconnectWhatsApp = () => request('post', '/conversations/whatsapp/discon
 const getEmailStatus = () => request('get', '/conversations/email/status');
 const syncEmails = () => request('post', '/conversations/email/sync');
 
+const getMessengerStatus = () => request('get', '/conversations/messenger/status');
+
 const createOpportunityFromConversation = (id, data) => request('post', `/conversations/${id}/opportunity`, { data });
 const getOpportunityStatuses = () => request('get', '/oppertunity-status/getalloppertunitystatuses');
 const getUsersByRole = (roleId = 'STAFF') => request('get', `/users/role/${encodeURIComponent(roleId)}`);
@@ -57,6 +59,7 @@ export default {
   disconnectWhatsApp,
   getEmailStatus,
   syncEmails,
+  getMessengerStatus,
   createOpportunityFromConversation,
   getOpportunityStatuses,
   getUsersByRole,
