@@ -807,10 +807,10 @@ export default function ConversationsPage() {
   return (
     <div className="flex min-h-[calc(100vh-7rem)] flex-col gap-4">
       {/* Top Header Bar */}
-      <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <header className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-900">Conversations</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Conversations</h1>
             <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${badgeBgClass}`}>
               {isEmail
                 ? `${emailFolder === 'sent' ? sentConversations.length : inboxConversations.length} ${emailFolder === 'sent' ? 'Sent' : 'Inbox'} Email${(emailFolder === 'sent' ? sentConversations.length : inboxConversations.length) === 1 ? '' : 's'}`
@@ -829,7 +829,7 @@ export default function ConversationsPage() {
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
             Manage incoming {config.label} conversations from one workspace.
           </p>
         </div>

@@ -65,6 +65,34 @@ export default function ProfilePage() {
         </div>
       )}
 
+            {/* Page Header */}
+      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              My Profile
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              {user?.role_name || user?.role_id || 'Account'}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            View and manage your account details, security credentials, and branch assignments.
+          </p>
+        </div>
+
+        {/* Header Actions */}
+        <div className="flex items-center justify-end flex-wrap gap-2.5">
+          <button
+            onClick={handleRefresh}
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh Profile"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
+          </button>
+        </div>
+      </div>
+
       {/* Personal & Account Details Card */}
       <div className="bg-white rounded-2xl border border-blue-200/80 p-5 shadow-2xs space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">

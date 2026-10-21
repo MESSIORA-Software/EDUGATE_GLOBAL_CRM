@@ -72,38 +72,39 @@ export default function EventManagement() {
         </div>
       )}
 
-      {/* Header Card */}
-      <div
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-        className="p-4 sm:p-5 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
-      >
-        <div className="flex items-center gap-3.5">
-          <div
-            style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
-            className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0"
-          >
-            <CalendarIcon className="w-6 h-6" />
+      {/* Page Header */}
+      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Events Management
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              {totalCount || 0} Events
+            </span>
           </div>
-          <div>
-            <h1 className={TYPOGRAPHY.h2}>Events Management</h1>
-            <p className={TYPOGRAPHY.subheading}>
-              Manage meetings, tasks, and calendar events for staff and clients
-            </p>
-          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Manage meetings, tasks, and calendar events for staff and clients.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Header Actions */}
+        <div className="flex items-center justify-end flex-wrap gap-2.5">
           <button
             onClick={handleRefresh}
-            style={{ borderColor: COLORS.border, color: COLORS.muted }}
-            className="p-2 rounded-xl border hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
             title="Refresh Events"
           >
-            <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-[#1E3A8A]' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${apiLoading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
-          <Button variant="secondary" icon={Plus} onClick={() => setIsAddOpen(true)}>
-            Create Event
-          </Button>
+          <button
+            type="button"
+            onClick={() => setIsAddOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 text-blue-600" />
+            <span>Create Event</span>
+          </button>
         </div>
       </div>
 

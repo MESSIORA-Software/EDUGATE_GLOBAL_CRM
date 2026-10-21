@@ -5,6 +5,7 @@ import { fetchRoles } from '../../actions/Admin/roleActions';
 import { fetchBranches } from '../../actions/Admin/branchAction';
 import { fetchUsers } from '../../actions/Admin/userActions';
 import {
+  RefreshCw,
   Shield,
   Building2,
   Users,
@@ -88,6 +89,38 @@ export default function SuperAdminDashboard() {
 
   return (
     <div className="space-y-5 max-w-full mx-auto">
+            {/* Page Header */}
+      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Dashboard Overview
+            </h1>
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              Super Admin
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Global executive control center for platform statistics, branches, and system metrics.
+          </p>
+        </div>
+
+        {/* Header Actions */}
+        <div className="flex items-center justify-end flex-wrap gap-2.5">
+          <button
+            onClick={() => {
+              dispatch(fetchRoles());
+              dispatch(fetchBranches());
+              dispatch(fetchUsers());
+            }}
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh Metrics"
+          >
+            <RefreshCw className="w-4 h-4 text-slate-600 hover:text-blue-600" />
+          </button>
+        </div>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 transition-all flex items-center justify-between">
