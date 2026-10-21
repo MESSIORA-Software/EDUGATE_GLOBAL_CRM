@@ -18,7 +18,6 @@ import {
   Kanban,
   MessageSquare,
   Calendar,
-  Bell,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -30,7 +29,6 @@ export default function Sidebar({ isOpen, onClose }) {
   const navItems = isSuperAdmin
     ? [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
         { name: 'System Roles', path: '/roles', icon: Shield },
         { name: 'Branch Locations', path: '/branches', icon: Building2 },
         { name: 'User Accounts', path: '/users', icon: Users },
@@ -44,7 +42,6 @@ export default function Sidebar({ isOpen, onClose }) {
       ]
     : [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
