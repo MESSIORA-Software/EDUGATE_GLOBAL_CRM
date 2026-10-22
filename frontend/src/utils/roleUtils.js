@@ -9,8 +9,8 @@ export const getUserRole = (user, rolesList = []) => {
   const strRole = String(rawRole).trim().toUpperCase();
 
   if (strRole.includes('SUPER')) return 'SUPER_ADMIN';
-  if (strRole === 'ADMIN') return 'ADMIN';
-  if (strRole === 'STAFF') return 'STAFF';
+  if (strRole === 'ADMIN' || strRole === 'EDUGATE_ADMIN' || strRole.endsWith('_ADMIN')) return 'ADMIN';
+  if (strRole === 'STAFF' || strRole === 'EDUGATE_STAFF' || strRole.endsWith('_STAFF')) return 'STAFF';
 
   // If numeric or matched against rolesList
   if (rolesList && rolesList.length > 0) {
@@ -22,8 +22,8 @@ export const getUserRole = (user, rolesList = []) => {
     if (found) {
       const matchKey = String(found.role_id || found.role_name || '').toUpperCase();
       if (matchKey.includes('SUPER')) return 'SUPER_ADMIN';
-      if (matchKey === 'ADMIN') return 'ADMIN';
-      if (matchKey === 'STAFF') return 'STAFF';
+      if (matchKey === 'ADMIN' || matchKey === 'EDUGATE_ADMIN' || matchKey.endsWith('_ADMIN')) return 'ADMIN';
+      if (matchKey === 'STAFF' || matchKey === 'EDUGATE_STAFF' || matchKey.endsWith('_STAFF')) return 'STAFF';
       return matchKey;
     }
   }

@@ -37,6 +37,7 @@ export default function useBranches() {
   const [editingBranch, setEditingBranch]     = useState(null);
   const [detailBranch, setDetailBranch]       = useState(null);
   const [usersBranch, setUsersBranch]         = useState(null);
+  const [deletingBranch, setDeletingBranch]   = useState(null);
 
   // Toast
   const [toast, setToast] = useState(null);
@@ -99,18 +100,14 @@ export default function useBranches() {
   };
 
   // ── Delete branch (API #5) ─────────────────────────────────
-  const handleDeleteBranch = async (branchId, branchName = '') => {
-    const label = branchName ? `"${branchName}"` : `Branch #${branchId}`;
-    if (!window.confirm(`Are you sure you want to delete ${label}?`)) {
-      return { success: false };
-    }
-    const res = await dispatch(deleteBranch(branchId));
-    if (res?.success) {
-      showToast(`Branch #${branchId} deleted successfully!`);
+  const handleDeleteBranch = (branch) => {
+    if (!branch) return;
+    if (typeof branch === 'object') {
+      setDeletingBranch(branch);
     } else {
-      showToast(res?.error || `Failed to delete Branch #${branchId}`, 'error');
+      const found = branches.find((b) => String(b.branch_id ?? b.id) === String(branch));
+      setDeletingBranch(found || { branch_id: branch, name: `Branch #${branch}` });
     }
-    return res;
   };
 
   // ── View branch users (API #6) ─────────────────────────────
@@ -123,10 +120,11 @@ export default function useBranches() {
 
   // ── Helpers ────────────────────────────────────────────────
   const getBadgeCode = (input) => {
-    if (!input) return 'BR';
-    if (typeof input === 'string') return input.trim().toUpperCase().slice(0, 3) || 'BR';
-    const str = input.branch_name || input.name || String(input.branch_id || input.id || 'BR');
-    return String(str).trim().toUpperCase().slice(0, 3) || 'BR';
+    if (!input) return 'EDUGATE_BRANCH';
+    let str = typeof input === 'string' ? input : (input.branch_name || input.name || String(input.branch_id || input.id || 'BRANCH'));
+    let clean = String(str).trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (!clean) return 'EDUGATE_BRANCH';
+    return clean.startsWith('EDUGATE_') ? clean : `EDUGATE_${clean}`;
   };
 
   const getBranchById = (id) =>
@@ -173,6 +171,7 @@ export default function useBranches() {
     editingBranch, setEditingBranch,
     detailBranch,  setDetailBranch,
     usersBranch,   setUsersBranch,
+    deletingBranch, setDeletingBranch,
 
     // Users
     branchUsers,

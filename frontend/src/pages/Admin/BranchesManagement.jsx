@@ -4,6 +4,7 @@ import BranchAddModal from '../../components/Modals/Admin/Branch/BranchAddModal'
 import BranchUpdateModal from '../../components/Modals/Admin/Branch/BranchUpdateModal';
 import BranchDetailModal from '../../components/Modals/Admin/Branch/BranchDetailModal';
 import BranchUsersModal from '../../components/Modals/Admin/Branch/BranchUsersModal';
+import BranchDeleteModal from '../../components/Modals/Admin/Branch/BranchDeleteModal';
 
 import {
   Building2,
@@ -29,9 +30,6 @@ export default function BranchesManagement() {
     error,
     searchTerm,
     setSearchTerm,
-    findIdInput,
-    setFindIdInput,
-    isFinding,
     isAddOpen,
     setIsAddOpen,
     editingBranch,
@@ -40,10 +38,11 @@ export default function BranchesManagement() {
     setDetailBranch,
     usersBranch,
     setUsersBranch,
+    deletingBranch,
+    setDeletingBranch,
     toast,
     showToast,
     handleRefresh,
-    handleFindById,
     handleDeleteBranch,
     handleViewBranchUsers,
     getBadgeCode,
@@ -100,7 +99,7 @@ export default function BranchesManagement() {
         </div>
       </div>
 
-            {/* Filter & Action Toolbar */}
+      {/* Filter & Action Toolbar */}
       <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center">
         <div className="relative w-full md:w-80 group">
           <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -121,26 +120,6 @@ export default function BranchesManagement() {
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-        </div>
-
-        <div className="flex items-center justify-end flex-wrap gap-2.5 w-full md:w-auto">
-          <form onSubmit={handleFindById} className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Branch ID (e.g. 1)"
-              value={findIdInput}
-              onChange={(e) => setFindIdInput(e.target.value)}
-              className="px-3 py-2 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-36"
-            />
-            <button
-              type="submit"
-              disabled={isFinding || !findIdInput.trim()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
-            >
-              {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
-              <span>Find</span>
-            </button>
-          </form>
         </div>
       </div>
 
@@ -168,7 +147,7 @@ export default function BranchesManagement() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  <th className="py-3.5 px-4">Code / ID</th>
+                  <th className="py-3.5 px-4">Branch ID</th>
                   <th className="py-3.5 px-4">Branch Name</th>
                   <th className="py-3.5 px-4">Contact</th>
                   <th className="py-3.5 px-4">Status</th>
@@ -178,7 +157,6 @@ export default function BranchesManagement() {
               <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredBranches.map((b, index) => {
                   const branchName = b.branch_name || b.name || `Branch #${b.branch_id || index + 1}`;
-                  const branchId = b.branch_id || b.id || index + 1;
                   const badge = getBadgeCode(branchName);
 
                   return (
@@ -207,26 +185,10 @@ export default function BranchesManagement() {
                           <span className="text-slate-400 text-[11px]">No phone</span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                            b.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-200'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
-                          {b.status || 'ACTIVE'}
-                        </span>
+                      <td className="py-3.5 px-4 text-xs font-medium text-slate-600">
+                        {b.status || 'Active'}
                       </td>
                       <td className="py-3.5 px-4 text-right space-x-1.5">
-                        <button
-                          onClick={() => handleViewBranchUsers(b)}
-                          className="p-1.5 rounded-lg border border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-400 transition-colors cursor-pointer"
-                          title="View Branch Users"
-                        >
-                          <Users className="w-3.5 h-3.5" />
-                        </button>
                         <button
                           onClick={() => setDetailBranch(b)}
                           className="p-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer"
@@ -242,7 +204,7 @@ export default function BranchesManagement() {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDeleteBranch(branchId)}
+                          onClick={() => setDeletingBranch(b)}
                           className="p-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer"
                           title="Delete Branch"
                         >
@@ -258,7 +220,7 @@ export default function BranchesManagement() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals & Drawers */}
       <BranchAddModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
@@ -276,12 +238,23 @@ export default function BranchesManagement() {
         isOpen={!!detailBranch}
         branch={detailBranch}
         onClose={() => setDetailBranch(null)}
+        onEdit={(b) => {
+          setDetailBranch(null);
+          setEditingBranch(b);
+        }}
       />
 
       <BranchUsersModal
         isOpen={!!usersBranch}
         branch={usersBranch}
         onClose={() => setUsersBranch(null)}
+      />
+
+      <BranchDeleteModal
+        isOpen={!!deletingBranch}
+        branch={deletingBranch}
+        onClose={() => setDeletingBranch(null)}
+        onSuccess={(msg) => showToast(msg)}
       />
     </div>
   );

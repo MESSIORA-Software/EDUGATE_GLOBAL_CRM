@@ -113,11 +113,11 @@ export const usersController = {
 
     async findUsersByBranch(req, res, next) {
         try {
-            const { branch_id } = req.body;
+            const branch_id = req.query.branch_id || req.body?.branch_id;
             if (!branch_id) {
                 return res.status(400).json({
                     status: 'error',
-                    message: 'Field "branch_id" is required in request body.',
+                    message: 'Field "branch_id" is required in query or request body.',
                 });
             }
 

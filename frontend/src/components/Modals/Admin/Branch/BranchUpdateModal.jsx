@@ -1,39 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateBranch } from '../../../../actions/Admin/branchAction';
-import { COLORS } from '../../../../constants/colors';
-import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
-import { X, Edit3, AlertCircle, MapPin, Phone, Info } from 'lucide-react';
-
-// ── Maps raw API / network errors → user-friendly sentences ──
-function friendlyError(raw) {
-  if (!raw) return 'Something went wrong. Please try again.';
-
-  const msg = String(raw);
-  const lower = msg.toLowerCase();
-
-  if (lower.includes('already exists') || lower.includes('duplicate') || lower.includes('unique'))
-    return 'A branch with this name or phone already exists. Please use different details.';
-
-  if (lower.includes('required') || lower.includes('missing'))
-    return 'All fields are required. Please fill in Branch Name, Address, and Phone.';
-
-  if (lower.includes('unauthorized') || lower.includes('forbidden') || lower.includes('401') || lower.includes('403'))
-    return 'You do not have permission to perform this action.';
-
-  if (lower.includes('connection') || lower.includes('econnrefused'))
-    return 'Connection failed. Please check if the backend server is running.';
-
-  if (msg.length < 150 && !lower.includes('<html') && !lower.includes('<!doctype')) {
-    return msg;
-  }
-
-  return 'An error occurred while updating the branch. Please check server logs.';
-}
-
-
-
+import { X, AlertCircle } from 'lucide-react';
 
 export default function BranchUpdateModal({ isOpen, branch, onClose, onSuccess }) {
   const dispatch = useDispatch();
@@ -43,19 +12,23 @@ export default function BranchUpdateModal({ isOpen, branch, onClose, onSuccess }
   const [name, setName]         = useState('');
   const [address, setAddress]   = useState('');
   const [phone, setPhone]       = useState('');
+  const [status, setStatus]     = useState('Active');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     if (branch) {
       setBranchId(branch.branch_id ?? branch.id ?? '');
-      setName(branch.name ?? '');
+      setName(branch.name ?? branch.branch_name ?? '');
       setAddress(branch.address ?? '');
       setPhone(branch.phone ?? '');
+      setStatus(branch.status || 'Active');
       setSubmitError('');
     }
   }, [branch]);
 
   if (!isOpen || !branch) return null;
+
+  const displayCode = branch.branch_code || `EDUGATE_${(name || '').toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
 
   const handleClose = () => {
     setSubmitError('');
@@ -66,177 +39,183 @@ export default function BranchUpdateModal({ isOpen, branch, onClose, onSuccess }
     e.preventDefault();
     setSubmitError('');
 
-    // Client-side validation
-    if (!name.trim())    { setSubmitError('Branch Name is required.'); return; }
-    if (!address.trim()) { setSubmitError('Branch Address is required.'); return; }
-    if (!phone.trim())   { setSubmitError('Contact Phone is required.'); return; }
+    const trimmedName = name.trim();
+    const trimmedAddress = address.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedName) {
+      setSubmitError('Branch Name is required.');
+      return;
+    }
+    if (!trimmedAddress) {
+      setSubmitError('Branch Address is required.');
+      return;
+    }
+    if (!trimmedPhone) {
+      setSubmitError('Contact Phone is required.');
+      return;
+    }
 
     const res = await dispatch(
-      updateBranch(Number(branchId) || branchId, name.trim(), address.trim(), phone.trim())
+      updateBranch(Number(branchId) || branchId, trimmedName, trimmedAddress, trimmedPhone, status)
     );
 
     if (res?.success) {
-      onSuccess?.(`Branch #${branchId} updated successfully!`);
+      onSuccess?.(`Branch "${trimmedName}" updated successfully!`);
       handleClose();
     } else {
-      setSubmitError(friendlyError(res?.error));
+      setSubmitError(res?.error || 'Failed to update branch.');
     }
   };
 
   return (
-    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 lg:left-60 z-40 overflow-hidden animate-in fade-in duration-200">
+      {/* Light subtle backdrop (sidebar remains fully available and interactive) */}
       <div
-        className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-md w-full overflow-hidden"
-      >
-        {/* Header */}
-        <div
-          style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-          className="flex items-center justify-between px-5 py-3.5 border-b"
-        >
-          <div className="flex items-center gap-2.5">
-            <div
-              style={{ backgroundColor: '#FEF3C7', color: COLORS.warning }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold"
-            >
-              <Edit3 className="w-4 h-4" />
-            </div>
+        className="fixed inset-0 lg:left-60 bg-slate-900/15 backdrop-blur-[1px] transition-opacity cursor-pointer"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
+
+      {/* Slide-over Right Half-Page Drawer */}
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 pointer-events-none">
+        <div className="w-screen max-w-2xl md:w-[50vw] bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full pointer-events-auto animate-in slide-in-from-right duration-300 ease-out">
+          {/* Drawer Header without icon */}
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <div>
-              <h3 className={TYPOGRAPHY.heading}>Update Branch Details</h3>
-              <p className={TYPOGRAPHY.caption}>
-                Editing Branch{' '}
-                <span
-                  style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
-                  className="font-mono font-bold px-1.5 py-0.5 rounded text-[10px] border border-blue-200"
-                >
-                  #{branchId}
-                </span>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                Edit Branch
+              </h2>
+              <p className="text-xs text-slate-500 font-normal">
+                Modify location details, contact info, and status
               </p>
             </div>
-          </div>
-          <button
-            onClick={handleClose}
-            style={{ color: COLORS.muted }}
-            className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
-
-          {/* ── Error Banner ─────────────────────────────────── */}
-          {submitError && (
-            <div
-              className="flex gap-2.5 p-3 border rounded-xl text-xs leading-relaxed"
-              style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', color: '#991B1B' }}
+            <button
+              type="button"
+              onClick={handleClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Close drawer"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
-              <div className="space-y-0.5">
-                <p className="font-bold text-red-700">Unable to update branch</p>
-                <p className="font-medium">{submitError}</p>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Drawer Body Form */}
+          <form id="branch-edit-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+            {submitError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
+            {/* Branch Identity Card */}
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+              <div className="pb-2 border-b border-slate-200/60">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Branch Information
+                </h3>
+              </div>
+
+              {/* Branch Name */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Branch Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Branch Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all shadow-2xs"
+                  required
+                />
+              </div>
+
+              {/* Read-Only Branch ID */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Branch ID
+                </label>
+                <input
+                  type="text"
+                  value={displayCode}
+                  disabled
+                  readOnly
+                  className="w-full px-3.5 py-2.5 bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-700 cursor-not-allowed select-none shadow-2xs"
+                />
+              </div>
+
+              {/* Status Select */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all shadow-2xs cursor-pointer"
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Contact Phone */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Contact Phone <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 0112345678"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all shadow-2xs"
+                  required
+                />
+              </div>
+
+              {/* Branch Address */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Branch Address <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows="3"
+                  placeholder="Branch address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all shadow-2xs resize-none"
+                  required
+                />
               </div>
             </div>
-          )}
+          </form>
 
-          {/* ── Hint ─────────────────────────────────────────── */}
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-xl border text-[11px] font-medium"
-            style={{ backgroundColor: '#FFFBEB', borderColor: '#FDE68A', color: '#92400E' }}
-          >
-            <Info className="w-3.5 h-3.5 shrink-0" />
-            <span>Branch ID cannot be changed. Update any other detail below.</span>
-          </div>
-
-          {/* Branch ID — read-only */}
-          <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>Branch ID (Read-only)</label>
-            <input
-              type="text"
-              value={`#${branchId}`}
-              disabled
-              style={{
-                backgroundColor: '#F1F5F9',
-                borderColor: COLORS.border,
-                color: COLORS.placeholder,
-              }}
-              className="w-full px-3 py-2 border rounded-xl text-xs font-mono font-bold cursor-not-allowed"
-            />
-          </div>
-
-          {/* Branch Name */}
-          <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>
-              Branch Name <span style={{ color: COLORS.secondary }}>*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Kandy Branch"
-              value={name}
-              onChange={(e) => { setName(e.target.value); setSubmitError(''); }}
-              style={{
-                backgroundColor: COLORS.background,
-                borderColor: submitError && !name.trim() ? '#EF4444' : COLORS.border,
-                color: COLORS.foreground,
-              }}
-              className="w-full px-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-            />
-          </div>
-
-          {/* Address */}
-          <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>
-              Branch Address <span style={{ color: COLORS.secondary }}>*</span>
-            </label>
-            <div className="relative">
-              <MapPin style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
-              <input
-                type="text"
-                placeholder="e.g. No. 45, Peradeniya Road, Kandy"
-                value={address}
-                onChange={(e) => { setAddress(e.target.value); setSubmitError(''); }}
-                style={{
-                  backgroundColor: COLORS.background,
-                  borderColor: submitError && !address.trim() ? '#EF4444' : COLORS.border,
-                  color: COLORS.foreground,
-                }}
-                className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-              />
-            </div>
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className={`${TYPOGRAPHY.label} block mb-1`}>
-              Contact Phone <span style={{ color: COLORS.secondary }}>*</span>
-            </label>
-            <div className="relative">
-              <Phone style={{ color: COLORS.placeholder }} className="w-3.5 h-3.5 absolute left-3 top-3" />
-              <input
-                type="text"
-                placeholder="e.g. 0778962219"
-                value={phone}
-                onChange={(e) => { setPhone(e.target.value); setSubmitError(''); }}
-                style={{
-                  backgroundColor: COLORS.background,
-                  borderColor: submitError && !phone.trim() ? '#EF4444' : COLORS.border,
-                  color: COLORS.foreground,
-                }}
-                className="w-full pl-9 pr-3 py-2 border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]"
-              />
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ borderColor: COLORS.border }} className="flex items-center justify-end gap-2 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={handleClose} disabled={updating}>
+          {/* Sticky Drawer Footer */}
+          <div className="p-4 sm:p-5 border-t border-slate-200/80 bg-white flex items-center justify-end gap-3 shrink-0 shadow-lg">
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={handleClose}
+              disabled={updating}
+            >
               Cancel
             </Button>
-            <Button variant="primary" size="sm" type="submit" loading={updating}>
+            <Button
+              variant="primary"
+              size="sm"
+              type="submit"
+              form="branch-edit-form"
+              loading={updating}
+              disabled={updating || !name.trim() || !address.trim() || !phone.trim()}
+            >
               Save Changes
             </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

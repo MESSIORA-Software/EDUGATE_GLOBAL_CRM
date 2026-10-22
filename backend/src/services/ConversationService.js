@@ -17,7 +17,8 @@ export const ConversationService = {
 
         const isAdmin = roleName === 'admin' || roleName === 'super admin' ||
             String(currentUser.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
-            String(currentUser.role_id || '').toUpperCase() === 'ADMIN';
+            String(currentUser.role_id || '').toUpperCase() === 'ADMIN' ||
+            String(currentUser.role_id || '').toUpperCase().endsWith('ADMIN');
 
         let conversations = [];
         if (isAdmin) {

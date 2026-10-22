@@ -64,23 +64,25 @@ export const findRoleById = (roleId) => {
   };
 };
 
-export const createRole = (roleId, roleName) => {
+export const createRole = (roleId, roleName, status = 'Active') => {
   return async (dispatch) => {
-    const resolvedRoleId = (roleId || roleName || '')
+    const sanitized = (roleId || roleName || '')
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '_')
       .replace(/^_+|_+$/g, '');
 
-    if (!resolvedRoleId || !roleName?.trim()) {
+    if (!sanitized || sanitized === 'EDUGATE' || !roleName?.trim()) {
       const msg = 'Valid Role Name and Role ID are required.';
       dispatch({ type: ROLE_ADD_FAILURE, payload: msg });
       return { success: false, error: msg };
     }
 
+    const resolvedRoleId = sanitized.startsWith('EDUGATE_') ? sanitized : `EDUGATE_${sanitized}`;
+
     dispatch({ type: ROLE_ADD_START });
     try {
-      const response = await roleService.createRole(resolvedRoleId, roleName.trim());
-      const newRole = { role_id: resolvedRoleId, role_name: roleName.trim(), ...response?.data };
+      const response = await roleService.createRole(resolvedRoleId, roleName.trim(), status);
+      const newRole = { role_id: resolvedRoleId, role_name: roleName.trim(), status, ...response?.data };
       dispatch({ type: ROLE_ADD_SUCCESS, payload: newRole });
       dispatch(fetchRoles());
       return { success: true, data: newRole };
@@ -93,18 +95,35 @@ export const createRole = (roleId, roleName) => {
   };
 };
 
-export const updateRole = (roleId, roleName) => {
+export const updateRole = (roleId, roleName, status = 'Active', newRoleId = null) => {
   return async (dispatch) => {
-    if (!roleId || !roleName) {
+    if (!roleId || !roleName?.trim()) {
       const msg = 'Both Role ID and Role Name are required.';
       dispatch({ type: ROLE_UPDATE_FAILURE, payload: msg });
       return { success: false, error: msg };
     }
 
+    let sanitizedNewId = null;
+    if (newRoleId && String(newRoleId).trim()) {
+      let base = String(newRoleId)
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      if (base && base !== 'EDUGATE') {
+        sanitizedNewId = base.startsWith('EDUGATE_') ? base : `EDUGATE_${base}`;
+      }
+    }
+
     dispatch({ type: ROLE_UPDATE_START });
     try {
-      const response = await roleService.updateRole(roleId, roleName);
-      const updatedRole = { role_id: roleId, role_name: roleName, ...response?.data };
+      const response = await roleService.updateRole(roleId, roleName.trim(), status, sanitizedNewId);
+      const updatedRole = {
+        role_id: sanitizedNewId || roleId,
+        role_name: roleName.trim(),
+        status,
+        ...response?.data,
+      };
       dispatch({ type: ROLE_UPDATE_SUCCESS, payload: updatedRole });
       dispatch(fetchRoles());
       return { success: true, data: updatedRole };
