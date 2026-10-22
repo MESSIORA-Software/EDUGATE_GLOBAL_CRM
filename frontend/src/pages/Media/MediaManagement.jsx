@@ -349,19 +349,6 @@ export default function MediaManagement() {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className={TYPOGRAPHY.label}>Storage Provider</label>
-                <select
-                  value={providerFilter}
-                  onChange={(e) => setProviderFilter(e.target.value)}
-                  className="px-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer"
-                >
-                  <option value="">All Providers</option>
-                  <option value="supabase">Supabase</option>
-                  <option value="google_drive">Google Drive</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
                 <label className={TYPOGRAPHY.label}>Uploader ID</label>
                 <input
                   type="number"
@@ -421,7 +408,6 @@ export default function MediaManagement() {
                     >
                       <th className="py-3.5 px-4">File</th>
                       <th className="py-3.5 px-4">Type</th>
-                      <th className="py-3.5 px-4">Provider</th>
                       <th className="py-3.5 px-4">Size</th>
                       <th className="py-3.5 px-4">Uploaded By</th>
                       <th className="py-3.5 px-4">Date</th>
@@ -460,26 +446,6 @@ export default function MediaManagement() {
                             </span>
                           </td>
 
-                          {/* Storage Provider */}
-                          <td className="py-3.5 px-4">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
-                              m.provider === 'google_drive'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : 'bg-slate-100 text-slate-600 border-slate-200'
-                            }`}>
-                              {m.provider === 'google_drive' ? (
-                                <>
-                                  <Cloud className="w-3 h-3 text-emerald-600" />
-                                  Drive
-                                </>
-                              ) : (
-                                <>
-                                  <Server className="w-3 h-3 text-slate-500" />
-                                  Supabase
-                                </>
-                              )}
-                            </span>
-                          </td>
 
                           {/* File Size */}
                           <td className="py-3.5 px-4 font-mono font-semibold text-slate-700 text-xs">
