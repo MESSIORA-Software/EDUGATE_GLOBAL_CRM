@@ -15,6 +15,7 @@ import CalendarRoutes from './CalendarRoutes.js';
 import NotificationRoutes from './NotificationRoutes.js';
 import InternalNotificationRoutes from './InternalNotificationRoutes.js';
 import ReferrerRoutes from './ReferrerRoutes.js';
+import StudentDocumentRoutes from './StudentDocumentRoutes.js';
 
 const router = Router();
 
@@ -44,5 +45,6 @@ router.use('/calendar', CalendarRoutes);
 router.use('/notifications', NotificationRoutes);
 router.use('/internal/notifications', InternalNotificationRoutes);
 router.use('/referrers', ReferrerRoutes);
+router.use('/student-documents', StudentDocumentRoutes);
 
 export default router;
