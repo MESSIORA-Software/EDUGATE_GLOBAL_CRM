@@ -59,6 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Referrers', path: '/referrers', icon: Award },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
+        { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },
         { name: 'My Profile', path: '/profile', icon: UserCheck },
       ]
@@ -67,6 +68,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
+        { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },
         { name: 'My Profile', path: '/profile', icon: UserCheck },
       ];

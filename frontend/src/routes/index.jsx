@@ -166,9 +166,7 @@ function AppRoutes() {
         path="/media"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <MediaManagement />
-            </SuperAdminRoute>
+            <MediaManagement />
           </ProtectedRoute>
         }
       />
@@ -176,9 +174,7 @@ function AppRoutes() {
         path="/media/google/callback"
         element={
           <ProtectedRoute>
-            <SuperAdminRoute>
-              <GoogleCallback />
-            </SuperAdminRoute>
+            <GoogleCallback />
           </ProtectedRoute>
         }
       />
