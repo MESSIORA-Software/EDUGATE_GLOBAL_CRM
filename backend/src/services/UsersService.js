@@ -8,9 +8,12 @@ export const userService = {
         return await UserRepository.findusers();
     },
 
-    // Get users by role (e.g. 'STAFF', 'ADMIN', 'SUPER_ADMIN')
+    // Get users by role (e.g. 'STAFF', 'EDUGATE_STAFF', 'ADMIN', 'SUPER_ADMIN')
     async getUsersByRole(roleId) {
         if (!roleId) return await UserRepository.findusers();
+        const target = String(roleId).toUpperCase().trim();
+        const altTarget = target.startsWith('EDUGATE_') ? target.replace(/^EDUGATE_/, '') : `EDUGATE_${target}`;
+
         try {
             const users = await UserRepository.findUsersByRole(roleId);
             if (users && users.length > 0) return users;
@@ -18,7 +21,10 @@ export const userService = {
             // fallback
         }
         const allUsers = await UserRepository.findusers();
-        return (allUsers || []).filter(u => String(u.role_id || '').toUpperCase() === String(roleId).toUpperCase());
+        return (allUsers || []).filter(u => {
+            const r = String(u.role_id || '').toUpperCase().trim();
+            return r === target || r === altTarget || r.endsWith(`_${target}`) || (target === 'STAFF' && r.includes('STAFF'));
+        });
     },
  
     // Get a user by ID

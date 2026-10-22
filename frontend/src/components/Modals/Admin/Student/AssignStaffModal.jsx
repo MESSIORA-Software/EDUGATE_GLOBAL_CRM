@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchUsers } from '../../../../actions/Admin/userActions';
+import userService from '../../../../services/Admin/userService';
 import PipelineService from '../../../../services/Admin/pipelineService';
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
-import { X, UserCheck, AlertCircle, User, Shield, Check } from 'lucide-react';
+import { X, UserCheck, AlertCircle, User, Shield, Check, LoaderCircle, Search } from 'lucide-react';
+import { isStaffUser } from '../../../../utils/roleUtils';
 
 export default function AssignStaffModal({ isOpen, opportunity, onClose, onSuccess }) {
   const dispatch = useDispatch();
@@ -13,9 +15,29 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
     (state) => state.users ?? {}
   );
 
+  const [localUsers, setLocalUsers] = useState([]);
+  const [loadingLocal, setLoadingLocal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const combinedUsers = staffUsers.length > 0 ? staffUsers : localUsers;
+
   const onlyStaffUsers = React.useMemo(() => {
-    return staffUsers.filter((u) => String(u.role_id || u.role || '').toUpperCase() === 'STAFF');
-  }, [staffUsers]);
+    return combinedUsers.filter((u) => {
+      const isActive = !u.status || String(u.status).toUpperCase() === 'ACTIVE';
+      return isActive && isStaffUser(u);
+    });
+  }, [combinedUsers]);
+
+  const filteredStaffUsers = React.useMemo(() => {
+    if (!searchTerm.trim()) return onlyStaffUsers;
+    const term = searchTerm.toLowerCase();
+    return onlyStaffUsers.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(term) ||
+        u.email?.toLowerCase().includes(term) ||
+        String(u.user_id || u.id).includes(term)
+    );
+  }, [onlyStaffUsers, searchTerm]);
 
   const [selectedStaffId, setSelectedStaffId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -25,9 +47,29 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
     if (isOpen) {
       if (staffUsers.length === 0) {
         dispatch(fetchUsers());
+        setLoadingLocal(true);
+        userService
+          .getAllUsers()
+          .then((res) => {
+            const list = Array.isArray(res)
+              ? res
+              : Array.isArray(res?.data)
+              ? res.data
+              : Array.isArray(res?.users)
+              ? res.users
+              : [];
+            setLocalUsers(list);
+          })
+          .catch((err) => {
+            console.error('Error fetching fallback users:', err);
+          })
+          .finally(() => {
+            setLoadingLocal(false);
+          });
       }
       setSelectedStaffId(opportunity?.assigned_staff_id ? String(opportunity.assigned_staff_id) : '');
       setError('');
+      setSearchTerm('');
     }
   }, [isOpen, opportunity, dispatch, staffUsers.length]);
 
@@ -49,7 +91,7 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
         opportunity.note_id || null
       );
 
-      const assignedUser = staffUsers.find((u) => String(u.user_id || u.id) === selectedStaffId);
+      const assignedUser = combinedUsers.find((u) => String(u.user_id || u.id) === selectedStaffId);
       const staffName = assignedUser?.name || 'Staff member';
 
       onSuccess?.(
@@ -66,6 +108,8 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
       setSaving(false);
     }
   };
+
+  const isLoading = (loadingUsers || loadingLocal) && combinedUsers.length === 0;
 
   return (
     <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
@@ -113,8 +157,27 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
           )}
 
           <div>
-            <label className={`${TYPOGRAPHY.label} block mb-2`}>Select Staff Member</label>
-            <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+            <div className="flex items-center justify-between mb-2">
+              <label className={`${TYPOGRAPHY.label}`}>Select Staff Member</label>
+              <span className="text-[11px] font-medium text-slate-400">
+                {onlyStaffUsers.length} staff available
+              </span>
+            </div>
+
+            {onlyStaffUsers.length > 3 && (
+              <div className="relative mb-2.5">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search staff by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
+            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
               {/* Option to Unassign */}
               <button
                 type="button"
@@ -126,43 +189,64 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
                 }`}
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-xs">
+                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-xs">
                     -
                   </div>
-                  <span>Unassigned</span>
+                  <div className="text-left">
+                    <span className="font-semibold text-slate-700">Unassigned</span>
+                    <p className="text-[10px] text-slate-400">Remove current staff assignment</p>
+                  </div>
                 </div>
                 {selectedStaffId === '' && <Check className="w-4 h-4 text-blue-600" />}
               </button>
 
-              {onlyStaffUsers.map((u) => {
-                const uId = String(u.user_id || u.id);
-                const isSelected = selectedStaffId === uId;
-                const initials = (u.name || 'ST').substring(0, 2).toUpperCase();
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-400">
+                  <LoaderCircle className="w-4 h-4 animate-spin text-blue-600" />
+                  <span>Loading staff members...</span>
+                </div>
+              ) : filteredStaffUsers.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                  {searchTerm ? 'No staff matching search' : 'No active staff users found'}
+                </div>
+              ) : (
+                filteredStaffUsers.map((u) => {
+                  const uId = String(u.user_id || u.id);
+                  const isSelected = selectedStaffId === uId;
+                  const initials = (u.name || 'ST').substring(0, 2).toUpperCase();
 
-                return (
-                  <button
-                    key={uId}
-                    type="button"
-                    onClick={() => setSelectedStaffId(uId)}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-2xs'
-                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
-                        {initials}
+                  return (
+                    <button
+                      key={uId}
+                      type="button"
+                      onClick={() => setSelectedStaffId(uId)}
+                      className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50/80 text-blue-900 shadow-2xs ring-1 ring-blue-400'
+                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
+                          {initials}
+                        </div>
+                        <div className="text-left min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="truncate font-bold text-slate-800">{u.name}</span>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                              Staff
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-slate-500 truncate">
+                            {u.email}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-left min-w-0">
-                        <div className="truncate font-bold text-slate-800">{u.name}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{u.email || u.role_name}</div>
-                      </div>
-                    </div>
-                    {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}
-                  </button>
-                );
-              })}
+                      {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
 

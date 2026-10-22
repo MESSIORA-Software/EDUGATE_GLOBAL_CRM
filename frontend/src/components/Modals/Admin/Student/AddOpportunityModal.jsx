@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import conversationService from '../../../../services/Conversation/conversationService';
 import userService from '../../../../services/Admin/userService';
+import { isStaffUser } from '../../../../utils/roleUtils';
 
 const CHANNEL_OPTIONS = [
   {
@@ -101,12 +102,12 @@ export default function AddOpportunityModal({
     setAssignedStaffId(conversation.assigned_staff_id || '');
     setNote('');
 
-    // Fetch pipeline statuses and staff users (role = STAFF)
+    // Fetch pipeline statuses and staff users (role = STAFF / EDUGATE_STAFF)
     setLoadingOptions(true);
     Promise.all([
       conversationService.getOpportunityStatuses().catch(() => null),
       conversationService.getUsersByRole('STAFF').catch(() => null),
-      userService.getUsersByRole('STAFF').catch(() => null),
+      userService.getAllUsers().catch(() => null),
     ])
       .then(([statusRes, userRes, userFallbackRes]) => {
         const statusData = statusRes?.data?.data || statusRes?.data || [];
@@ -120,8 +121,11 @@ export default function AddOpportunityModal({
 
         const userData = userRes?.data?.data || userRes?.data || userFallbackRes?.data || userFallbackRes || [];
         const rawUsers = Array.isArray(userData) ? userData : [];
-        // Only allow users whose role is STAFF
-        const staffOnly = rawUsers.filter((u) => String(u.role_id || u.role || '').toUpperCase() === 'STAFF');
+        // Allow users whose role matches staff
+        const staffOnly = rawUsers.filter((u) => {
+          const isActive = !u.status || String(u.status).toUpperCase() === 'ACTIVE';
+          return isActive && isStaffUser(u);
+        });
         setStaffList(staffOnly);
       })
       .finally(() => {
