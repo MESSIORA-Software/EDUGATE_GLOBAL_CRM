@@ -44,3 +44,19 @@ export const getRoleDashboardTitle = (user, rolesList = []) => {
     .join(' ');
   return `${formatted} Dashboard`;
 };
+
+export const isStaffUser = (user) => {
+  if (!user) return false;
+  const rawRole = user.role_id || user.role || user.role_name || '';
+  const strRole = String(rawRole).trim().toUpperCase();
+  return (
+    strRole === 'STAFF' ||
+    strRole === 'EDUGATE_STAFF' ||
+    strRole.endsWith('_STAFF') ||
+    strRole.includes('STAFF') ||
+    strRole.includes('COUNSELOR') ||
+    strRole.includes('OFFICER') ||
+    strRole.includes('AGENT')
+  );
+};
+

@@ -6,7 +6,7 @@ import { fetchUsers } from '../../../../actions/Admin/userActions';
 import { COLORS } from '../../../../constants/colors';
 import { TYPOGRAPHY } from '../../../../constants/typography';
 import useAuth from '../../../../hooks/Auth/useAuth';
-import { getUserRole } from '../../../../utils/roleUtils';
+import { getUserRole, isStaffUser } from '../../../../utils/roleUtils';
 import Button from '../../../ui/Button';
 import {
   X,
@@ -37,7 +37,10 @@ export default function CreateOpportunityModal({ isOpen, client, onClose, onSucc
   const { users: staffUsers = [] } = useSelector((state) => state.users ?? {});
 
   const availableStaffUsers = React.useMemo(() => {
-    return staffUsers.filter((u) => String(u.role_id || u.role || '').toUpperCase() === 'STAFF');
+    return staffUsers.filter((u) => {
+      const isActive = !u.status || String(u.status).toUpperCase() === 'ACTIVE';
+      return isActive && isStaffUser(u);
+    });
   }, [staffUsers]);
 
   const existingOppClientIds = React.useMemo(() => {
