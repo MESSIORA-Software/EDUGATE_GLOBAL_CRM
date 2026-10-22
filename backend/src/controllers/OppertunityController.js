@@ -73,6 +73,7 @@ export const OppertunityController = {
             const isAdmin = actor && (
                 String(actor.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
                 String(actor.role_id || '').toUpperCase() === 'ADMIN' ||
+                String(actor.role_id || '').toUpperCase().endsWith('ADMIN') ||
                 String(actor.role_name || '').toLowerCase() === 'admin' ||
                 String(actor.role_name || '').toLowerCase() === 'super admin'
             );

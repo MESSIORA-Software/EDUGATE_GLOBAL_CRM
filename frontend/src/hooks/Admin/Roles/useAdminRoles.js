@@ -20,6 +20,7 @@ export default function useAdminRoles() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
   const [detailRole, setDetailRole] = useState(null);
+  const [deletingRole, setDeletingRole] = useState(null);
 
   // Toast alert
   const [toast, setToast] = useState(null);
@@ -54,14 +55,13 @@ export default function useAdminRoles() {
     }
   };
 
-  const handleDelete = async (roleId) => {
-    if (window.confirm(`Are you sure you want to delete role '${roleId}'?`)) {
-      const res = await dispatch(deleteRole(roleId));
-      if (res.success) {
-        showToast(`Role '${roleId}' deleted successfully!`);
-      } else {
-        showToast(res.error || `Failed to delete role '${roleId}'`, 'error');
-      }
+  const handleDelete = (role) => {
+    if (!role) return;
+    if (typeof role === 'string') {
+      const found = rolesList?.find((r) => r.role_id === role || r.id === role);
+      setDeletingRole(found || { role_id: role, role_name: role });
+    } else {
+      setDeletingRole(role);
     }
   };
 
@@ -100,6 +100,8 @@ export default function useAdminRoles() {
     setEditingRole,
     detailRole,
     setDetailRole,
+    deletingRole,
+    setDeletingRole,
     toast,
     showToast,
     handleRefresh,

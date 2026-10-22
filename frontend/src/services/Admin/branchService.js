@@ -5,7 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://edugate-global-crm.ver
 const REQUEST_TIMEOUT_MS = 15000;
 
 // Create Branch
-const createBranch = async (name, address, phone) => {
+const createBranch = async (name, address, phone, status = 'Active') => {
   const config = {
     method: 'post',
     url: `${BASE_URL}/branches/createbranch`,
@@ -17,6 +17,7 @@ const createBranch = async (name, address, phone) => {
       name: name,
       address: address,
       phone: phone,
+      status: status,
     },
   };
 
@@ -55,7 +56,7 @@ const getBranchById = async (branchId) => {
 
 
 // Update Branch
-const updateBranch = async (branchId, name, address, phone) => {
+const updateBranch = async (branchId, name, address, phone, status = 'Active') => {
   const config = {
     method: 'put',
     url: `${BASE_URL}/branches/updatebranch`,
@@ -68,6 +69,7 @@ const updateBranch = async (branchId, name, address, phone) => {
       name: name,
       address: address,
       phone: phone,
+      status: status,
     },
   };
 

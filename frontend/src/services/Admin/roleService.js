@@ -35,13 +35,13 @@ const getRoleById = async (role_id) => {
   return await response.json();
 };
 
-const createRole = async (role_id, role_name) => {
+const createRole = async (role_id, role_name, status = 'Active') => {
   const response = await fetch(`${BASE_URL}/roles`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role_id, role_name }),
+    body: JSON.stringify({ role_id, role_name, status }),
   });
 
   if (!response.ok) {
@@ -52,13 +52,18 @@ const createRole = async (role_id, role_name) => {
   return await response.json();
 };
 
-const updateRole = async (role_id, role_name) => {
+const updateRole = async (role_id, role_name, status = 'Active', new_role_id = null) => {
+  const payload = { role_id, role_name, status };
+  if (new_role_id) {
+    payload.new_role_id = new_role_id;
+  }
+
   const response = await fetch(`${BASE_URL}/roles`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ role_id, role_name }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {

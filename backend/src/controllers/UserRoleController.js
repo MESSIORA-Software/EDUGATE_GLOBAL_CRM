@@ -38,8 +38,8 @@ export const UserRoleController = {
     // POST /api/roles
     async create(req, res, next) {
         try {
-            const { role_id, role_name, created_by } = req.body;
-            const newRole = await roleService.createRole({ role_id, role_name, created_by });
+            const { role_id, role_name, created_by, status } = req.body;
+            const newRole = await roleService.createRole({ role_id, role_name, created_by, status });
             res.status(201).json({
                 status: 'success',
                 message: 'Role created successfully',

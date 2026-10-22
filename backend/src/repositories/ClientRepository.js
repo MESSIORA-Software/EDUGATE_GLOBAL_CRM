@@ -20,6 +20,7 @@ async getAllClients(currentUser = null) {
     const isAdmin = currentUser && (
         String(currentUser.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
         String(currentUser.role_id || '').toUpperCase() === 'ADMIN' ||
+        String(currentUser.role_id || '').toUpperCase().endsWith('ADMIN') ||
         String(currentUser.role_name || '').toLowerCase() === 'admin' ||
         String(currentUser.role_name || '').toLowerCase() === 'super admin'
     );

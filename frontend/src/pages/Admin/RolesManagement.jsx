@@ -3,6 +3,7 @@ import useAdminRoles from '../../hooks/Admin/Roles/useAdminRoles';
 import RoleAddModal from '../../components/Modals/Admin/Role/RoleAddModal';
 import RoleUpdateModal from '../../components/Modals/Admin/Role/RoleUpdateModal';
 import RoleDetailModal from '../../components/Modals/Admin/Role/RoleDetailModal';
+import RoleDeleteModal from '../../components/Modals/Admin/Role/RoleDeleteModal';
 
 import {
   Shield,
@@ -25,19 +26,17 @@ export default function RolesManagement() {
     error,
     searchTerm,
     setSearchTerm,
-    findIdInput,
-    setFindIdInput,
-    isFinding,
     isAddOpen,
     setIsAddOpen,
     editingRole,
     setEditingRole,
     detailRole,
     setDetailRole,
+    deletingRole,
+    setDeletingRole,
     toast,
     showToast,
     handleRefresh,
-    handleFindById,
     handleDelete,
   } = useAdminRoles();
 
@@ -114,26 +113,6 @@ export default function RolesManagement() {
             </button>
           )}
         </div>
-
-        <div className="flex items-center justify-end flex-wrap gap-2.5 w-full md:w-auto">
-          <form onSubmit={handleFindById} className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="Role ID (e.g. ADMIN)"
-              value={findIdInput}
-              onChange={(e) => setFindIdInput(e.target.value)}
-              className="px-3 py-2 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-36"
-            />
-            <button
-              type="submit"
-              disabled={isFinding || !findIdInput.trim()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
-            >
-              {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
-              <span>Find</span>
-            </button>
-          </form>
-        </div>
       </div>
 
       {/* Table Container */}
@@ -171,17 +150,14 @@ export default function RolesManagement() {
                   <tr key={r.role_id || index} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3.5 px-4 font-mono font-bold">
                       <span className="px-2 py-0.5 rounded-md border border-blue-200 bg-blue-50/50 text-blue-800 text-[11px]">
-                        #{r.role_id}
+                        {r.role_id}
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-bold text-slate-800">
                       {r.role_name}
                     </td>
-                    <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Active
-                      </span>
+                    <td className="py-3.5 px-4 text-xs font-medium text-slate-600">
+                      {r.status || 'Active'}
                     </td>
                     <td className="py-3.5 px-4 text-right space-x-1.5">
                       <button
@@ -199,7 +175,7 @@ export default function RolesManagement() {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDelete(r.role_id)}
+                        onClick={() => setDeletingRole(r)}
                         className="p-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer"
                         title="Delete Role"
                       >
@@ -232,6 +208,17 @@ export default function RolesManagement() {
         isOpen={!!detailRole}
         role={detailRole}
         onClose={() => setDetailRole(null)}
+        onEdit={(r) => {
+          setDetailRole(null);
+          setEditingRole(r);
+        }}
+      />
+
+      <RoleDeleteModal
+        isOpen={!!deletingRole}
+        role={deletingRole}
+        onClose={() => setDeletingRole(null)}
+        onSuccess={(msg) => showToast(msg)}
       />
     </div>
   );

@@ -118,7 +118,7 @@ export const fetchBranches = () => {
 // ADD / CREATE BRANCH
 // ============================================================
 
-export const addBranch = (name, address, phone) => {
+export const addBranch = (name, address, phone, status = 'Active') => {
   return async (dispatch) => {
 
     if (!name || !address || !phone) {
@@ -141,7 +141,8 @@ export const addBranch = (name, address, phone) => {
       await BranchService.createBranch(
         name,
         address,
-        phone
+        phone,
+        status
       );
 
       dispatch({
@@ -150,6 +151,7 @@ export const addBranch = (name, address, phone) => {
           name,
           address,
           phone,
+          status,
         },
       });
 
@@ -188,7 +190,8 @@ export const updateBranch = (
   branchId,
   name,
   address,
-  phone
+  phone,
+  status = 'Active'
 ) => {
   return async (dispatch) => {
 
@@ -216,7 +219,8 @@ export const updateBranch = (
         branchId,
         name,
         address,
-        phone
+        phone,
+        status
       );
 
       dispatch({
@@ -226,6 +230,7 @@ export const updateBranch = (
           name,
           address,
           phone,
+          status,
         },
       });
 
