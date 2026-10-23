@@ -57,7 +57,16 @@ export const usersController = {
         try {
             const { branch_id, name, email, password_hash, password, role_id, status, created_by } = req.body;
             const finalPasswordHash = password_hash || password || 'hashed_password_123';
-            const newUser = await userService.createUser({ branch_id, name, email, password_hash: finalPasswordHash, role_id, status, created_by });
+            const newUser = await userService.createUser({
+                branch_id,
+                name,
+                email,
+                password: password || password_hash,
+                password_hash: finalPasswordHash,
+                role_id,
+                status,
+                created_by
+            });
             res.status(201).json({
                 status: 'success',
                 message: 'User created successfully',

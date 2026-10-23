@@ -95,8 +95,8 @@ export default function useClients() {
     }
   };
 
-  const handleAddClient = async (name, email, dob, source) => {
-    const res = await dispatch(addClient(name, email, dob, source));
+  const handleAddClient = async (name, email, dob, source, referrer_id = null) => {
+    const res = await dispatch(addClient(name, email, dob, source, referrer_id));
     if (res?.success) {
       showToast(`Client "${name}" created successfully!`);
     } else {
@@ -105,8 +105,8 @@ export default function useClients() {
     return res;
   };
 
-  const handleUpdateClient = async (clientId, name, email, dob, source) => {
-    const res = await dispatch(updateClient(clientId, name, email, dob, source));
+  const handleUpdateClient = async (clientId, name, email, dob, source, referrer_id = null) => {
+    const res = await dispatch(updateClient(clientId, name, email, dob, source, referrer_id));
     if (res?.success) {
       showToast(`Client #${clientId} updated successfully!`);
     } else {

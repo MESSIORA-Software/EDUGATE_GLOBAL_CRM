@@ -116,6 +116,57 @@ export const ConversationService = {
         return await ConversationRepository.getConversationsByClientId(clientId);
     },
 
+    // 3b. Get or create conversation for a client and specific channel
+    async getOrCreateClientConversation(clientId, channel = 'messenger') {
+        const normalizedChannel = (channel || 'messenger').toLowerCase();
+
+        // Check if conversation already exists for this client and channel
+        const { data: existing } = await supabase
+            .from('conversations')
+            .select(`
+                *,
+                clients:client_id (client_id, name, email, dob, source),
+                assigned_staff:assigned_staff_id (user_id, name, email),
+                messages:messages(message_id, sender_type, created_at, content)
+            `)
+            .eq('client_id', clientId)
+            .eq('channel', normalizedChannel)
+            .order('last_message_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (existing) {
+            return existing;
+        }
+
+        // Fetch client details
+        const { data: client, error: clientErr } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('client_id', clientId)
+            .single();
+
+        if (clientErr || !client) {
+            const err = new Error('Client not found');
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const channelClientId = normalizedChannel === 'email'
+            ? (client.email || `client_${clientId}@edugate.com`)
+            : (client.phone || client.name || `client_${clientId}`);
+
+        const newConv = await ConversationRepository.createConversation({
+            client_id: client.client_id,
+            channel: normalizedChannel,
+            channel_client_id: channelClientId,
+            status: 'open',
+            last_message_at: new Date().toISOString()
+        });
+
+        return await ConversationRepository.getConversationById(newConv.conversation_id);
+    },
+
     // 4. Assign Staff member to conversation (actor = authenticated user, from JWT)
     async assignStaff(conversationId, staffId, currentUser) {
         return await ConversationRepository.assignStaff(conversationId, staffId, currentUser.user_id);

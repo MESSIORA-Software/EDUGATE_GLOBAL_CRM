@@ -91,4 +91,15 @@ export const ReferrerRepository = {
     if (error) throw error;
     return data;
   },
+
+  async getStudentsByReferrerId(referrerId) {
+    const { data, error } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('referrer_id', referrerId)
+      .order('client_id', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
 };

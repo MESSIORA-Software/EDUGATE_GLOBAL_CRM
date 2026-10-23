@@ -5,12 +5,16 @@ import {
   findUserById,
   deleteUser,
 } from '../../../actions/Admin/userActions';
+import { fetchRoles } from '../../../actions/Admin/roleActions';
+import { fetchBranches } from '../../../actions/Admin/branchAction';
 
 export default function useAdminUsers() {
   const dispatch = useDispatch();
   const { users: usersList, loading: apiLoading, submitting, error } = useSelector(
     (state) => state.users
   );
+  const { roles = [] } = useSelector((state) => state.roles ?? {});
+  const { list: branches = [] } = useSelector((state) => state.branch ?? {});
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('All');
@@ -21,12 +25,15 @@ export default function useAdminUsers() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [detailUser, setDetailUser] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
 
   // Toast alert
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
     dispatch(fetchUsers());
+    dispatch(fetchRoles());
+    dispatch(fetchBranches());
   }, [dispatch]);
 
   const showToast = (message, type = 'success') => {
@@ -36,6 +43,8 @@ export default function useAdminUsers() {
 
   const handleRefresh = () => {
     dispatch(fetchUsers());
+    dispatch(fetchRoles());
+    dispatch(fetchBranches());
     showToast('Users list refreshed');
   };
 
@@ -55,14 +64,19 @@ export default function useAdminUsers() {
     }
   };
 
-  const handleDelete = async (userId) => {
-    if (window.confirm(`Are you sure you want to delete user '${userId}'?`)) {
-      const res = await dispatch(deleteUser(userId));
-      if (res.success) {
-        showToast(`User deleted successfully!`);
-      } else {
-        showToast(res.error || 'Failed to delete user', 'error');
-      }
+  const handleDelete = (user) => {
+    setDeletingUser(user);
+  };
+
+  const handleDeleteUser = async (userId) => {
+    const res = await dispatch(deleteUser(userId));
+    if (res.success) {
+      showToast(`User deleted successfully!`);
+      setDeletingUser(null);
+      return { success: true };
+    } else {
+      showToast(res.error || 'Failed to delete user', 'error');
+      return { success: false, error: res.error };
     }
   };
 
@@ -72,12 +86,29 @@ export default function useAdminUsers() {
   const filteredUsers = useMemo(() => {
     let list = Array.isArray(usersList) ? [...usersList] : [];
 
+    // Map role and branch names if missing
+    list = list.map((u) => {
+      const matchedRole = roles.find(
+        (r) => String(r.role_id) === String(u.role_id) || String(r.id) === String(u.role_id)
+      );
+      const matchedBranch = branches.find(
+        (b) => String(b.branch_id) === String(u.branch_id) || String(b.id) === String(u.branch_id)
+      );
+      return {
+        ...u,
+        role_name: u.role_name || matchedRole?.role_name || matchedRole?.name || u.role_id || 'Staff',
+        branch_name: u.branch_name || matchedBranch?.branch_name || matchedBranch?.name || 'Main Office',
+      };
+    });
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(
         (u) =>
           (u.name && u.name.toLowerCase().includes(q)) ||
           (u.email && u.email.toLowerCase().includes(q)) ||
+          (u.role_name && u.role_name.toLowerCase().includes(q)) ||
+          (u.branch_name && u.branch_name.toLowerCase().includes(q)) ||
           (u.user_id && String(u.user_id).toLowerCase().includes(q))
       );
     }
@@ -87,7 +118,7 @@ export default function useAdminUsers() {
     }
 
     return list;
-  }, [usersList, searchQuery, selectedStatus]);
+  }, [usersList, roles, branches, searchQuery, selectedStatus]);
 
   return {
     usersList,
@@ -110,10 +141,13 @@ export default function useAdminUsers() {
     setEditingUser,
     detailUser,
     setDetailUser,
+    deletingUser,
+    setDeletingUser,
     toast,
     showToast,
     handleRefresh,
     handleFindById,
     handleDelete,
+    handleDeleteUser,
   };
 }

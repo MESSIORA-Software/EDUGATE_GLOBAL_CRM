@@ -61,7 +61,28 @@ const viewMyProfile = async (token) => {
   return await response.json();
 };
 
+const verifyPassword = async (password, email) => {
+  const authToken = localStorage.getItem('token');
+
+  const response = await fetch(`${BASE_URL}/auth/verify-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+    body: JSON.stringify({ password, email }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || errorData.error || 'Incorrect password.');
+  }
+
+  return await response.json();
+};
+
 export default {
   login,
   viewMyProfile,
+  verifyPassword,
 };

@@ -248,13 +248,14 @@ export const moveOpportunityStatus = (
 };
 
 // 4. Create Opportunity for a Student (from Students page or Pipeline)
-export const createOpportunityForStudent = ({
-  clientId,
-  assignedStaffId = null,
-  statusId = null,
-  note = '',
-}) => {
+export const createOpportunityForStudent = (params = {}, extraData = {}) => {
   return async (dispatch, getState) => {
+    const rawClientId = params?.clientId ?? params?.client_id;
+    const clientId = rawClientId ? Number(rawClientId) : null;
+    const assignedStaffId = params?.assignedStaffId ?? params?.assigned_staff_id ?? null;
+    const statusId = params?.statusId ?? params?.status_id ?? null;
+    const note = params?.note ?? '';
+
     if (!clientId) {
       return { success: false, error: 'Client ID is required.' };
     }

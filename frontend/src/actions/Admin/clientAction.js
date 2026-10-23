@@ -60,7 +60,7 @@ export const fetchClients = () => {
 };
 
 // 2. Add / Create Client
-export const addClient = (name, email, dob, source) => {
+export const addClient = (name, email, dob, source, referrer_id = null) => {
   return async (dispatch) => {
     if (!name || !email) {
       const message = 'Client Name and Email are required.';
@@ -70,10 +70,10 @@ export const addClient = (name, email, dob, source) => {
 
     dispatch({ type: CLIENT_ADD_START });
     try {
-      const response = await ClientService.createClient(name, email, dob, source);
+      const response = await ClientService.createClient(name, email, dob, source, referrer_id);
       dispatch({
         type: CLIENT_ADD_SUCCESS,
-        payload: response.data?.data || { name, email, dob, source },
+        payload: response.data?.data || { name, email, dob, source, referrer_id },
       });
       dispatch(fetchClients());
       return { success: true };
@@ -86,7 +86,7 @@ export const addClient = (name, email, dob, source) => {
 };
 
 // 3. Update Client
-export const updateClient = (clientId, name, email, dob, source) => {
+export const updateClient = (clientId, name, email, dob, source, referrer_id = null) => {
   return async (dispatch) => {
     if (!clientId) {
       const message = 'Client ID is required.';
@@ -96,10 +96,10 @@ export const updateClient = (clientId, name, email, dob, source) => {
 
     dispatch({ type: CLIENT_UPDATE_START });
     try {
-      const response = await ClientService.updateClient(clientId, name, email, dob, source);
+      const response = await ClientService.updateClient(clientId, name, email, dob, source, referrer_id);
       dispatch({
         type: CLIENT_UPDATE_SUCCESS,
-        payload: response.data?.data || { client_id: clientId, name, email, dob, source },
+        payload: response.data?.data || { client_id: clientId, name, email, dob, source, referrer_id },
       });
       dispatch(fetchClients());
       return { success: true };
@@ -110,6 +110,8 @@ export const updateClient = (clientId, name, email, dob, source) => {
     }
   };
 };
+
+import { fetchPipelineData } from './pipelineAction';
 
 // 4. Delete Client
 export const deleteClient = (clientId) => {
@@ -128,6 +130,7 @@ export const deleteClient = (clientId) => {
         payload: clientId,
       });
       dispatch(fetchClients());
+      dispatch(fetchPipelineData());
       return { success: true };
     } catch (err) {
       const errorMsg = extractError(err);

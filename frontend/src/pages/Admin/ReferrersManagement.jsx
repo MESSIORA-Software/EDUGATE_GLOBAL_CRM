@@ -3,6 +3,7 @@ import ReferrerService from '../../services/Admin/referrerService';
 import AddReferrerModal from '../../components/Modals/Admin/Referrer/AddReferrerModal';
 import EditReferrerModal from '../../components/Modals/Admin/Referrer/EditReferrerModal';
 import ReferrerDetailModal from '../../components/Modals/Admin/Referrer/ReferrerDetailModal';
+import ReferrerDeleteModal from '../../components/Modals/Admin/Referrer/ReferrerDeleteModal';
 import {
   Award,
   Plus,
@@ -19,20 +20,24 @@ import {
   AlertCircle,
   Loader2,
   Users,
-  Sparkles,
+  Filter,
+  ChevronDown,
+  X,
+  UserPlus,
 } from 'lucide-react';
 
 export default function ReferrersManagement() {
   const [referrers, setReferrers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [toast, setToast] = useState(null);
 
-  // Modals state
+  // Drawer Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingReferrer, setEditingReferrer] = useState(null);
   const [detailReferrer, setDetailReferrer] = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
+  const [deletingReferrer, setDeletingReferrer] = useState(null);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -60,26 +65,17 @@ export default function ReferrersManagement() {
     fetchReferrers();
   }, [fetchReferrers]);
 
-  const handleDelete = async (referrer) => {
-    const confirmMsg = `Are you sure you want to delete referrer "${referrer.name}" (${referrer.referrer_code})?`;
-    if (!window.confirm(confirmMsg)) return;
-
-    try {
-      setDeletingId(referrer.referrer_id);
-      await ReferrerService.deleteReferrer(referrer.referrer_id);
-      showToast(`Referrer "${referrer.name}" deleted successfully!`);
-      fetchReferrers();
-    } catch (err) {
-      showToast(err?.response?.data?.message || err?.message || 'Failed to delete referrer', 'error');
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
   const filteredReferrers = useMemo(() => {
-    if (!searchTerm.trim()) return referrers;
-    const term = searchTerm.toLowerCase().trim();
     return referrers.filter((r) => {
+      // Status filter
+      if (statusFilter !== 'ALL') {
+        const itemStatus = (r.status || 'Active').toUpperCase();
+        if (itemStatus !== statusFilter.toUpperCase()) return false;
+      }
+
+      // Search term
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase().trim();
       const code = (r.referrer_code || '').toLowerCase();
       const name = (r.name || '').toLowerCase();
       const email = (r.email || '').toLowerCase();
@@ -98,17 +94,7 @@ export default function ReferrersManagement() {
         note.includes(term)
       );
     });
-  }, [referrers, searchTerm]);
-
-  // Metric stats
-  const activeCount = useMemo(
-    () => referrers.filter((r) => (r.status || 'Active') === 'Active').length,
-    [referrers]
-  );
-  const whatsappCount = useMemo(
-    () => referrers.filter((r) => Boolean(r.whatsapp_number)).length,
-    [referrers]
-  );
+  }, [referrers, searchTerm, statusFilter]);
 
   return (
     <div className="space-y-4 max-w-full mx-auto">
@@ -130,86 +116,90 @@ export default function ReferrersManagement() {
         </div>
       )}
 
-      {/* Top Banner / Metrics Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Total Referrers</p>
-            <p className="text-2xl font-extrabold text-blue-950 mt-0.5">{referrers.length}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center">
-            <Users className="w-5 h-5" />
-          </div>
+      {/* Page Header matching User Accounts */}
+      <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            Referrers & Partners
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Manage referral partners, unique referral codes, student recommendations, and commission tracking.
+          </p>
         </div>
 
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Active Partners</p>
-            <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">{activeCount}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center">
-            <Award className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">WhatsApp Enabled</p>
-            <p className="text-2xl font-extrabold text-slate-800 mt-0.5">{whatsappCount}</p>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50/70 border border-emerald-200/70 text-emerald-600 flex items-center justify-center">
-            <MessageSquare className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <div className="p-3.5 bg-white rounded-2xl border border-blue-200/80 shadow-2xs flex flex-col md:flex-row gap-3 justify-between items-center">
-        <div className="relative w-full md:w-96">
-          <Search className="w-4 h-4 text-blue-500 absolute left-3 top-2.5 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search by code (e.g. EDUGATE_REFERRER_01), name, phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 border border-blue-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-          />
-        </div>
-
-        <div className="flex items-center gap-2.5 w-full md:w-auto justify-end">
+        {/* Header Actions */}
+        <div className="flex items-center justify-end flex-wrap gap-2.5">
           <button
-            type="button"
             onClick={fetchReferrers}
-            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50/40 transition-all cursor-pointer shadow-2xs"
-            title="Refresh Referrers List"
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh"
           >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
-
           <button
             type="button"
             onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-sm shadow-blue-600/20 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Referrer</span>
+            <UserPlus className="w-3.5 h-3.5 text-blue-600" />
+            <span>Add New Referrer</span>
           </button>
+        </div>
+      </div>
+
+      {/* Filter & Action Toolbar */}
+      <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row gap-3 justify-between items-center">
+        <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto flex-1">
+          <div className="relative w-full sm:w-80 group">
+            <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="search"
+              placeholder="Search by code, name, phone, address..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-9 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-medium text-slate-700 placeholder:text-slate-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-xs"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1 rounded-md transition-all cursor-pointer"
+                title="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="relative w-full sm:w-44">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="appearance-none w-full pl-8 pr-8 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-semibold text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-xs"
+            >
+              <option value="ALL">All Statuses</option>
+              <option value="ACTIVE">Active Partners</option>
+              <option value="INACTIVE">Inactive Partners</option>
+            </select>
+            <Filter className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+          </div>
         </div>
       </div>
 
       {/* Table Container */}
-      <div className="bg-white rounded-2xl border border-blue-200/80 shadow-2xs overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200/80 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 <th className="py-3.5 px-4">Referrer ID</th>
                 <th className="py-3.5 px-4">Referrer Name</th>
                 <th className="py-3.5 px-4">Contact Info</th>
                 <th className="py-3.5 px-4">Home Address</th>
                 <th className="py-3.5 px-4">Note / Partnership</th>
                 <th className="py-3.5 px-4 text-center">Status</th>
-                <th className="py-3.5 px-4 text-center">Actions</th>
+                <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
@@ -217,7 +207,7 @@ export default function ReferrersManagement() {
                 <tr>
                   <td colSpan={7} className="py-16 text-center text-slate-500">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
-                    <p className="font-medium text-xs">Loading referrers...</p>
+                    <p className="font-semibold text-xs">Loading referrers...</p>
                   </td>
                 </tr>
               ) : filteredReferrers.length === 0 ? (
@@ -225,15 +215,17 @@ export default function ReferrersManagement() {
                   <td colSpan={7} className="py-16 text-center">
                     <div className="max-w-xs mx-auto text-center space-y-2">
                       <Award className="w-10 h-10 text-slate-300 mx-auto" />
-                      <p className="text-sm font-bold text-slate-800">No Referrers Found</p>
+                      <p className="font-bold text-sm text-slate-700">No Referrers Found</p>
                       <p className="text-xs text-slate-400">
-                        {searchTerm ? 'No referrers match your search query.' : 'Get started by registering referral partners.'}
+                        {searchTerm || statusFilter !== 'ALL'
+                          ? 'No referrers match your search or filter criteria.'
+                          : 'Get started by adding your first referral partner.'}
                       </p>
-                      {!searchTerm && (
+                      {!searchTerm && statusFilter === 'ALL' && (
                         <button
                           type="button"
                           onClick={() => setIsAddOpen(true)}
-                          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer"
+                          className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors cursor-pointer shadow-xs"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Add First Referrer</span>
@@ -257,11 +249,11 @@ export default function ReferrersManagement() {
                   return (
                     <tr
                       key={ref.referrer_id}
-                      className="hover:bg-blue-50/30 transition-colors group"
+                      className="hover:bg-blue-50/20 transition-colors group"
                     >
                       {/* Referrer Unique Code */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-mono text-[11px] font-bold text-blue-800 bg-blue-50 border border-blue-200/80 px-2 py-0.5 rounded-md inline-block shadow-2xs">
+                        <span className="font-mono text-[11px] font-bold text-blue-800 bg-blue-50/80 border border-blue-200/80 px-2 py-0.5 rounded-md inline-block shadow-2xs">
                           {ref.referrer_code}
                         </span>
                       </td>
@@ -340,30 +332,32 @@ export default function ReferrersManagement() {
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            (ref.status || 'Active') === 'Active'
+                            (ref.status || 'Active').toUpperCase() === 'ACTIVE'
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              (ref.status || 'Active') === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'
+                              (ref.status || 'Active').toUpperCase() === 'ACTIVE'
+                                ? 'bg-emerald-500'
+                                : 'bg-slate-400'
                             }`}
                           />
-                          {ref.status || 'Active'}
+                          {(ref.status || 'Active').toUpperCase() === 'ACTIVE' ? 'Active' : 'Inactive'}
                         </span>
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1">
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             type="button"
                             onClick={() => setDetailReferrer(ref)}
                             className="p-1.5 text-slate-400 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                             title="View Full Referrer Details"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
@@ -371,20 +365,15 @@ export default function ReferrersManagement() {
                             className="p-1.5 text-slate-400 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
                             title="Edit Referrer"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(ref)}
-                            disabled={deletingId === ref.referrer_id}
-                            className="p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                            onClick={() => setDeletingReferrer(ref)}
+                            className="p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                             title="Delete Referrer"
                           >
-                            {deletingId === ref.referrer_id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-600" />
-                            ) : (
-                              <Trash2 className="w-3.5 h-3.5" />
-                            )}
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -397,7 +386,7 @@ export default function ReferrersManagement() {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Slide-over Modals */}
       <AddReferrerModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
@@ -422,6 +411,16 @@ export default function ReferrersManagement() {
         referrer={detailReferrer}
         onClose={() => setDetailReferrer(null)}
         onEdit={(ref) => setEditingReferrer(ref)}
+      />
+
+      <ReferrerDeleteModal
+        isOpen={!!deletingReferrer}
+        referrer={deletingReferrer}
+        onClose={() => setDeletingReferrer(null)}
+        onSuccess={(msg) => {
+          showToast(msg);
+          fetchReferrers();
+        }}
       />
     </div>
   );

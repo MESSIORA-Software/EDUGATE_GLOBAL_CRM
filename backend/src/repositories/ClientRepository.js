@@ -15,7 +15,9 @@ if (error) throw error;
 },
 
 async getAllClients(currentUser = null) {
-    let query = supabase.from('clients').select('*');
+    let query = supabase
+        .from('clients')
+        .select('*, referrers ( referrer_id, referrer_code, name, email, phone_number, whatsapp_number )');
 
     const isAdmin = currentUser && (
         String(currentUser.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
@@ -56,7 +58,7 @@ async getAllClients(currentUser = null) {
 async getClientById(client_id) {
     const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select('*, referrers ( referrer_id, referrer_code, name, email, phone_number, whatsapp_number )')
         .eq('client_id', client_id)
         .single();
     if (error) throw error;
@@ -75,6 +77,22 @@ async updateClient(client_id, updatedData) {
 }, 
  
 async deleteClient(client_id) {
+    // 1. Remove associated opportunity pipeline records so card is completely removed
+    const { error: oppError } = await supabase
+        .from('opportunities')
+        .delete()
+        .eq('client_id', client_id);
+    if (oppError) {
+        console.warn('Notice: Could not delete associated opportunities:', oppError.message);
+    }
+
+    // 2. Remove associated conversations if any
+    await supabase
+        .from('conversations')
+        .delete()
+        .eq('client_id', client_id);
+
+    // 3. Delete the client record
     const { data, error } = await supabase
         .from('clients')
         .delete()
@@ -83,7 +101,6 @@ async deleteClient(client_id) {
         .single();
     if (error) throw error;
     return data;
-    
 }
 
 }

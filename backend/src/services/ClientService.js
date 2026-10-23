@@ -2,13 +2,13 @@ import { ClientRepository } from '../repositories/ClientRepository.js';
 
 export const ClientService = {
 
-async createClient({ name, email, dob, source, created_by = null }) {
+async createClient({ name, email, dob, source, referrer_id = null }) {
     const clientData = {
         name: name,
         email: email,
         dob: dob,
-        source: source, 
-        created_by: created_by,
+        source: source,
+        referrer_id: referrer_id ? Number(referrer_id) : null,
         created_at: new Date()
     };
 
@@ -29,7 +29,7 @@ async getClientById(client_id) {
     return client;
 },
 
-async updateClient(client_id, { name, email, dob, source }) {
+async updateClient(client_id, { name, email, dob, source, referrer_id }) {
 
     await this.getClientById(client_id); // Ensure the client exists before updating
 
@@ -39,6 +39,9 @@ async updateClient(client_id, { name, email, dob, source }) {
         dob: dob,
         source: source
     };
+    if (referrer_id !== undefined) {
+        updatedData.referrer_id = referrer_id ? Number(referrer_id) : null;
+    }
     const updatedClient = await ClientRepository.updateClient(client_id, updatedData);
     return updatedClient;
 },

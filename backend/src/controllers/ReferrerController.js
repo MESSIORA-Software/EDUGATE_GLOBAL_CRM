@@ -103,4 +103,17 @@ export const ReferrerController = {
       next(error);
     }
   },
+
+  async getReferrerStudents(req, res, next) {
+    try {
+      const referrer_id = req.params.id || req.body.referrer_id || req.query.referrer_id;
+      const data = await ReferrerService.getReferrerStudents(referrer_id);
+      res.status(200).json({
+        status: 'success',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

@@ -5,8 +5,6 @@ import {
   updatePipelineStatus,
   deletePipelineStatus,
 } from '../../../../actions/Admin/pipelineAction';
-import { COLORS } from '../../../../constants/colors';
-import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
 import {
   X,
@@ -125,235 +123,228 @@ export default function ManagePipelineModal({ isOpen, onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 lg:left-60 z-40 overflow-hidden animate-in fade-in duration-200">
+      {/* Backdrop */}
       <div
-        className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
-      >
-        {/* Header */}
-        <div
-          style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-          className="flex items-center justify-between px-5 py-3.5 border-b shrink-0"
-        >
-          <div className="flex items-center gap-2.5">
-            <div
-              style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold"
-            >
-              <Sliders className="w-4 h-4 text-blue-700" />
-            </div>
+        className="fixed inset-0 lg:left-60 bg-slate-900/15 backdrop-blur-[1px] transition-opacity cursor-pointer"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 pointer-events-none">
+        <div className="w-screen max-w-2xl md:w-[50vw] bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full pointer-events-auto animate-in slide-in-from-right duration-300 ease-out">
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <div>
-              <h3 className={TYPOGRAPHY.heading}>Manage Pipeline</h3>
-              <p className={TYPOGRAPHY.caption}>
-                Configure pipeline status stages, order, and column visibility
+              <h2 className="text-base font-bold text-slate-800">
+                Manage Pipeline Stages
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Configure pipeline status stages, position order, and column visibility
               </p>
             </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ color: COLORS.muted }}
-            className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
-          {modalError && (
-            <div className="flex gap-2.5 p-3 border border-red-200 bg-red-50 text-red-800 rounded-xl text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
-              <span>{modalError}</span>
-            </div>
-          )}
-
-          {/* Add New Stage Box */}
-          <div className="p-3.5 rounded-xl border border-blue-100 bg-blue-50/40">
-            <h4 className="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
-              <Plus className="w-3.5 h-3.5 text-blue-600" />
-              <span>Add New Pipeline Stage</span>
-            </h4>
-            <form onSubmit={handleAddStatus} className="flex flex-col sm:flex-row gap-2.5 items-end">
-              <div className="flex-1 w-full">
-                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                  Stage Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Documentation Pending, Visa Applied"
-                  value={newStatusName}
-                  onChange={(e) => setNewStatusName(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="w-full sm:w-28">
-                <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
-                  Position
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={newStageOrder}
-                  onChange={(e) => setNewStageOrder(e.target.value)}
-                  className="w-full px-3 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                icon={Plus}
-                loading={addingStatus}
-                className="w-full sm:w-auto shrink-0"
-              >
-                Add Stage
-              </Button>
-            </form>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Existing Stages List */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                Current Pipeline Stages ({statuses.length})
+          {/* Drawer Body */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {modalError && (
+              <div className="flex gap-2.5 p-3.5 border border-red-200 bg-red-50 text-red-800 rounded-xl text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                <span>{modalError}</span>
+              </div>
+            )}
+
+            {/* Add New Stage Box */}
+            <div className="p-4 rounded-xl border border-blue-200/80 bg-blue-50/40 space-y-3">
+              <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                <Plus className="w-4 h-4 text-blue-600" />
+                <span>Add New Pipeline Stage</span>
               </h4>
-              <span className="text-[11px] text-slate-400">
-                Sorted by Column Position
-              </span>
+              <form onSubmit={handleAddStatus} className="flex flex-col sm:flex-row gap-3 items-end">
+                <div className="flex-1 w-full">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                    Stage Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Documentation Pending, Visa Applied"
+                    value={newStatusName}
+                    onChange={(e) => setNewStatusName(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="w-full sm:w-28">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                    Position
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={newStageOrder}
+                    onChange={(e) => setNewStageOrder(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  icon={Plus}
+                  loading={addingStatus}
+                  className="w-full sm:w-auto shrink-0"
+                >
+                  Add Stage
+                </Button>
+              </form>
             </div>
 
-            <div className="space-y-2">
-              {statuses.map((status, index) => {
-                const isEditing = editingStatusId === status.status_id;
-                const oppCount = opportunities.filter((o) => o.status_id === status.status_id).length;
-                const hasOpportunities = oppCount > 0;
+            {/* Existing Stages List */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                  Current Pipeline Stages ({statuses.length})
+                </h4>
+                <span className="text-[11px] text-slate-400">
+                  Ordered by Column Sequence
+                </span>
+              </div>
 
-                return (
-                  <div
-                    key={status.status_id}
-                    className="p-3 bg-white border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition-colors"
-                  >
-                    {isEditing ? (
-                      /* Edit Mode */
-                      <div className="flex-1 flex flex-col sm:flex-row items-center gap-2">
-                        <input
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          className="flex-1 w-full px-2.5 py-1.5 border border-blue-300 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                          <span className="text-[11px] text-slate-400 font-mono">Pos:</span>
+              <div className="space-y-2">
+                {statuses.map((status, index) => {
+                  const isEditing = editingStatusId === status.status_id;
+                  const oppCount = opportunities.filter((o) => o.status_id === status.status_id).length;
+                  const hasOpportunities = oppCount > 0;
+
+                  return (
+                    <div
+                      key={status.status_id}
+                      className="p-3.5 bg-white border border-slate-200/80 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs hover:border-slate-300 transition-colors"
+                    >
+                      {isEditing ? (
+                        /* Edit Mode */
+                        <div className="flex-1 flex flex-col sm:flex-row items-center gap-2">
                           <input
-                            type="number"
-                            min="1"
-                            value={editOrder}
-                            onChange={(e) => setEditOrder(e.target.value)}
-                            className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="flex-1 w-full px-3 py-1.5 border border-blue-300 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleSaveEdit(status.status_id)}
-                            disabled={updatingStatus}
-                            className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold px-2.5"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Save</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingStatusId(null)}
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer text-xs px-2"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      /* Display Mode */
-                      <>
-                        <div className="flex items-center gap-3">
-                          <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-mono text-[11px] font-bold flex items-center justify-center shrink-0">
-                            #{status.stage_order || index + 1}
-                          </span>
-                          <div>
-                            <p className="text-xs font-bold text-slate-800">
-                              {status.status_name}
-                            </p>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              Status ID: {status.status_id}
-                            </span>
+                          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                            <span className="text-[11px] text-slate-400 font-mono">Pos:</span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={editOrder}
+                              onChange={(e) => setEditOrder(e.target.value)}
+                              className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(status.status_id)}
+                              disabled={updatingStatus}
+                              className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold px-2.5"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Save</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingStatusId(null)}
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer text-xs px-2"
+                            >
+                              Cancel
+                            </button>
                           </div>
                         </div>
+                      ) : (
+                        /* Display Mode */
+                        <>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="w-7 h-7 rounded-lg bg-blue-50 text-blue-900 border border-blue-200 font-mono text-xs font-bold flex items-center justify-center shrink-0">
+                              #{status.stage_order || index + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-800 truncate">
+                                {status.status_name}
+                              </p>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                Stage ID: {status.status_id}
+                              </span>
+                            </div>
+                          </div>
 
-                        <div className="flex items-center gap-2.5 justify-end">
-                          {/* Opportunity Count Badge */}
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
-                              hasOpportunities
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'bg-slate-100 text-slate-500'
-                            }`}
-                          >
-                            <span>{oppCount} {oppCount === 1 ? 'Opportunity' : 'Opportunities'}</span>
-                          </span>
+                          <div className="flex items-center gap-2 justify-end shrink-0">
+                            {/* Opportunity Count Badge */}
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
+                                hasOpportunities
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}
+                            >
+                              <span>{oppCount} {oppCount === 1 ? 'Opportunity' : 'Opportunities'}</span>
+                            </span>
 
-                          {/* Edit Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleStartEdit(status)}
-                            className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
-                            title="Edit Stage Name"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
+                            {/* Edit Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(status)}
+                              className="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-colors cursor-pointer"
+                              title="Edit Stage Name & Order"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
 
-                          {/* Delete Button (Disabled if opportunities exist) */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteStatus(status)}
-                            disabled={hasOpportunities || deletingStatus}
-                            style={{
-                              cursor: hasOpportunities ? 'not-allowed' : 'pointer',
-                            }}
-                            className={`p-1.5 rounded-lg border transition-colors ${
-                              hasOpportunities
-                                ? 'border-slate-200 text-slate-300 bg-slate-50 opacity-60'
-                                : 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
-                            }`}
-                            title={
-                              hasOpportunities
-                                ? `Cannot delete: ${oppCount} active opportunities in this stage`
-                                : 'Delete Stage'
-                            }
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
+                            {/* Delete Button (Disabled if opportunities exist) */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStatus(status)}
+                              disabled={hasOpportunities || deletingStatus}
+                              style={{
+                                cursor: hasOpportunities ? 'not-allowed' : 'pointer',
+                              }}
+                              className={`p-1.5 rounded-lg border transition-colors ${
+                                hasOpportunities
+                                  ? 'border-slate-200 text-slate-300 bg-slate-50 opacity-60'
+                                  : 'border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300'
+                              }`}
+                              title={
+                                hasOpportunities
+                                  ? `Cannot delete: ${oppCount} active opportunities in this stage`
+                                  : 'Delete Stage'
+                              }
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div
-          style={{ borderColor: COLORS.border }}
-          className="flex items-center justify-between px-5 py-3 border-t bg-slate-50 shrink-0"
-        >
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-            <ShieldAlert className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>Stages containing active opportunities cannot be deleted.</span>
+          {/* Footer */}
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Stages with opportunities cannot be deleted.</span>
+            </div>
+            <Button variant="primary" onClick={onClose}>
+              Done
+            </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={onClose}>
-            Done
-          </Button>
         </div>
       </div>
     </div>

@@ -15,6 +15,10 @@ router.get('/', optionalAuthenticateToken, ReferrerController.getAllReferrers);
 router.post('/create', optionalAuthenticateToken, ReferrerController.createReferrer);
 router.post('/', optionalAuthenticateToken, ReferrerController.createReferrer);
 
+// Get referrer students and score
+router.get('/students', optionalAuthenticateToken, ReferrerController.getReferrerStudents);
+router.get('/:id/students', optionalAuthenticateToken, ReferrerController.getReferrerStudents);
+
 // Get referrer by id
 router.get('/getbyid', optionalAuthenticateToken, ReferrerController.getReferrerById);
 router.get('/:id', optionalAuthenticateToken, ReferrerController.getReferrerById);

@@ -4,8 +4,8 @@ export const ClientController = {
     
 async createClient(req, res, next) {
     try {
-        const { name, email, dob, source } = req.body;  
-        const newClient = await ClientService.createClient({ name, email, dob, source });
+        const { name, email, dob, source, referrer_id } = req.body;  
+        const newClient = await ClientService.createClient({ name, email, dob, source, referrer_id });
         res.status(201).json({
             status: 'success',
             message: 'Client created successfully',
@@ -49,7 +49,7 @@ async getAllClients(req, res, next) {
 
 async updateClient(req, res, next) {
     try {
-        const { client_id, name, email, dob, source } = req.body;
+        const { client_id, name, email, dob, source, referrer_id } = req.body;
 
          if (!client_id) {
             return res.status(400).json({
@@ -58,7 +58,7 @@ async updateClient(req, res, next) {
             });
         }
 
-        const updatedClient = await ClientService.updateClient(client_id, { name, email, dob, source });
+        const updatedClient = await ClientService.updateClient(client_id, { name, email, dob, source, referrer_id });
         res.status(200).json({
             status: 'success',
             message: 'Client updated successfully',
@@ -71,7 +71,7 @@ async updateClient(req, res, next) {
 
 async deleteClient(req, res, next) {
     try {
-        const { client_id } = req.body;
+        const client_id = req.params.id || req.body.client_id;
         if (!client_id) {
             return res.status(400).json({
                 status: 'error',

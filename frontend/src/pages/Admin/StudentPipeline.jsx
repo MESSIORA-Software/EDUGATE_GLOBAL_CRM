@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import usePipeline from '../../hooks/Admin/Pipeline/usePipeline';
 import ClientAddModal from '../../components/Modals/Admin/Student/ClientAddModal';
 import ClientDetailModal from '../../components/Modals/Admin/Student/ClientDetailModal';
@@ -34,6 +35,7 @@ import {
   Table as TableIcon,
   Plus,
   FileSpreadsheet,
+  MessageCircle,
 } from 'lucide-react';
 
 // Status Theme Helper with professional, clean subtle indicators
@@ -230,6 +232,31 @@ export default function StudentPipeline() {
     isStaff,
   } = usePipeline();
 
+  const navigate = useNavigate();
+
+  const handleOpenConversation = (opp, channelId) => {
+    const student = opp?.client || {};
+    const sId = opp?.client_id || student.client_id;
+
+    let targetChannel = 'messenger';
+    const chLower = (channelId || student.source || '').toLowerCase();
+    if (chLower.includes('wa') || chLower.includes('whatsapp')) targetChannel = 'whatsapp';
+    else if (chLower.includes('mail') || chLower.includes('email')) targetChannel = 'email';
+    else if (chLower.includes('call') || chLower.includes('phone') || chLower.includes('sms') || chLower.includes('message')) targetChannel = 'sms';
+    else if (chLower.includes('messenger') || chLower.includes('facebook') || chLower.includes('fb')) targetChannel = 'messenger';
+
+    navigate('/conversations', {
+      state: {
+        clientId: sId,
+        studentName: student.name,
+        studentEmail: student.email,
+        studentPhone: student.phone,
+        channel: targetChannel,
+        opportunityId: opp?.opportunity_id,
+      },
+    });
+  };
+
   // View Mode: 'card' (Kanban) or 'table'
   const [viewMode, setViewMode] = useState('card');
   const [tableStatusFilter, setTableStatusFilter] = useState('All');
@@ -251,6 +278,7 @@ export default function StudentPipeline() {
       const client = opp.client || {};
       const cId = String(opp.client_id || client.client_id || '');
       const oppId = String(opp.opportunity_id || '');
+      const eduOppId = `edu_opp_${oppId}`;
       const name = (client.name || '').toLowerCase();
       const email = (client.email || '').toLowerCase();
       const src = (client.source || '').toLowerCase();
@@ -261,7 +289,8 @@ export default function StudentPipeline() {
         email.includes(search) ||
         src.includes(search) ||
         cId.includes(search) ||
-        oppId.includes(search);
+        oppId.includes(search) ||
+        eduOppId.includes(search);
 
       const matchesProgram =
         programFilter === 'All' || client.source === programFilter;
@@ -273,64 +302,47 @@ export default function StudentPipeline() {
     });
   }, [opportunities, searchTerm, programFilter, tableStatusFilter]);
 
-  // Export Student Pipeline to Excel (.xls spreadsheet)
-  const handleExportExcel = () => {
-    const listToExport = opportunities && opportunities.length > 0 ? opportunities : [];
+  // Export Student Pipeline to Excel / CSV directly in browser without opening any blank pages
+  const handleExportExcel = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-    if (listToExport.length === 0) {
-      showToast({ type: 'error', message: 'No student opportunities found to export.' });
+    const listToExport = allFilteredOpportunities && allFilteredOpportunities.length > 0
+      ? allFilteredOpportunities
+      : opportunities;
+
+    if (!listToExport || listToExport.length === 0) {
+      showToast('No student opportunities found to export.', 'error');
       return;
     }
 
-    let tableHtml = `
-      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-      <head>
-        <meta charset="utf-8">
-        <!--[if gte mso 9]>
-        <xml>
-          <x:ExcelWorkbook>
-            <x:ExcelWorksheets>
-              <x:ExcelWorksheet>
-                <x:Name>Student Pipeline</x:Name>
-                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
-              </x:ExcelWorksheet>
-            </x:ExcelWorksheets>
-          </x:ExcelWorkbook>
-        </xml>
-        <![endif]-->
-        <style>
-          th { background-color: #1E3A8A; color: #FFFFFF; font-weight: bold; border: 1px solid #CBD5E1; padding: 10px; text-align: left; }
-          td { border: 1px solid #E2E8F0; padding: 8px; font-size: 12px; }
-          .badge { font-weight: bold; color: #1E3A8A; }
-        </style>
-      </head>
-      <body>
-        <h2>EDUGATE GLOBAL CRM - Student Pipeline Export</h2>
-        <p>Export Date: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })} | Total Records: ${listToExport.length}</p>
-        <table>
-          <thead>
-            <tr>
-              <th>Opportunity ID</th>
-              <th>Student ID</th>
-              <th>Student Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Pipeline Stage</th>
-              <th>Lead Source</th>
-              <th>Assigned Staff</th>
-              <th>Staff Email</th>
-              <th>Created Date</th>
-            </tr>
-          </thead>
-          <tbody>
-    `;
+    const headers = [
+      'Opportunity ID',
+      'Student ID',
+      'Student Name',
+      'Email Address',
+      'Phone Number',
+      'Pipeline Stage',
+      'Lead Source',
+      'Assigned Staff',
+      'Staff Email',
+      'Created Date',
+    ];
 
-    listToExport.forEach((opp) => {
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const clean = String(val).replace(/"/g, '""');
+      return `"${clean}"`;
+    };
+
+    const rows = listToExport.map((opp) => {
       const client = opp.client || {};
       const statusObj = statuses.find((s) => String(s.status_id) === String(opp.status_id));
       const stageName = statusObj ? statusObj.status_name : (opp.status_name || 'Active');
-      const oppId = opp.opportunity_id ? `#OPP-${opp.opportunity_id}` : '';
-      const clientId = client.client_id ? `#STD-${client.client_id}` : (opp.client_id || '');
+      const oppId = opp.opportunity_id ? `EDU_OPP_${opp.opportunity_id}` : '';
+      const clientId = client.client_id ? `EDU_STD_${client.client_id}` : (opp.client_id ? `EDU_STD_${opp.client_id}` : '');
       const studentName = client.name || 'Unnamed Student';
       const email = client.email || 'N/A';
       const phone = client.phone || client.contact_number || 'N/A';
@@ -339,41 +351,40 @@ export default function StudentPipeline() {
       const staffEmail = opp.staff?.email || 'N/A';
       const dateCreated = formatDate(opp.created_at || client.created_at);
 
-      tableHtml += `
-        <tr>
-          <td class="badge">${oppId}</td>
-          <td>${clientId}</td>
-          <td><strong>${studentName}</strong></td>
-          <td>${email}</td>
-          <td>${phone}</td>
-          <td>${stageName}</td>
-          <td>${source}</td>
-          <td>${staffName}</td>
-          <td>${staffEmail}</td>
-          <td>${dateCreated}</td>
-        </tr>
-      `;
+      return [
+        escapeCsv(oppId),
+        escapeCsv(clientId),
+        escapeCsv(studentName),
+        escapeCsv(email),
+        escapeCsv(phone),
+        escapeCsv(stageName),
+        escapeCsv(source),
+        escapeCsv(staffName),
+        escapeCsv(staffEmail),
+        escapeCsv(dateCreated),
+      ].join(',');
     });
 
-    tableHtml += `
-          </tbody>
-        </table>
-      </body>
-      </html>
-    `;
+    // Prepend UTF-8 BOM (\uFEFF) so Excel opens it with perfect unicode, accents, and column alignment
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const now = new Date().toISOString().slice(0, 10);
+    const fileName = `Edugate_Student_Pipeline_${now}.csv`;
 
-    const blob = new Blob([tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    // Direct download anchor - does NOT open any new or blank tab
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const now = new Date().toISOString().slice(0, 10);
-    link.download = `Edugate_Student_Pipeline_${now}.xls`;
+    link.setAttribute('download', fileName);
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 200);
 
-    showToast({ type: 'success', message: `Exported ${listToExport.length} student records to Excel!` });
+    showToast(`Exported ${listToExport.length} student records successfully!`, 'success');
   };
 
   return (
@@ -392,7 +403,7 @@ export default function StudentPipeline() {
           ) : (
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           )}
-          <span>{toast.message}</span>
+          <span>{typeof toast.message === 'string' ? toast.message : String(toast.message?.message || toast.message || '')}</span>
         </div>
       )}
 
@@ -471,11 +482,12 @@ export default function StudentPipeline() {
           <button
             type="button"
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
-              handleExportExcel();
+              handleExportExcel(e);
             }}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50/40 text-emerald-900 text-xs font-semibold hover:bg-emerald-50 hover:border-emerald-600 transition-all cursor-pointer shadow-2xs"
-            title="Export Student Pipeline to Excel"
+            title="Export Student Pipeline to Excel / CSV"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Export As Excel</span>
@@ -537,7 +549,7 @@ export default function StudentPipeline() {
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           <input
             type="text"
-            placeholder="Search by student, email, or #OPP-ID..."
+            placeholder="Search by student, email, or EDU_OPP_ ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-9 pr-3 py-2 border border-slate-200 bg-slate-50/70 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white transition-all"
@@ -660,10 +672,10 @@ export default function StudentPipeline() {
 
                     return (
                       <tr key={oppId} className="hover:bg-slate-50/70 transition-colors">
-                        {/* #OPP ID */}
+                        {/* Opportunity ID */}
                         <td className="py-3 px-4 font-mono font-semibold text-slate-700">
-                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200/70 text-[11px]">
-                            #OPP-{oppId}
+                          <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200 text-[11px] font-bold shadow-2xs">
+                            EDU_OPP_{oppId}
                           </span>
                         </td>
 
@@ -746,18 +758,31 @@ export default function StudentPipeline() {
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-1.5 flex-wrap max-w-[150px]">
                             {student.source && (
-                              <span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 truncate">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenConversation(opp, student.source);
+                                }}
+                                className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors truncate cursor-pointer"
+                                title={`Open conversation for ${student.source}`}
+                              >
                                 {student.source}
-                              </span>
+                              </button>
                             )}
                             {channelIcons.map((ch) => (
-                              <div
+                              <button
                                 key={ch.id}
-                                className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${ch.bg}`}
-                                title={`Channel: ${ch.title}`}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenConversation(opp, ch.id);
+                                }}
+                                className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${ch.bg} hover:scale-110 active:scale-95 shadow-2xs hover:shadow transition-all cursor-pointer`}
+                                title={`Open ${ch.title} Conversation`}
                               >
                                 {ch.icon}
-                              </div>
+                              </button>
                             ))}
                           </div>
                         </td>
@@ -1034,99 +1059,123 @@ export default function StudentPipeline() {
                                             }}
                                             className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-2 cursor-pointer font-medium"
                                           >
-                                          <Eye className="w-3.5 h-3.5 text-blue-500" />
-                                          View Student Info
-                                        </button>
-                                        {!isStaff && (
+                                            <Eye className="w-3.5 h-3.5 text-blue-500" />
+                                            View Student Info
+                                          </button>
                                           <button
                                             type="button"
                                             onClick={() => {
-                                              setAssignStaffOpp(opp);
+                                              handleOpenConversation(opp);
                                               setActiveMenuOppId(null);
                                             }}
-                                            className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 cursor-pointer font-medium"
+                                            className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 flex items-center gap-2 cursor-pointer font-medium"
                                           >
-                                            <UserCheck className="w-3.5 h-3.5 text-red-500" />
-                                            Assign Staff
+                                            <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                                            Open Conversation
                                           </button>
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            setNoteModalOpp(opp);
-                                            setActiveMenuOppId(null);
-                                          }}
-                                          className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2 cursor-pointer font-medium"
-                                        >
-                                          <StickyNote className="w-3.5 h-3.5 text-amber-500" />
-                                          {hasNote ? 'Edit Note' : 'Add Note'}
-                                        </button>
+                                          {!isStaff && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setAssignStaffOpp(opp);
+                                                setActiveMenuOppId(null);
+                                              }}
+                                              className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 cursor-pointer font-medium"
+                                            >
+                                              <UserCheck className="w-3.5 h-3.5 text-red-500" />
+                                              Assign Staff
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setNoteModalOpp(opp);
+                                              setActiveMenuOppId(null);
+                                            }}
+                                            className="w-full text-left px-3 py-1.5 text-slate-700 hover:bg-amber-50 hover:text-amber-700 flex items-center gap-2 cursor-pointer font-medium"
+                                          >
+                                            <StickyNote className="w-3.5 h-3.5 text-amber-500" />
+                                            {hasNote ? 'Edit Note' : 'Add Note'}
+                                          </button>
 
-                                        <div className="border-t border-slate-100 my-1 pt-1">
-                                          <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                            Move To Stage
+                                          <div className="border-t border-slate-100 my-1 pt-1">
+                                            <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                              Move To Stage
+                                            </div>
+                                            {statuses
+                                              .filter((st) => st.status_id !== status.status_id)
+                                              .map((targetSt) => (
+                                                <button
+                                                  key={targetSt.status_id}
+                                                  type="button"
+                                                  onClick={() => {
+                                                    handleMoveOpportunity(opp, targetSt.status_id);
+                                                    setActiveMenuOppId(null);
+                                                  }}
+                                                  className="w-full text-left px-3 py-1.5 text-slate-600 hover:bg-blue-50 hover:text-blue-900 flex items-center justify-between cursor-pointer"
+                                                >
+                                                  <span className="truncate">{targetSt.status_name}</span>
+                                                  <ArrowRight className="w-3 h-3 text-blue-500 shrink-0" />
+                                                </button>
+                                              ))}
                                           </div>
-                                          {statuses
-                                            .filter((st) => st.status_id !== status.status_id)
-                                            .map((targetSt) => (
-                                              <button
-                                                key={targetSt.status_id}
-                                                type="button"
-                                                onClick={() => {
-                                                  handleMoveOpportunity(opp, targetSt.status_id);
-                                                  setActiveMenuOppId(null);
-                                                }}
-                                                className="w-full text-left px-3 py-1.5 text-slate-600 hover:bg-blue-50 hover:text-blue-900 flex items-center justify-between cursor-pointer"
-                                              >
-                                                <span className="truncate">{targetSt.status_name}</span>
-                                                <ArrowRight className="w-3 h-3 text-blue-500 shrink-0" />
-                                              </button>
-                                            ))}
                                         </div>
-                                      </div>
-                                    )}
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
 
-                              {/* Middle: #OPP-ID + Source + Date */}
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-md bg-blue-50 text-blue-900 border border-blue-200 shadow-2xs">
-                                    #OPP-{oppId}
-                                  </span>
-                                  {student.source && (
-                                    <span className="text-[10px] font-semibold px-2 py-0.2 rounded-md bg-red-50 text-red-800 border border-red-200 truncate max-w-[130px]">
-                                      {student.source}
+                                {/* Middle: Opportunity ID + Source + Date */}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-900 border border-blue-200 shadow-2xs">
+                                      EDU_OPP_{oppId}
                                     </span>
-                                  )}
-                                </div>
-
-                                <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                                  <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
-                                  <span>{formatDate(opp.created_at || student.created_at)}</span>
-                                </div>
-                              </div>
-
-                              {/* Bottom Bar: Channel Icons + Note Button */}
-                              <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
-                                <div className="flex items-center gap-1 overflow-hidden">
-                                  {channelIcons.length > 0 ? (
-                                    channelIcons.map((ch) => (
-                                      <div
-                                        key={ch.id}
-                                        className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${ch.bg}`}
-                                        title={`Channel: ${ch.title}`}
+                                    {student.source && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleOpenConversation(opp, student.source);
+                                        }}
+                                        className="text-[10px] font-semibold px-2 py-0.2 rounded-md bg-red-50 text-red-800 border border-red-200 hover:bg-red-100 transition-colors truncate max-w-[130px] cursor-pointer"
+                                        title={`Open conversation for ${student.source}`}
                                       >
-                                        {ch.icon}
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <span className="text-[10px] text-slate-400 font-normal">
-                                      Direct
-                                    </span>
-                                  )}
+                                        {student.source}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                    <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                                    <span>{formatDate(opp.created_at || student.created_at)}</span>
+                                  </div>
                                 </div>
+
+                                {/* Bottom Bar: Channel Icons + Note Button */}
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 gap-2">
+                                  <div className="flex items-center gap-1.5 overflow-hidden">
+                                    {channelIcons.length > 0 ? (
+                                      channelIcons.map((ch) => (
+                                        <button
+                                          key={ch.id}
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenConversation(opp, ch.id);
+                                          }}
+                                          className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${ch.bg} hover:scale-110 active:scale-95 shadow-2xs hover:shadow transition-all cursor-pointer`}
+                                          title={`Click to open ${ch.title} conversation with ${student.name || 'student'}`}
+                                        >
+                                          {ch.icon}
+                                        </button>
+                                      ))
+                                    ) : (
+                                      <span className="text-[10px] text-slate-400 font-normal">
+                                        Direct
+                                      </span>
+                                    )}
+                                  </div>
 
                                 <button
                                   type="button"
