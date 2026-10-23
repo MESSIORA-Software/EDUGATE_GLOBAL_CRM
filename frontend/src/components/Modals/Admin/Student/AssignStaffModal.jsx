@@ -3,10 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchUsers } from '../../../../actions/Admin/userActions';
 import userService from '../../../../services/Admin/userService';
 import PipelineService from '../../../../services/Admin/pipelineService';
-import { COLORS } from '../../../../constants/colors';
-import { TYPOGRAPHY } from '../../../../constants/typography';
 import Button from '../../../ui/Button';
-import { X, UserCheck, AlertCircle, User, Shield, Check, LoaderCircle, Search } from 'lucide-react';
+import { X, UserCheck, AlertCircle, User, Shield, Check, LoaderCircle, Search, UserMinus } from 'lucide-react';
 import { isStaffUser } from '../../../../utils/roleUtils';
 
 export default function AssignStaffModal({ isOpen, opportunity, onClose, onSuccess }) {
@@ -75,7 +73,8 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
 
   if (!isOpen || !opportunity) return null;
 
-  const studentName = opportunity?.client?.name || `Student #${opportunity?.client_id || ''}`;
+  const student = opportunity?.client || {};
+  const studentName = student.name || `Student #${opportunity?.client_id || ''}`;
 
   const handleAssign = async (e) => {
     e.preventDefault();
@@ -96,8 +95,8 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
 
       onSuccess?.(
         selectedStaffId
-          ? `Assigned ${staffName} to opportunity #${opportunity.opportunity_id}`
-          : `Unassigned staff from opportunity #${opportunity.opportunity_id}`
+          ? `Assigned ${staffName} to opportunity EDU_OPP_${opportunity.opportunity_id}`
+          : `Unassigned staff from opportunity EDU_OPP_${opportunity.opportunity_id}`
       );
       onClose();
     } catch (err) {
@@ -112,154 +111,195 @@ export default function AssignStaffModal({ isOpen, opportunity, onClose, onSucce
   const isLoading = (loadingUsers || loadingLocal) && combinedUsers.length === 0;
 
   return (
-    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+    <div className="fixed inset-0 lg:left-60 z-40 overflow-hidden animate-in fade-in duration-200">
+      {/* Backdrop */}
       <div
-        className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-md w-full overflow-hidden"
-      >
-        {/* Header */}
-        <div
-          style={{ backgroundColor: COLORS.background, borderColor: COLORS.border }}
-          className="flex items-center justify-between px-5 py-3.5 border-b"
-        >
-          <div className="flex items-center gap-2.5">
-            <div
-              style={{ backgroundColor: COLORS.primaryLight, color: COLORS.primary }}
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-bold shadow-2xs"
-            >
-              <UserCheck className="w-4 h-4" />
-            </div>
+        className="fixed inset-0 lg:left-60 bg-slate-900/15 backdrop-blur-[1px] transition-opacity cursor-pointer"
+        onClick={onClose}
+      />
+
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 pointer-events-none">
+        <div className="w-screen max-w-2xl md:w-[50vw] bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full pointer-events-auto animate-in slide-in-from-right duration-300 ease-out">
+          {/* Header */}
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className={TYPOGRAPHY.heading}>Assign Staff Member</h3>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-mono">
-                  #OPP-{opportunity.opportunity_id}
-                </span>
-              </div>
-              <p className={TYPOGRAPHY.caption}>{studentName}</p>
+              <h2 className="text-base font-bold text-slate-800">
+                Assign Staff Member
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Manage staff ownership for this student opportunity
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            style={{ color: COLORS.muted }}
-            className="w-7 h-7 rounded-full hover:bg-slate-200/60 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Body */}
-        <form onSubmit={handleAssign} className="p-5 space-y-4">
-          {error && (
-            <div className="flex gap-2.5 p-3 border border-red-200 bg-red-50 text-red-800 rounded-xl text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className={`${TYPOGRAPHY.label}`}>Select Staff Member</label>
-              <span className="text-[11px] font-medium text-slate-400">
-                {onlyStaffUsers.length} staff available
-              </span>
-            </div>
-
-            {onlyStaffUsers.length > 3 && (
-              <div className="relative mb-2.5">
-                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search staff by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-            )}
-
-            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-              {/* Option to Unassign */}
-              <button
-                type="button"
-                onClick={() => setSelectedStaffId('')}
-                className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                  selectedStaffId === ''
-                    ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-2xs'
-                    : 'border-slate-200 hover:bg-slate-50 text-slate-600'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold text-xs">
-                    -
-                  </div>
-                  <div className="text-left">
-                    <span className="font-semibold text-slate-700">Unassigned</span>
-                    <p className="text-[10px] text-slate-400">Remove current staff assignment</p>
-                  </div>
+          {/* Form */}
+          <form onSubmit={handleAssign} className="flex-1 flex flex-col min-h-0">
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {error && (
+                <div className="flex gap-2.5 p-3.5 border border-red-200 bg-red-50 text-red-800 rounded-xl text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500 mt-0.5" />
+                  <span>{error}</span>
                 </div>
-                {selectedStaffId === '' && <Check className="w-4 h-4 text-blue-600" />}
-              </button>
-
-              {isLoading ? (
-                <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-400">
-                  <LoaderCircle className="w-4 h-4 animate-spin text-blue-600" />
-                  <span>Loading staff members...</span>
-                </div>
-              ) : filteredStaffUsers.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  {searchTerm ? 'No staff matching search' : 'No active staff users found'}
-                </div>
-              ) : (
-                filteredStaffUsers.map((u) => {
-                  const uId = String(u.user_id || u.id);
-                  const isSelected = selectedStaffId === uId;
-                  const initials = (u.name || 'ST').substring(0, 2).toUpperCase();
-
-                  return (
-                    <button
-                      key={uId}
-                      type="button"
-                      onClick={() => setSelectedStaffId(uId)}
-                      className={`w-full flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
-                        isSelected
-                          ? 'border-blue-500 bg-blue-50/80 text-blue-900 shadow-2xs ring-1 ring-blue-400'
-                          : 'border-slate-200 hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[11px] shrink-0 shadow-2xs">
-                          {initials}
-                        </div>
-                        <div className="text-left min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="truncate font-bold text-slate-800">{u.name}</span>
-                            <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
-                              Staff
-                            </span>
-                          </div>
-                          <div className="text-[10px] text-slate-500 truncate">
-                            {u.email}
-                          </div>
-                        </div>
-                      </div>
-                      {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}
-                    </button>
-                  );
-                })
               )}
-            </div>
-          </div>
 
-          {/* Footer */}
-          <div style={{ borderColor: COLORS.border }} className="flex items-center justify-end gap-2 pt-3 border-t">
-            <Button variant="outline" size="sm" type="button" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
-            <Button variant="primary" size="sm" type="submit" loading={saving}>
-              Confirm Assignment
-            </Button>
-          </div>
-        </form>
+              {/* Opportunity Student Context Card */}
+              <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/60 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-900 border border-blue-200">
+                    EDU_OPP_{opportunity.opportunity_id}
+                  </span>
+                  <h4 className="text-sm font-bold text-slate-900 mt-1 truncate">
+                    {studentName}
+                  </h4>
+                  <p className="text-xs text-slate-500 truncate">
+                    {student.email || 'No email provided'} {student.phone ? `• ${student.phone}` : ''}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                    Current Stage
+                  </span>
+                  <span className="text-xs font-semibold text-slate-700">
+                    {opportunity.status_name || 'Active Opportunity'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Staff Selection Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Select Staff Member
+                  </label>
+                  <span className="text-xs font-medium text-slate-400">
+                    {onlyStaffUsers.length} active staff
+                  </span>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Search staff by name or email address..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm('')}
+                      className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Staff List */}
+                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1 pt-1">
+                  {/* Option: Unassigned */}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedStaffId('')}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+                      selectedStaffId === ''
+                        ? 'border-blue-500 bg-blue-50/80 text-blue-900 ring-2 ring-blue-500/20 shadow-2xs'
+                        : 'border-slate-200 hover:bg-slate-50/80 text-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-xs shrink-0">
+                        <UserMinus className="w-4 h-4" />
+                      </div>
+                      <div className="text-left">
+                        <span className="font-bold text-slate-800">Unassigned</span>
+                        <p className="text-[11px] text-slate-500">Remove current assigned staff member</p>
+                      </div>
+                    </div>
+                    {selectedStaffId === '' && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
+                  </button>
+
+                  {isLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-12 text-xs text-slate-400">
+                      <LoaderCircle className="w-5 h-5 animate-spin text-blue-600" />
+                      <span>Loading staff team...</span>
+                    </div>
+                  ) : filteredStaffUsers.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      {searchTerm ? 'No staff member matches your search.' : 'No active staff accounts available.'}
+                    </div>
+                  ) : (
+                    filteredStaffUsers.map((u) => {
+                      const uId = String(u.user_id || u.id);
+                      const isSelected = selectedStaffId === uId;
+                      const initials = (u.name || 'ST').substring(0, 2).toUpperCase();
+
+                      return (
+                        <button
+                          key={uId}
+                          type="button"
+                          onClick={() => setSelectedStaffId(uId)}
+                          className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50/80 text-blue-900 ring-2 ring-blue-500/20 shadow-2xs'
+                              : 'border-slate-200 hover:bg-slate-50/80 text-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 rounded-full bg-blue-900 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                              {initials}
+                            </div>
+                            <div className="text-left min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="truncate font-bold text-slate-800">{u.name}</span>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                                  Staff
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 truncate">
+                                {u.email}
+                              </div>
+                            </div>
+                          </div>
+                          {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                loading={saving}
+              >
+                Confirm Assignment
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

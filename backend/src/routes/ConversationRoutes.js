@@ -20,6 +20,7 @@ router.post('/media/upload', uploadMiddleware, validateFile, MessageController.u
 // Conversation threads
 router.get('/', ConversationController.getConversations);
 router.get('/client/:client_id', ConversationController.getClientConversations);
+router.post('/client/:client_id/get-or-create', ConversationController.getOrCreateClientConversation);
 router.get('/:id', ConversationController.getConversationDetails);
 router.patch('/:id/assign', ConversationController.assignStaff);
 router.put('/client/:client_id', ConversationController.updateClientDetails);

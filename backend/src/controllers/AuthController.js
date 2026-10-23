@@ -40,7 +40,33 @@ export const authController = {
         } catch (error) {
             next(error);
         }
-    }
+    },
 
-    
+    async resetPassword(req, res, next) {
+        try {
+            const { email, currentPassword, newPassword } = req.body;
+            const result = await authService.resetPassword({ email, currentPassword, newPassword });
+            res.status(200).json({
+                status: 'success',
+                message: result.message
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
+    async verifyPassword(req, res, next) {
+        try {
+            const { password, email } = req.body;
+            const userId = req.user?.user_id;
+            const result = await authService.verifyPassword({ userId, email, password });
+            res.status(200).json({
+                status: 'success',
+                message: 'Password verified successfully',
+                data: result
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 };

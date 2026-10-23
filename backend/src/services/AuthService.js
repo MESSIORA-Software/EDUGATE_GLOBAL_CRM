@@ -74,5 +74,82 @@ export const authService = {
         return {
             message: 'User logged out successfully'
         };
+    },
+
+    async resetPassword({ email, currentPassword, newPassword }) {
+        if (!email || !newPassword) {
+            const error = new Error('Email and new password are required');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const user = await UserRepository.finduserbyemail(email.trim());
+        if (!user) {
+            const error = new Error('No user found with the provided email address');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // If currentPassword is provided, verify it
+        if (currentPassword) {
+            let isPasswordValid = false;
+            if (user.password_hash && user.password_hash.startsWith('$2')) {
+                isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+            } else {
+                isPasswordValid = currentPassword === user.password_hash;
+            }
+            if (!isPasswordValid) {
+                const error = new Error('The temporary/current password you entered is incorrect');
+                error.statusCode = 401;
+                throw error;
+            }
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword.trim(), salt);
+
+        await UserRepository.updateuser(user.user_id, {
+            password_hash: hashedPassword,
+            updated_at: new Date()
+        });
+
+        return {
+            message: 'Password reset successfully. You can now log in with your new password.'
+        };
+    },
+
+    async verifyPassword({ userId, email, password }) {
+        if (!password) {
+            const error = new Error('Password is required');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        let user = null;
+        if (userId) {
+            user = await UserRepository.finduserbyid(userId);
+        } else if (email) {
+            user = await UserRepository.finduserbyemail(email.trim());
+        }
+
+        if (!user) {
+            const error = new Error('Current user account not found');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        let isPasswordValid = false;
+        if (user.password_hash && user.password_hash.startsWith('$2')) {
+            isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        } else {
+            isPasswordValid = password === user.password_hash;
+        }
+        if (!isPasswordValid) {
+            const error = new Error('Incorrect password. Please enter your valid current password.');
+            error.statusCode = 401;
+            throw error;
+        }
+
+        return { verified: true };
     }
 };

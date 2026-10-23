@@ -92,6 +92,14 @@ const deleteReferrer = async (referrerId) => {
   });
 };
 
+// 7. Get Referrer Students and Referral Score
+const getReferrerStudents = async (referrerId) => {
+  return apiRequest({
+    method: 'get',
+    url: `${BASE_URL}/referrers/${referrerId}/students`,
+  });
+};
+
 export default {
   getNextCode,
   createReferrer,
@@ -99,4 +107,5 @@ export default {
   getReferrerById,
   updateReferrer,
   deleteReferrer,
+  getReferrerStudents,
 };

@@ -3,6 +3,7 @@ import useAdminUsers from '../../hooks/Admin/Users/useAdminUsers';
 import UserAddModal from '../../components/Modals/Admin/User/UserAddModal';
 import UserUpdateModal from '../../components/Modals/Admin/User/UserUpdateModal';
 import UserDetailModal from '../../components/Modals/Admin/User/UserDetailModal';
+import UserDeleteModal from '../../components/Modals/Admin/User/UserDeleteModal';
 
 import {
   Users,
@@ -15,8 +16,6 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
-  Building2,
-  ShieldCheck,
   Loader2,
   Filter,
   ChevronDown,
@@ -40,6 +39,8 @@ export default function UsersManagement() {
     setEditingUser,
     detailUser,
     setDetailUser,
+    deletingUser,
+    setDeletingUser,
     toast,
     showToast,
     handleRefresh,
@@ -104,7 +105,13 @@ export default function UsersManagement() {
           <div className="relative w-full sm:w-80 group">
             <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
-              type="text"
+              type="search"
+              name="users_search_filter_control"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck="false"
+              data-lpignore="true"
+              data-form-type="other"
               placeholder="Search by name, email, role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -136,26 +143,6 @@ export default function UsersManagement() {
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
           </div>
         </div>
-
-        <div className="flex items-center justify-end flex-wrap gap-2.5 w-full lg:w-auto">
-          <form onSubmit={handleFindById} className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="User ID (e.g. 1)"
-              value={findIdInput}
-              onChange={(e) => setFindIdInput(e.target.value)}
-              className="px-3 py-2 border border-blue-200 bg-white rounded-xl text-xs font-mono uppercase text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 w-32"
-            />
-            <button
-              type="submit"
-              disabled={isFinding || !findIdInput.trim()}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer disabled:opacity-50 shrink-0 shadow-2xs"
-            >
-              {isFinding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
-              <span>Find</span>
-            </button>
-          </form>
-        </div>
       </div>
 
       {/* Table Container */}
@@ -182,9 +169,9 @@ export default function UsersManagement() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                  <th className="py-3.5 px-4">User ID</th>
                   <th className="py-3.5 px-4">User Details</th>
                   <th className="py-3.5 px-4">Role / Scope</th>
-                  <th className="py-3.5 px-4">Branch Location</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -192,9 +179,22 @@ export default function UsersManagement() {
               <tbody className="divide-y divide-slate-100 text-xs">
                 {filteredUsers.map((u, index) => {
                   const initials = (u.name || u.email || 'U').substring(0, 2).toUpperCase();
+                  const formattedUserId = u.user_id
+                    ? String(u.user_id).startsWith('EDU_USER_')
+                      ? u.user_id
+                      : `EDU_USER_${u.user_id}`
+                    : 'N/A';
 
                   return (
                     <tr key={u.user_id || index} className="hover:bg-slate-50/70 transition-colors">
+                      {/* 1st Column: User ID */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="font-mono text-xs font-bold text-slate-800">
+                          {formattedUserId}
+                        </span>
+                      </td>
+
+                      {/* 2nd Column: User Details */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0">
@@ -206,31 +206,23 @@ export default function UsersManagement() {
                           </div>
                         </div>
                       </td>
+
+                      {/* 3rd Column: Role / Scope (Normal Black Text) */}
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-800 border border-blue-200">
-                          <ShieldCheck className="w-3 h-3 text-blue-600" />
+                        <span className="text-xs font-medium text-slate-800">
                           {u.role_name || u.role_id || 'Staff'}
                         </span>
                       </td>
+
+                      {/* 4th Column: Status (Normal Black Text) */}
                       <td className="py-3.5 px-4">
-                        <span className="flex items-center gap-1.5 text-slate-600 text-[11px] font-medium">
-                          <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
-                          {u.branch_name || 'Main Office'}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                            u.status === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-200'
-                          }`}
-                        >
-                          <CheckCircle2 className="w-3 h-3" />
+                        <span className="text-xs font-medium text-slate-800">
                           {u.status || 'ACTIVE'}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-1.5">
+
+                      {/* 5th Column: Actions */}
+                      <td className="py-3.5 px-4 text-right space-x-1.5 whitespace-nowrap">
                         <button
                           onClick={() => setDetailUser(u)}
                           className="p-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer"
@@ -246,7 +238,7 @@ export default function UsersManagement() {
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(u.user_id)}
+                          onClick={() => setDeletingUser(u)}
                           className="p-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer"
                           title="Delete User"
                         >
@@ -262,25 +254,43 @@ export default function UsersManagement() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals & Drawers */}
       <UserAddModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
-        onSuccess={(msg) => showToast(msg)}
+        onSuccess={(msg) => {
+          showToast(msg);
+          handleRefresh();
+        }}
       />
 
       <UserUpdateModal
         isOpen={!!editingUser}
         user={editingUser}
         onClose={() => setEditingUser(null)}
-        onSuccess={(msg) => showToast(msg)}
+        onSuccess={(msg) => {
+          showToast(msg);
+          handleRefresh();
+        }}
       />
 
       <UserDetailModal
         isOpen={!!detailUser}
         user={detailUser}
         onClose={() => setDetailUser(null)}
+        onEdit={(u) => setEditingUser(u)}
+      />
+
+      <UserDeleteModal
+        isOpen={!!deletingUser}
+        user={deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onSuccess={(msg) => {
+          showToast(msg);
+          handleRefresh();
+        }}
       />
     </div>
   );
 }
+

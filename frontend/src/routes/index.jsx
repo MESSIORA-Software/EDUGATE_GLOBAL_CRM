@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import useAuth from '../hooks/Auth/useAuth';
 import MainLayout from '../layout/MainLayout';
 import LoginPage from '../pages/Auth/LoginPage';
+import ResetPasswordPage from '../pages/Auth/ResetPasswordPage';
 import ProfilePage from '../pages/Auth/ProfilePage';
 import RolesManagement from '../pages/Admin/RolesManagement';
 import UsersManagement from '../pages/Admin/UsersManagement';
@@ -63,6 +64,10 @@ function AppRoutes() {
             <LoginPage />
           </PublicRoute>
         }
+      />
+      <Route
+        path="/reset-password"
+        element={<ResetPasswordPage />}
       />
 
       {/* Protected Routes */}

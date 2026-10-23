@@ -64,4 +64,18 @@ export const ReferrerService = {
     if (!referrerId) throw new Error('Field "referrer_id" is required.');
     return await ReferrerRepository.deleteReferrer(Number(referrerId));
   },
+
+  async getReferrerStudents(referrerId) {
+    if (!referrerId) throw new Error('Field "referrer_id" is required.');
+    const referrer = await ReferrerRepository.getReferrerById(Number(referrerId));
+    let students = await ReferrerRepository.getStudentsByReferrerId(Number(referrerId));
+
+    const score = (students?.length || 0) * 10;
+    return {
+      referrer,
+      students,
+      total_students: students?.length || 0,
+      score,
+    };
+  },
 };

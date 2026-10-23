@@ -1,254 +1,397 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchPipelineData } from '../../../../actions/Admin/pipelineAction';
 import {
   X,
-  User,
   Mail,
   Calendar,
   Share2,
-  Hash,
   Phone,
-  UserCheck,
-  Target,
-  Sparkles,
   Layers,
+  Copy,
+  Check,
+  Edit2,
+  Award,
 } from 'lucide-react';
+import Button from '../../../ui/Button';
+import referrerService from '../../../../services/Admin/referrerService';
 
-// Channel icon helper
-function getChannelBadge(sourceStr = '') {
-  if (!sourceStr) return null;
-  const lower = sourceStr.toLowerCase();
+export default function ClientDetailModal({ isOpen, client, onClose, onEdit }) {
+  const dispatch = useDispatch();
+  const [copied, setCopied] = useState(false);
+  const [referrerInfo, setReferrerInfo] = useState(null);
 
-  if (lower.includes('messenger') || lower.includes('facebook') || lower.includes('fb')) {
-    return {
-      name: 'Messenger',
-      color: 'bg-blue-50 text-blue-700 border-blue-200',
-      icon: (
-        <svg className="w-3.5 h-3.5 fill-[#1877F2]" viewBox="0 0 24 24">
-          <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.2 5.43 3.19 7.07.16.13.26.33.26.54l-.07 1.7c-.03.74.77 1.25 1.41.87l1.91-1.12c.16-.1.35-.13.54-.1.87.23 1.79.35 2.76.35 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm1.06 13.06l-2.58-2.75-5.04 2.75 5.54-5.88 2.65 2.75 4.97-2.75-5.54 5.88z" />
-        </svg>
-      ),
-    };
-  }
+  const { opportunities = [], statuses = [] } = useSelector((state) => state.pipeline ?? {});
 
-  if (lower.includes('whatsapp') || lower.includes('wa')) {
-    return {
-      name: 'WhatsApp',
-      color: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-      icon: (
-        <svg className="w-3.5 h-3.5 fill-[#25D366]" viewBox="0 0 24 24">
-          <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm5.78 14.07c-.24.68-1.2 1.25-1.95 1.34-.51.06-1.17.09-3.39-.83-2.84-1.18-4.66-4.08-4.8-4.27-.14-.19-1.15-1.53-1.15-2.92 0-1.39.73-2.07 1-2.35.24-.25.53-.31.71-.31.18 0 .35 0 .5.01.16.01.37-.06.58.44.22.52.74 1.8.8 1.93.07.13.11.28.02.46-.09.18-.14.28-.27.44-.13.16-.28.35-.4.47-.13.13-.27.28-.12.54.16.26.7 1.15 1.5 1.86 1.03.92 1.9 1.21 2.17 1.34.27.13.43.11.59-.07.16-.18.68-.79.86-1.06.18-.27.36-.22.61-.13.25.09 1.59.75 1.86.88.27.13.45.2.52.31.06.11.06.64-.18 1.32z" />
-        </svg>
-      ),
-    };
-  }
+  useEffect(() => {
+    if (isOpen && opportunities.length === 0) {
+      dispatch(fetchPipelineData());
+    }
+  }, [isOpen, opportunities.length, dispatch]);
 
-  if (lower.includes('email') || lower.includes('mail')) {
-    return {
-      name: 'Email',
-      color: 'bg-purple-50 text-purple-800 border-purple-200',
-      icon: (
-        <svg className="w-3.5 h-3.5 stroke-[#7C3AED] fill-none" viewBox="0 0 24 24" strokeWidth="2">
-          <rect width="20" height="16" x="2" y="4" rx="2" />
-          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-        </svg>
-      ),
-    };
-  }
+  useEffect(() => {
+    if (client) {
+      if (client.referrers) {
+        setReferrerInfo(client.referrers);
+      } else if (client.referrer_id) {
+        referrerService
+          .getReferrerById(client.referrer_id)
+          .then((res) => setReferrerInfo(res?.data?.data || res?.data))
+          .catch(() => setReferrerInfo(null));
+      } else {
+        setReferrerInfo(null);
+      }
+    }
+  }, [client]);
 
-  return {
-    name: sourceStr,
-    color: 'bg-blue-50 text-blue-800 border-blue-200',
-    icon: <Share2 className="w-3.5 h-3.5 text-blue-600" />,
-  };
-}
+  const clientId = client?.client_id || client?.id || '';
 
-export default function ClientDetailModal({ isOpen, client, onClose }) {
+  const studentOpportunity = useMemo(() => {
+    if (!clientId) return null;
+    return opportunities.find((opp) => Number(opp.client_id) === Number(clientId));
+  }, [opportunities, clientId]);
+
+  const currentStageName = useMemo(() => {
+    if (!studentOpportunity) return 'Not Created Opportunity';
+    const matchedStatus = statuses.find(
+      (s) => Number(s.status_id) === Number(studentOpportunity.status_id)
+    );
+    return (
+      matchedStatus?.name ||
+      studentOpportunity.status_name ||
+      client?.status_name ||
+      'In Pipeline'
+    );
+  }, [studentOpportunity, statuses, client?.status_name]);
+
   if (!isOpen || !client) return null;
 
-  const clientId = client.client_id || client.id || 'N/A';
-  const oppId = client.opportunity_id;
-  const clientName = client.name || 'Unnamed Client';
+  const formattedClientId = clientId
+    ? String(clientId).startsWith('EDU_STUDENT_')
+      ? String(clientId)
+      : `EDU_STUDENT_${clientId}`
+    : 'N/A';
+  const clientName = client.name || 'Unnamed Student';
   const email = client.email || 'No email provided';
-  const phone = client.phone || client.contact_number || client.mobile || 'Not provided';
+  const phone = client.phone || client.contact_number || client.mobile || 'Not specified';
   const dob = client.dob || 'Not specified';
   const source = client.source || 'Direct Contact';
-  const stageName = client.status_name || client.stage || null;
-  const staffName = client.staff_name || (client.staff ? (client.staff.name || client.staff.email) : null);
-  const staffEmail = client.staff?.email || null;
-
-  const channelInfo = getChannelBadge(source);
 
   const createdAt = client.created_at
     ? new Date(client.created_at).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: 'short',
         year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
       })
-    : null;
+    : 'Active';
 
-  const initials = clientName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase();
+  const handleCopyId = () => {
+    if (!formattedClientId) return;
+    navigator.clipboard?.writeText(formattedClientId);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  const staffInitials = staffName
-    ? staffName
-        .trim()
-        .split(/\s+/)
-        .slice(0, 2)
-        .map((w) => w[0])
-        .join('')
-        .toUpperCase()
-    : null;
+  const isReferee = Boolean(
+    referrerInfo ||
+      client.referrer_id ||
+      client.referrers ||
+      source?.toLowerCase().includes('referee') ||
+      source?.toLowerCase().includes('refer')
+  );
+
+  const refereeName = referrerInfo?.name || client.referrers?.name;
 
   return (
-    <div className="fixed inset-0 lg:left-60 z-40 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="rounded-2xl shadow-xl border border-blue-200/80 bg-white max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Clean Corporate Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold text-sm shadow-2xs shrink-0">
-              {initials || 'ST'}
-            </div>
+    <div className="fixed inset-0 lg:left-60 z-40 overflow-hidden animate-in fade-in duration-200">
+      {/* Light subtle backdrop */}
+      <div
+        className="fixed inset-0 lg:left-60 bg-slate-900/15 backdrop-blur-[1px] transition-opacity cursor-pointer"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Slide-over Right Half-Page Drawer */}
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-10 pointer-events-none">
+        <div className="w-screen max-w-2xl md:w-[50vw] bg-white border-l border-slate-200 shadow-2xl flex flex-col h-full pointer-events-auto animate-in slide-in-from-right duration-300 ease-out">
+          {/* Drawer Header without icon */}
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">{clientName}</h3>
-                <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 border border-blue-200">
-                  #STD-{clientId}
-                </span>
-                {oppId && (
-                  <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 border border-indigo-200">
-                    #OPP-{oppId}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 font-normal mt-0.5">Student Profile & Pipeline Overview</p>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+                Student Profile Details
+              </h2>
+              <p className="text-xs text-slate-500 font-normal">
+                Comprehensive student inquiry, credentials, and pipeline status
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Close drawer"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
 
-        {/* Content Body */}
-        <div className="p-5 space-y-4 overflow-y-auto">
-          {/* Contact Details Card */}
-          <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Contact Information
-            </span>
+          {/* Drawer Body Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Identity Card */}
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+              <div className="pb-2 border-b border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                    Student Information
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Core identity credentials and academic records
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200">
+                    {formattedClientId}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyId}
+                    className="p-1 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-blue-600 hover:border-blue-300 transition-all text-xs cursor-pointer"
+                    title="Copy Student ID"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Email */}
-              <div className="p-2.5 bg-white rounded-lg border border-slate-200/70 space-y-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-                  <Mail className="w-3 h-3 text-blue-500" /> Email Address
-                </span>
-                <p className="text-xs font-bold text-slate-800 truncate" title={email}>
-                  {email}
+              {/* Details List */}
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1">
+                    Student Full Name
+                  </span>
+                  <p className="font-bold text-slate-900 text-sm">{clientName}</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1">
+                      Email Address
+                    </span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{email}</span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1">
+                      Contact Number
+                    </span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{phone}</span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1">
+                      Date of Birth
+                    </span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{dob}</span>
+                    </p>
+                  </div>
+
+                  <div>
+                    <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1">
+                      Date Registered
+                    </span>
+                    <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>{createdAt}</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pipeline & Inquiry Source Card */}
+            <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+              <div className="pb-2 border-b border-slate-200/60">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                  Lead & Pipeline Information
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Consultation intake channels and opportunity progression
                 </p>
               </div>
 
-              {/* Phone */}
-              <div className="p-2.5 bg-white rounded-lg border border-slate-200/70 space-y-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-                  <Phone className="w-3 h-3 text-blue-500" /> Contact Number
-                </span>
-                <p className="text-xs font-bold text-slate-800 truncate">{phone}</p>
-              </div>
+              <div className="space-y-4 text-xs">
+                {/* Lead Source Channel */}
+                <div>
+                  <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1.5">
+                    Lead Source Channel
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {isReferee ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs">
+                        <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>Referee: {refereeName || 'Assigned Referee'}</span>
+                        {(referrerInfo?.referrer_code || client.referrers?.referrer_code) && (
+                          <span className="font-mono text-[10px] text-blue-700 bg-white px-1.5 py-0.5 rounded border border-amber-200 ml-1">
+                            {referrerInfo?.referrer_code || client.referrers?.referrer_code}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Share2 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="font-bold text-slate-800">{source}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-              {/* Date of Birth */}
-              <div className="p-2.5 bg-white rounded-lg border border-slate-200/70 space-y-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-blue-500" /> Date of Birth
-                </span>
-                <p className="text-xs font-bold text-slate-800">{dob}</p>
-              </div>
-
-              {/* Registration Date */}
-              <div className="p-2.5 bg-white rounded-lg border border-slate-200/70 space-y-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-blue-500" /> Registered Date
-                </span>
-                <p className="text-xs font-bold text-slate-800">{createdAt || 'Active'}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Pipeline & Staff Assignment Card */}
-          <div className="p-4 rounded-xl border border-blue-200/80 bg-white space-y-3 shadow-2xs">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-              Pipeline & Staff Allocation
-            </span>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Lead Source (Clean Blue/Corporate Style - NOT green!) */}
-              <div className="p-3 bg-blue-50/40 border border-blue-200/80 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 flex items-center gap-1">
-                  <Share2 className="w-3 h-3 text-blue-600" /> Lead Source Channel
-                </span>
-                <div className="flex items-center gap-1.5 pt-0.5">
-                  {channelInfo?.icon}
-                  <span className="text-xs font-bold text-slate-800">{channelInfo?.name || source}</span>
+                {/* Pipeline Stage (Assigned Staff Member completely removed) */}
+                <div className="pt-1">
+                  <span className="font-semibold text-slate-500 block text-[11px] uppercase tracking-wider mb-1.5">
+                    Pipeline Stage
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-blue-600 shrink-0" />
+                    {studentOpportunity ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-900 border border-blue-200">
+                          EDU_OPP_{studentOpportunity.opportunity_id}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                          <span>{currentStageName}</span>
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                        <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                        <span>Not Created Opportunity</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+            </div>
 
-              {/* Assigned Staff Member */}
-              <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                  <UserCheck className="w-3 h-3 text-slate-500" /> Assigned Staff
-                </span>
-                {staffName ? (
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <div className="w-6 h-6 rounded-full bg-blue-100 border border-blue-200 text-blue-800 font-bold text-[10px] flex items-center justify-center shrink-0">
-                      {staffInitials || 'ST'}
+            {/* Referring Partner / Referee Details */}
+            {(referrerInfo || source?.toLowerCase().includes('referee') || client.referrer_id) && (
+              <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-5 space-y-4 animate-in fade-in duration-200">
+                <div className="pb-2 border-b border-amber-200/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                      <Award className="w-4 h-4 text-amber-700" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 truncate">{staffName}</p>
-                      {staffEmail && <p className="text-[10px] text-slate-400 truncate">{staffEmail}</p>}
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-amber-950">
+                        Referring Partner (Referee)
+                      </h3>
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        Referral partner information and performance points
+                      </p>
                     </div>
                   </div>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 pt-0.5">
-                    Unassigned Staff
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Stage / Opportunity Status */}
-            {stageName && (
-              <div className="p-2.5 bg-slate-50/70 rounded-lg border border-slate-200 flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
-                  <Layers className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Pipeline Stage</span>
+                  {referrerInfo?.referrer_code && (
+                    <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-white text-blue-900 border border-amber-300 shadow-2xs">
+                      {referrerInfo.referrer_code}
+                    </span>
+                  )}
                 </div>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                  {stageName}
-                </span>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="font-semibold text-amber-800 block text-[11px] uppercase tracking-wider mb-1">
+                      Referee Full Name
+                    </span>
+                    <p className="font-bold text-slate-900 text-sm">
+                      {referrerInfo?.name || 'Assigned Referee'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {referrerInfo?.phone_number && (
+                      <div>
+                        <span className="font-semibold text-amber-800 block text-[11px] uppercase tracking-wider mb-1">
+                          Phone Number
+                        </span>
+                        <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-blue-600" />
+                          <span>{referrerInfo.phone_number}</span>
+                        </p>
+                      </div>
+                    )}
+
+                    {referrerInfo?.whatsapp_number && (
+                      <div>
+                        <span className="font-semibold text-amber-800 block text-[11px] uppercase tracking-wider mb-1">
+                          WhatsApp Number
+                        </span>
+                        <p className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>{referrerInfo.whatsapp_number}</span>
+                        </p>
+                      </div>
+                    )}
+
+                    {referrerInfo?.email && (
+                      <div>
+                        <span className="font-semibold text-amber-800 block text-[11px] uppercase tracking-wider mb-1">
+                          Email Address
+                        </span>
+                        <p className="font-semibold text-slate-800 flex items-center gap-1.5 truncate">
+                          <Mail className="w-3.5 h-3.5 text-blue-600" />
+                          <span>{referrerInfo.email}</span>
+                        </p>
+                      </div>
+                    )}
+
+                    <div>
+                      <span className="font-semibold text-amber-800 block text-[11px] uppercase tracking-wider mb-1">
+                        Referral Points
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                        <Check className="w-3.5 h-3.5" />
+                        +10 Score Points
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end px-5 py-3 border-t border-slate-100 bg-slate-50/50">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs"
-          >
-            Close Profile
-          </button>
+          {/* Drawer Footer Actions */}
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={onClose}
+            >
+              Close
+            </Button>
+            {onEdit && (
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  onClose();
+                  onEdit(client);
+                }}
+                className="flex items-center gap-1.5"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+                <span>Edit Student</span>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

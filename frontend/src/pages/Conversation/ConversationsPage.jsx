@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle, CheckCheck, CheckCircle2, ChevronDown, Download, FileText, Forward, ImagePlus, Inbox,
   LoaderCircle, Mail, Maximize2, MessageCircle, Minimize2, Paperclip, PhoneCall, Plus,
@@ -471,7 +472,15 @@ export default function ConversationsPage() {
   const userRole = getUserRole(user);
   const isSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
 
-  const [activeChannel, setActiveChannel] = useState('messenger');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const routeParams = useParams();
+
+  const initialChannel = location.state?.channel
+    ? String(location.state.channel).toLowerCase()
+    : 'messenger';
+
+  const [activeChannel, setActiveChannel] = useState(initialChannel);
   const [conversations, setConversations] = useState([]);
   const [selected, setSelected] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -495,6 +504,16 @@ export default function ConversationsPage() {
   const [composeInitial, setComposeInitial] = useState({ to: '', subject: '', body: '', conversationId: null });
   const [isOpportunityModalOpen, setIsOpportunityModalOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState('');
+
+  // Sync activeChannel if location state channel updates
+  useEffect(() => {
+    if (location.state?.channel) {
+      const targetCh = String(location.state.channel).toLowerCase();
+      if (['messenger', 'whatsapp', 'email', 'sms'].includes(targetCh) && targetCh !== activeChannel) {
+        setActiveChannel(targetCh);
+      }
+    }
+  }, [location.state?.channel]);
 
   // Saved Email Drafts
   const [draftsList, setDraftsList] = useState(() => {
@@ -539,13 +558,49 @@ export default function ConversationsPage() {
       const response = await conversationService.getConversations({ channel });
       const list = response?.data?.data || [];
       setConversations(list);
-      setSelected((current) => list.find((item) => item.conversation_id === current?.conversation_id) || list[0] || null);
+
+      const targetClientId = location.state?.clientId;
+      const targetStudentName = (location.state?.studentName || '').toLowerCase().trim();
+
+      let matchedConv = null;
+      if (targetClientId || targetStudentName) {
+        matchedConv = list.find((item) => {
+          if (targetClientId && (String(item.client_id) === String(targetClientId) || String(item.clients?.client_id) === String(targetClientId))) {
+            return true;
+          }
+          if (targetStudentName && item.contact_name?.toLowerCase().trim() === targetStudentName) {
+            return true;
+          }
+          return false;
+        });
+      }
+
+      if (matchedConv) {
+        setSelected(matchedConv);
+      } else if (targetClientId) {
+        // Find or create conversation for this client & channel
+        try {
+          const createRes = await conversationService.getOrCreateClientConversation(targetClientId, channel);
+          if (createRes?.data?.data) {
+            const newConv = createRes.data.data;
+            setConversations((prev) => [newConv, ...prev.filter((c) => c.conversation_id !== newConv.conversation_id)]);
+            setSelected(newConv);
+          } else {
+            setSelected((current) => list.find((item) => item.conversation_id === current?.conversation_id) || list[0] || null);
+          }
+        } catch (getOrCreateErr) {
+          console.warn('Could not get or create client conversation:', getOrCreateErr);
+          setSelected((current) => list.find((item) => item.conversation_id === current?.conversation_id) || list[0] || null);
+        }
+      } else {
+        setSelected((current) => list.find((item) => item.conversation_id === current?.conversation_id) || list[0] || null);
+      }
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
       setLoading(false);
     }
-  }, [activeChannel]);
+  }, [activeChannel, location.state]);
 
   const loadMessages = useCallback(async (conversation) => {
     if (!conversation) {

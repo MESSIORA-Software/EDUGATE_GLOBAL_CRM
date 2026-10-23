@@ -21,6 +21,9 @@ const request = (method, url, options = {}) => axios.request({
 });
 
 const getConversations = (filters = {}) => request('get', '/conversations', { params: filters });
+const getClientConversations = (clientId) => request('get', `/conversations/client/${clientId}`);
+const getOrCreateClientConversation = (clientId, channel) =>
+  request('post', `/conversations/client/${clientId}/get-or-create`, { data: { channel } });
 const getConversationDetails = (id) => request('get', `/conversations/${id}`);
 const getMessages = (id) => request('get', `/conversations/${id}/messages`);
 const sendMessage = (id, messageData) => request('post', `/conversations/${id}/messages`, { data: messageData });
@@ -50,6 +53,8 @@ const getStaffUsers = () => getUsersByRole('STAFF');
 
 export default {
   getConversations,
+  getClientConversations,
+  getOrCreateClientConversation,
   getConversationDetails,
   getMessages,
   sendMessage,

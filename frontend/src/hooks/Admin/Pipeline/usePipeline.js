@@ -46,8 +46,15 @@ export default function usePipeline() {
   // Toast
   const [toast, setToast] = useState(null);
 
-  const showToast = useCallback((message, type = 'success') => {
-    setToast({ message, type });
+  const showToast = useCallback((msgOrObj, type = 'success') => {
+    if (typeof msgOrObj === 'object' && msgOrObj !== null) {
+      setToast({
+        message: typeof msgOrObj.message === 'string' ? msgOrObj.message : String(msgOrObj.message || ''),
+        type: msgOrObj.type || 'success',
+      });
+    } else {
+      setToast({ message: String(msgOrObj || ''), type });
+    }
     setTimeout(() => setToast(null), 3500);
   }, []);
 

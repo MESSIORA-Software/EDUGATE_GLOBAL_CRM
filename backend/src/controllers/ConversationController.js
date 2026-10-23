@@ -54,6 +54,21 @@ export const ConversationController = {
         }
     },
 
+    // POST /api/conversations/client/:client_id/get-or-create
+    async getOrCreateClientConversation(req, res, next) {
+        try {
+            const { client_id } = req.params;
+            const { channel } = req.body || {};
+            const conversation = await ConversationService.getOrCreateClientConversation(client_id, channel);
+            res.status(200).json({
+                status: 'success',
+                data: conversation
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+
     // PATCH /api/conversations/:id/assign
     async assignStaff(req, res, next) {
         try {

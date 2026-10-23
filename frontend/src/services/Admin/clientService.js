@@ -22,7 +22,7 @@ const apiRequest = (options) => {
 };
 
 // 1. Create Client
-const createClient = async (name, email, dob, source) => {
+const createClient = async (name, email, dob, source, referrer_id = null) => {
   return apiRequest({
     method: 'post',
     url: `${BASE_URL}/clients/createclient`,
@@ -31,6 +31,7 @@ const createClient = async (name, email, dob, source) => {
       email,
       dob,
       source,
+      referrer_id,
     },
   });
 };
@@ -55,7 +56,7 @@ const getClientById = async (clientId) => {
 };
 
 // 4. Update Client
-const updateClient = async (clientId, name, email, dob, source) => {
+const updateClient = async (clientId, name, email, dob, source, referrer_id = null) => {
   return apiRequest({
     method: 'put',
     url: `${BASE_URL}/clients/updateclient`,
@@ -65,6 +66,7 @@ const updateClient = async (clientId, name, email, dob, source) => {
       email,
       dob,
       source,
+      referrer_id,
     },
   });
 };
