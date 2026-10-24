@@ -1,102 +1,394 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { NavLink } from 'react-router-dom';
+import { fetchClients } from '../../actions/Admin/clientAction';
+import { fetchEvents } from '../../actions/Admin/eventAction';
+import { fetchUsers } from '../../actions/Admin/userActions';
 import {
-  Building2,
+  RefreshCw,
+  GraduationCap,
+  Kanban,
+  MessageSquare,
+  Calendar,
+  HardDrive,
   UserCheck,
-  Lock,
-  ArrowRight,
-  Info,
+  Award,
+  ChevronRight,
+  Users,
+  Clock,
+  User,
+  Plus,
 } from 'lucide-react';
 
 export default function AdminDashboard() {
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth ?? {});
+  const { list: clients = [] } = useSelector((state) => state.client ?? {});
+  const { list: events = [] } = useSelector((state) => state.event ?? {});
+  const { users = [] } = useSelector((state) => state.users ?? {});
+
+  const [currentEventIdx, setCurrentEventIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadAllMetrics = () => {
+    setRefreshing(true);
+    dispatch(fetchClients());
+    dispatch(fetchEvents());
+    dispatch(fetchUsers());
+    setTimeout(() => setRefreshing(false), 600);
+  };
+
+  useEffect(() => {
+    loadAllMetrics();
+  }, [dispatch]);
+
+  // Rotate events automatically every 5 seconds
+  useEffect(() => {
+    if (!events || events.length <= 1 || isPaused) return;
+    const timer = setInterval(() => {
+      setCurrentEventIdx((prev) => (prev + 1) % events.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [events, isPaused]);
+
+  const totalStudents = clients?.length || 0;
+  const totalEvents = events?.length || 0;
+  const totalUsers = users?.length || 0;
+  const userName = user?.name || user?.fullName || 'Administrator';
+
+  const activeEvent =
+    events && events.length > 0
+      ? events[currentEventIdx % events.length]
+      : null;
+
+  const getEventStaffName = (ev) => {
+    if (!ev) return 'Staff Counselor';
+    if (ev.assigned_staff?.name) return ev.assigned_staff.name;
+    if (ev.assigned_staff?.email) return ev.assigned_staff.email;
+    if (ev.assigned_staff_id && users) {
+      const u = users.find(
+        (usr) => String(usr.user_id || usr.id) === String(ev.assigned_staff_id)
+      );
+      if (u?.name) return u.name;
+      if (u?.email) return u.email;
+    }
+    return ev.staff_name || 'Staff Counselor';
+  };
+
+  const formatEventDate = (ev) => {
+    if (!ev?.event_date) return 'Upcoming';
+    try {
+      const parts = String(ev.event_date).split('-');
+      if (parts.length === 3) {
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        });
+      }
+      return ev.event_date;
+    } catch {
+      return ev.event_date;
+    }
+  };
+
+  const adminModules = [
+    {
+      title: 'Students & Clients',
+      desc: 'Candidate profiles, passports, academic files & intake terms.',
+      path: '/clients',
+      icon: GraduationCap,
+      count: totalStudents,
+      badge: 'Students',
+      color: 'bg-blue-50 border-blue-200 text-blue-700',
+    },
+    {
+      title: 'Student Pipeline',
+      desc: 'Interactive Kanban board tracking applications & leads.',
+      path: '/pipeline',
+      icon: Kanban,
+      badge: 'Pipeline',
+      color: 'bg-purple-50 border-purple-200 text-purple-700',
+    },
+    {
+      title: 'Conversations & Inquiries',
+      desc: 'Live multi-channel communication hub for WhatsApp, Messenger & Email.',
+      path: '/conversations',
+      icon: MessageSquare,
+      badge: 'Messages',
+      color: 'bg-cyan-50 border-cyan-200 text-cyan-700',
+    },
+    {
+      title: 'Events & Scheduling',
+      desc: 'Consultations, student counseling meetings & calendar schedules.',
+      path: '/events',
+      icon: Calendar,
+      count: totalEvents,
+      badge: 'Events',
+      color: 'bg-amber-50 border-amber-200 text-amber-700',
+    },
+    {
+      title: 'Media Storage Cloud',
+      desc: 'Document vault for verified applicant transcripts, passports & visa grants.',
+      path: '/media',
+      icon: HardDrive,
+      badge: 'Vault',
+      color: 'bg-rose-50 border-rose-200 text-rose-700',
+    },
+    {
+      title: 'Referrers Network',
+      desc: 'Manage agent partners, commission status & student recommendations.',
+      path: '/referrers',
+      icon: Award,
+      badge: 'Referrers',
+      color: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+    },
+    {
+      title: 'My Profile & Credentials',
+      desc: 'Personal account details, security credentials & password settings.',
+      path: '/profile',
+      icon: UserCheck,
+      badge: 'Profile',
+      color: 'bg-slate-50 border-slate-200 text-slate-700',
+    },
+  ];
 
   return (
     <div className="space-y-5 max-w-full mx-auto">
-            {/* Page Header */}
+      {/* Page Header */}
       <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              Branch Dashboard
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+              Administrator Dashboard
             </h1>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+              Admin Workspace
+            </span>
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
-            Branch administration metrics, student allocations, and daily staff activities.
+            Welcome back, <strong className="text-slate-800">{userName}</strong>. Client admissions pipeline, staff supervision, and operations hub.
           </p>
         </div>
-      </div>
 
-      {/* Scope / Restriction Notice */}
-      <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs">
-        <Info className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="space-y-0.5">
-          <p className="font-bold">Administrative Permission Policy</p>
-          <p className="text-amber-800 leading-relaxed text-[11px]">
-            System entity configuration (Roles, Global Branches, and Staff Account Provisioning) is centrally governed by the <strong>Super Administrator</strong>. Management features are currently reserved for Super Admin accounts.
-          </p>
-        </div>
-      </div>
-
-      {/* Branch Metrics Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Branch Status</p>
-            <p className="text-xl font-extrabold text-slate-800 mt-0.5">Online</p>
-            <span className="text-[10px] text-emerald-600 font-medium">Branch operations running</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center font-bold">
-            <Building2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Access Level</p>
-            <p className="text-xl font-extrabold text-indigo-900 mt-0.5">ADMIN</p>
-            <span className="text-[10px] text-indigo-600 font-medium">Standard Administrator</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold">
-            <Lock className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Account Profile</p>
-            <p className="text-xl font-extrabold text-slate-800 mt-0.5">{user?.status || 'ACTIVE'}</p>
-            <span className="text-[10px] text-slate-500 font-medium">Verified account status</span>
-          </div>
-          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 flex items-center justify-center font-bold">
-            <UserCheck className="w-5 h-5" />
-          </div>
-        </div>
-      </div>
-
-      {/* Account Info Card */}
-      <div className="p-5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-3">
-        <h3 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
-          My Account & Credentials
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Name</span>
-            <p className="font-bold text-slate-800 mt-0.5">{user?.name || 'Admin User'}</p>
-          </div>
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-            <span className="text-[10px] text-slate-400 font-bold uppercase">Email</span>
-            <p className="font-bold text-slate-800 mt-0.5">{user?.email || 'N/A'}</p>
-          </div>
-        </div>
-
-        <div className="pt-2 flex justify-end">
-          <NavLink
-            to="/profile"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 transition-colors"
+        {/* Header Actions */}
+        <div className="flex items-center justify-end flex-wrap gap-2.5">
+          <button
+            onClick={loadAllMetrics}
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
+            title="Refresh Metrics"
           >
-            <span>Manage My Profile</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <RefreshCw
+              className={`w-4 h-4 text-slate-600 hover:text-blue-600 ${
+                refreshing ? 'animate-spin text-blue-600' : ''
+              }`}
+            />
+          </button>
+
+          <NavLink
+            to="/clients"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/50 hover:bg-blue-100 text-blue-900 text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5 text-blue-700" />
+            <span>Manage Students</span>
           </NavLink>
+        </div>
+      </div>
+
+      {/* KPI Summary Cards (4 Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {/* Card 1: Total Students */}
+        <NavLink
+          to="/clients"
+          className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 hover:shadow-sm transition-all flex items-center justify-between group"
+        >
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Total Students
+            </p>
+            <p className="text-2xl font-extrabold text-blue-900 mt-0.5">
+              {totalStudents}
+            </p>
+            <span className="text-[10px] text-blue-600 font-medium">
+              Registered applicants & clients
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <GraduationCap className="w-5 h-5" />
+          </div>
+        </NavLink>
+
+        {/* Card 2: Student Pipeline */}
+        <NavLink
+          to="/pipeline"
+          className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 hover:shadow-sm transition-all flex items-center justify-between group"
+        >
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Student Pipeline
+            </p>
+            <p className="text-2xl font-extrabold text-blue-900 mt-0.5">
+              {totalStudents}
+            </p>
+            <span className="text-[10px] text-purple-600 font-medium">
+              Active counseling stages
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <Kanban className="w-5 h-5" />
+          </div>
+        </NavLink>
+
+        {/* Card 3: Communications Hub */}
+        <NavLink
+          to="/conversations"
+          className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 hover:shadow-sm transition-all flex items-center justify-between group"
+        >
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              Client Messages
+            </p>
+            <p className="text-2xl font-extrabold text-blue-900 mt-0.5">
+              Active
+            </p>
+            <span className="text-[10px] text-cyan-600 font-medium">
+              WhatsApp, Messenger & Email
+            </span>
+          </div>
+          <div className="w-11 h-11 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
+            <MessageSquare className="w-5 h-5" />
+          </div>
+        </NavLink>
+
+        {/* Card 4: Live Rotating Upcoming Events (Rotates every 5s) */}
+        <div
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          className="p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 hover:shadow-sm transition-all flex flex-col justify-between group min-h-[96px]"
+        >
+          {/* Header Row: Live Pulse + Event Counter */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                Upcoming Events
+              </p>
+            </div>
+            {totalEvents > 0 && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 font-mono">
+                {(currentEventIdx % totalEvents) + 1}/{totalEvents}
+              </span>
+            )}
+          </div>
+
+          {/* Body Row: Rotating Event Detail */}
+          {activeEvent ? (
+            <NavLink
+              to="/events"
+              key={activeEvent.event_id || currentEventIdx}
+              className="mt-1 block min-w-0 animate-in fade-in slide-in-from-right-1 duration-300"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p
+                  className="text-xs sm:text-sm font-bold text-slate-900 truncate group-hover:text-blue-700 transition-colors"
+                  title={activeEvent.title}
+                >
+                  {activeEvent.title || 'Scheduled Meeting'}
+                </p>
+                <span className="text-[10px] text-blue-600 font-medium shrink-0 group-hover:translate-x-0.5 transition-transform">
+                  &rarr;
+                </span>
+              </div>
+              <div className="flex items-center flex-wrap gap-x-3 gap-y-0.5 text-[11px] mt-0.5">
+                <span className="inline-flex items-center gap-1 text-slate-600 font-medium truncate max-w-[120px]">
+                  <User className="w-3 h-3 text-blue-500 shrink-0" />
+                  <span className="truncate">{getEventStaffName(activeEvent)}</span>
+                </span>
+                <span className="inline-flex items-center gap-1 text-slate-500 font-medium">
+                  <Calendar className="w-3 h-3 text-amber-500 shrink-0" />
+                  <span>
+                    {formatEventDate(activeEvent)}
+                    {activeEvent.start_time
+                      ? ` • ${activeEvent.start_time.slice(0, 5)}`
+                      : ''}
+                  </span>
+                </span>
+              </div>
+            </NavLink>
+          ) : (
+            <NavLink
+              to="/events"
+              className="flex items-center justify-between mt-1 text-slate-400 group-hover:text-blue-600"
+            >
+              <div>
+                <p className="text-xs font-bold text-slate-700">No Events Scheduled</p>
+                <span className="text-[10px] text-slate-400 font-medium">Click to schedule consultation</span>
+              </div>
+              <Calendar className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
+            </NavLink>
+          )}
+        </div>
+      </div>
+
+      {/* Main Admin Work Modules Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-800 tracking-tight">
+              Administrative Operations & Modules
+            </h2>
+            <p className="text-xs text-slate-500">
+              Direct access to admissions management, communication channels, and student files
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {adminModules.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.title}
+                to={item.path}
+                className="group p-4 bg-white rounded-2xl border border-blue-200/80 shadow-2xs hover:border-blue-500 hover:shadow-md transition-all flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div
+                      className={`w-9 h-9 rounded-xl border flex items-center justify-center ${item.color}`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    {item.count !== undefined ? (
+                      <span className="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-lg border border-slate-200">
+                        {item.count} {item.badge}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-slate-400 group-hover:text-blue-600 transition-colors">
+                        Access &rarr;
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-xs font-bold text-slate-800 group-hover:text-[#1E3A8A] transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] font-semibold text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                  <span>Open Module View</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
+              </NavLink>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import useAuth from '../../hooks/Auth/useAuth';
 import { fetchBranches } from '../../actions/Admin/branchAction';
 import UserUpdateModal from '../../components/Modals/Admin/User/UserUpdateModal';
+import ChangePasswordModal from '../../components/Modals/Auth/ChangePasswordModal';
 import {
   User,
   Mail,
@@ -25,6 +26,8 @@ import {
   MessageSquare,
   Sparkles,
   KeyRound,
+  Eye,
+  EyeOff,
   ExternalLink,
 } from 'lucide-react';
 
@@ -35,6 +38,15 @@ export default function ProfilePage() {
 
   const [activeTab, setActiveTab] = useState('details'); // 'details' | 'permissions' | 'security'
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [currentPasswordDisplay, setCurrentPasswordDisplay] = useState(() => {
+    try {
+      return sessionStorage.getItem('current_user_pwd') || '1234';
+    } catch {
+      return '1234';
+    }
+  });
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -91,6 +103,11 @@ export default function ProfilePage() {
   const userInitials = (displayName || 'U').charAt(0).toUpperCase();
   const userEmail = user?.email || 'kamal@example.com';
   const userId = user?.user_id || user?.id || '15';
+  const formattedUserId = userId
+    ? String(userId).startsWith('EDU_USER_')
+      ? String(userId)
+      : `EDU_USER_${userId}`
+    : 'EDU_USER_15';
 
   const matchedBranch = branches?.find(
     (b) => String(b.branch_id || b.id) === String(user?.branch_id)
@@ -140,14 +157,6 @@ export default function ProfilePage() {
             title="Refresh Profile"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsEditOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-blue-600" />
-            <span>Edit Profile</span>
           </button>
         </div>
       </div>
@@ -212,7 +221,7 @@ export default function ProfilePage() {
                   <span className="text-slate-400 font-medium flex items-center gap-1.5">
                     <Hash className="w-3.5 h-3.5" /> Account ID
                   </span>
-                  <span className="font-mono font-semibold text-slate-800">#{userId}</span>
+                  <span className="font-mono font-semibold text-slate-800">{formattedUserId}</span>
                 </div>
               </div>
 
@@ -421,15 +430,33 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">Account Password</p>
-                      <p className="text-slate-500 mt-0.5 tracking-widest font-mono">••••••••••••</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-slate-800 font-mono text-xs font-semibold tracking-wider select-all">
+                          {showPassword ? currentPasswordDisplay : '••••••••••••'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors cursor-pointer"
+                          title={showPassword ? 'Hide password' : 'View password'}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="w-3.5 h-3.5 text-slate-600" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                          )}
+                        </button>
+                      </div>
                       <p className="text-[11px] text-slate-400 mt-1">
-                        Use a strong password with at least 6 characters.
+                        {showPassword
+                          ? 'Active password for current login session.'
+                          : 'Click the eye icon to view your password.'}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
-                    onClick={() => setIsEditOpen(true)}
+                    onClick={() => setIsChangePasswordOpen(true)}
                     className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-white hover:bg-blue-50 text-blue-900 text-xs font-semibold transition-all cursor-pointer shadow-2xs shrink-0 self-start sm:self-auto"
                   >
                     <Lock className="w-3.5 h-3.5 text-blue-600" />
@@ -442,7 +469,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Edit Profile / Change Password Modal */}
+      {/* Edit Profile Details Modal */}
       {isEditOpen && (
         <UserUpdateModal
           isOpen={isEditOpen}
@@ -451,6 +478,20 @@ export default function ProfilePage() {
           onSuccess={() => {
             setIsEditOpen(false);
             showToast('success', 'Profile updated successfully');
+            fetchProfile(token);
+          }}
+        />
+      )}
+
+      {/* Change Password Side Popup Drawer */}
+      {isChangePasswordOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordOpen}
+          user={user}
+          onClose={() => setIsChangePasswordOpen(false)}
+          onSuccess={(newPassword, message) => {
+            setCurrentPasswordDisplay(newPassword);
+            showToast('success', message || 'Password updated successfully');
             fetchProfile(token);
           }}
         />

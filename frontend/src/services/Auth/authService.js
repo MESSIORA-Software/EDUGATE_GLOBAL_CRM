@@ -81,8 +81,30 @@ const verifyPassword = async (password, email) => {
   return await response.json();
 };
 
+const changePassword = async ({ email, currentPassword, newPassword }) => {
+  const authToken = localStorage.getItem('token');
+
+  const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+    body: JSON.stringify({ email, currentPassword, newPassword }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'Failed to change password.');
+  }
+
+  return data;
+};
+
 export default {
   login,
   viewMyProfile,
   verifyPassword,
+  changePassword,
 };

@@ -226,16 +226,7 @@ function AppRoutes() {
       />
       <Route
         path="/settings"
-        element={
-          <ProtectedRoute>
-            <SuperAdminRoute>
-              <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs text-center">
-                <h2 className="text-lg font-bold text-slate-800">System Settings</h2>
-                <p className="text-slate-500 text-xs mt-1">Configure CRM global preferences.</p>
-              </div>
-            </SuperAdminRoute>
-          </ProtectedRoute>
-        }
+        element={<Navigate to="/dashboard" replace />}
       />
 
       {/* Fallback to root / login */}

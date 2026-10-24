@@ -19,6 +19,15 @@ router.post('/', optionalAuthenticateToken, ReferrerController.createReferrer);
 router.get('/students', optionalAuthenticateToken, ReferrerController.getReferrerStudents);
 router.get('/:id/students', optionalAuthenticateToken, ReferrerController.getReferrerStudents);
 
+// Payment Settings
+router.get('/payment-settings', optionalAuthenticateToken, ReferrerController.getPaymentSettings);
+router.put('/payment-settings', optionalAuthenticateToken, ReferrerController.updatePaymentSettings);
+
+// Record & List Payouts
+router.post('/payouts', optionalAuthenticateToken, ReferrerController.addPayout);
+router.post('/:id/payouts', optionalAuthenticateToken, ReferrerController.addPayout);
+router.get('/:id/payouts', optionalAuthenticateToken, ReferrerController.getPayouts);
+
 // Get referrer by id
 router.get('/getbyid', optionalAuthenticateToken, ReferrerController.getReferrerById);
 router.get('/:id', optionalAuthenticateToken, ReferrerController.getReferrerById);

@@ -92,11 +92,53 @@ const deleteReferrer = async (referrerId) => {
   });
 };
 
-// 7. Get Referrer Students and Referral Score
+// 7. Get Referrer Students and Payment Calculation
 const getReferrerStudents = async (referrerId) => {
   return apiRequest({
     method: 'get',
     url: `${BASE_URL}/referrers/${referrerId}/students`,
+  });
+};
+
+// 8. Get Referral Payment Settings
+const getPaymentSettings = async () => {
+  return apiRequest({
+    method: 'get',
+    url: `${BASE_URL}/referrers/payment-settings`,
+  });
+};
+
+// 9. Update Referral Payment Settings
+const updatePaymentSettings = async ({ rate_per_student, currency = 'LKR', apply_to_all = true }) => {
+  return apiRequest({
+    method: 'put',
+    url: `${BASE_URL}/referrers/payment-settings`,
+    data: {
+      rate_per_student,
+      currency,
+      apply_to_all,
+    },
+  });
+};
+
+// 10. Record Payout Settlement
+const addPayout = async (referrerId, { amount, payment_method, reference_note }) => {
+  return apiRequest({
+    method: 'post',
+    url: `${BASE_URL}/referrers/${referrerId}/payouts`,
+    data: {
+      amount,
+      payment_method,
+      reference_note,
+    },
+  });
+};
+
+// 11. Get Referrer Payouts History
+const getPayouts = async (referrerId) => {
+  return apiRequest({
+    method: 'get',
+    url: `${BASE_URL}/referrers/${referrerId}/payouts`,
   });
 };
 
@@ -108,4 +150,8 @@ export default {
   updateReferrer,
   deleteReferrer,
   getReferrerStudents,
+  getPaymentSettings,
+  updatePaymentSettings,
+  addPayout,
+  getPayouts,
 };

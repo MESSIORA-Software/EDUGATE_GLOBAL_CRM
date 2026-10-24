@@ -4,8 +4,11 @@ dotenv.config();
 const GRAPH_API_VERSION = 'v21.0';
 
 export const FacebookMessengerService = {
-    // Helper to get active page access token
+    // Helper to get active page access token (reloads .env dynamically if updated)
     getToken() {
+        try {
+            dotenv.config({ override: true });
+        } catch (_) {}
         return process.env.FACEBOOK_PAGE_ACCESS_TOKEN?.trim() || null;
     },
 

@@ -191,11 +191,17 @@ export const ConversationService = {
         // Step B: If client not linked, find by email or create new client without touching phone
         if (!client) {
             if (clientEmail) {
-                const { data } = await supabase.from('clients').select('*').eq('email', clientEmail).maybeSingle();
+                const { data } = await supabase.from('clients').select('*').ilike('email', clientEmail).maybeSingle();
                 client = data;
             }
 
             if (!client) {
+                // If channel is email, do not auto-create random clients for automated/unknown senders
+                if (channel === 'email') {
+                    console.log(`[ConversationService] Inbound email from ${channelClientId} rejected (not a registered student).`);
+                    return null;
+                }
+
                 client = await ClientRepository.createClient({
                     name: clientName || `Lead (${channelClientId})`,
                     email: clientEmail || null,

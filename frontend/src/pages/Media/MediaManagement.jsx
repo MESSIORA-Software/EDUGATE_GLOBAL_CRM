@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import useMedia from '../../hooks/Media/useMedia';
 import UploadMediaModal from '../../components/Modals/Media/UploadMediaModal';
+import MediaDeleteModal from '../../components/Modals/Media/MediaDeleteModal';
 import StudentMediaView from './StudentMediaView';
 import { COLORS } from '../../constants/colors';
 import { TYPOGRAPHY } from '../../constants/typography';
@@ -133,6 +134,8 @@ export default function MediaManagement() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' or 'student'
+  const [mediaToDelete, setMediaToDelete] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const hasActiveFilters = Boolean(mimeFilter || dateFrom || dateTo || providerFilter || uploadedByFilter);
 
@@ -493,7 +496,10 @@ export default function MediaManagement() {
                                 <ExternalLink className="w-3.5 h-3.5" />
                               </button>
                               <button
-                                onClick={() => deleteMedia(m.media_id, m.provider)}
+                                onClick={() => {
+                                  setMediaToDelete(m);
+                                  setIsDeleteModalOpen(true);
+                                }}
                                 className="p-2 rounded-xl border border-slate-200 bg-white text-slate-500 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50/50 transition-all shadow-xs cursor-pointer"
                                 title="Delete File"
                               >
@@ -560,6 +566,19 @@ export default function MediaManagement() {
         isStudentMode={activeTab === 'student'}
         onClose={() => setIsUploadOpen(false)}
         onUpload={uploadMedia}
+      />
+
+      {/* Delete Confirmation Modal with Admin Password Verification */}
+      <MediaDeleteModal
+        isOpen={isDeleteModalOpen}
+        media={mediaToDelete}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setMediaToDelete(null);
+        }}
+        onConfirm={async (media) => {
+          await deleteMedia(media.media_id, media.provider);
+        }}
       />
     </div>
   );
