@@ -2,17 +2,42 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUser } from '../../../../actions/Admin/userActions';
 import { fetchRoles } from '../../../../actions/Admin/roleActions';
+import { fetchBranches } from '../../../../actions/Admin/branchAction';
 import Button from '../../../ui/Button';
-import { X, AlertCircle, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { X, AlertCircle, Eye, EyeOff, Copy, Check, Lock } from 'lucide-react';
 
 export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { submitting, error } = useSelector((state) => state.users);
   const { roles = [] } = useSelector((state) => state.roles ?? {});
+  const { list: branches = [] } = useSelector((state) => state.branch ?? {});
+  const { user: authUser } = useSelector((state) => state.auth || {});
+
+  const storedUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user')) || null;
+    } catch {
+      return null;
+    }
+  })();
+  const effectiveAuthUser = authUser || storedUser;
+
+  const rawAuthRole = String(
+    effectiveAuthUser?.role_id || effectiveAuthUser?.role || effectiveAuthUser?.role_name || ''
+  ).trim().toUpperCase();
+
+  const isSuperAdmin = rawAuthRole.includes('SUPER');
+  const isAdmin =
+    isSuperAdmin ||
+    rawAuthRole === 'ADMIN' ||
+    rawAuthRole === 'EDUGATE_ADMIN' ||
+    rawAuthRole === 'MANAGER' ||
+    rawAuthRole.endsWith('_ADMIN');
 
   const [userId, setUserId] = useState('');
   const [name, setName] = useState('');
   const [roleId, setRoleId] = useState('');
+  const [branchId, setBranchId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,14 +50,18 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
       if (!roles || roles.length === 0) {
         dispatch(fetchRoles());
       }
+      if (!branches || branches.length === 0) {
+        dispatch(fetchBranches());
+      }
     }
-  }, [isOpen, roles, dispatch]);
+  }, [isOpen, roles, branches, dispatch]);
 
   useEffect(() => {
     if (user) {
       setUserId(user.user_id || user.id || '');
       setName(user.name || '');
       setRoleId(user.role_id || 'EDUGATE_STAFF');
+      setBranchId(user.branch_id || user.branch || 1);
       setEmail(user.email || '');
       setPassword('');
       setStatus(user.status || 'ACTIVE');
@@ -54,9 +83,36 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
 
   const originalRoleId = String(user?.role_id ?? '').trim();
   const currentRoleId = String(roleId ?? '').trim();
-  const isRoleChanged = Boolean(originalRoleId && currentRoleId && currentRoleId !== originalRoleId);
+  const isRoleChanged = isAdmin && Boolean(originalRoleId && currentRoleId && currentRoleId !== originalRoleId);
 
   const requiresNewPassword = isEmailChanged || isRoleChanged;
+
+  const currentRoleIdVal = roleId || user?.role_id || 'EDUGATE_STAFF';
+  const matchedRole = roles.find(
+    (r) => String(r.role_id || r.id).toUpperCase() === String(currentRoleIdVal).toUpperCase()
+  );
+  const roleNameDisplay =
+    matchedRole?.role_name ||
+    matchedRole?.name ||
+    user?.role_name ||
+    (String(currentRoleIdVal).toUpperCase().includes('STAFF')
+      ? 'Staff'
+      : String(currentRoleIdVal).toUpperCase().includes('ADMIN')
+      ? 'Administrator'
+      : currentRoleIdVal);
+
+  const roleCodeDisplay = matchedRole?.role_id || matchedRole?.id || user?.role_id || currentRoleIdVal;
+  const formattedRoleLabel = `${roleNameDisplay} (${roleCodeDisplay})`;
+
+  const currentBranchIdVal = branchId || user?.branch_id || user?.branch || 1;
+  const matchedBranch = branches.find(
+    (b) => String(b.branch_id || b.id) === String(currentBranchIdVal)
+  );
+  const branchDisplayLabel =
+    matchedBranch?.name ||
+    matchedBranch?.branch_name ||
+    user?.branch_name ||
+    `Branch #${currentBranchIdVal}`;
 
   const handleCopyId = () => {
     if (!formattedUserId) return;
@@ -73,8 +129,12 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
       setLocalError('User name is required.');
       return;
     }
-    if (!roleId) {
+    if (isAdmin && !roleId) {
       setLocalError('Please select a system role.');
+      return;
+    }
+    if (isAdmin && !branchId) {
+      setLocalError('Please select an allocated branch.');
       return;
     }
     if (!email.trim()) {
@@ -88,11 +148,11 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
 
     const payload = {
       user_id: userId,
-      branch_id: user?.branch_id || 1,
+      branch_id: isAdmin ? (Number(branchId) || branchId || user?.branch_id || 1) : (user?.branch_id || 1),
       name: name.trim(),
       email: email.trim(),
-      role_id: isNaN(Number(roleId)) ? roleId : Number(roleId),
-      status: status,
+      role_id: isAdmin ? (isNaN(Number(roleId)) ? roleId : Number(roleId)) : (user?.role_id || roleId),
+      status: isAdmin ? status : (user?.status || status),
     };
 
     if (requiresNewPassword && password.trim()) {
@@ -128,7 +188,9 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
                 Edit User Account
               </h2>
               <p className="text-xs text-slate-500 font-normal">
-                Update credentials, assigned role, and account status
+                {isAdmin
+                  ? 'Update credentials, assigned role, and account status'
+                  : 'Update personal profile details and contact information'}
               </p>
             </div>
             <button
@@ -196,33 +258,107 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
 
               {/* Role (placed directly after Full Name) */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Role <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={roleId}
-                  onChange={(e) => setRoleId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-2xs cursor-pointer"
-                >
-                  {roles.length > 0 ? (
-                    roles.map((r) => {
-                      const rId = r.role_id || r.id;
-                      return (
-                        <option key={rId} value={rId}>
-                          {r.role_name || r.name || rId} ({rId})
-                        </option>
-                      );
-                    })
-                  ) : (
-                    <>
-                      <option value="EDUGATE_STAFF">Staff (EDUGATE_STAFF)</option>
-                      <option value="EDUGATE_ADMIN">Admin (EDUGATE_ADMIN)</option>
-                      <option value="EDUGATE_SUPER_ADMIN">Super Admin (EDUGATE_SUPER_ADMIN)</option>
-                    </>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Role {isAdmin && <span className="text-rose-500">*</span>}
+                  </label>
+                  {!isAdmin && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                      <Lock className="w-3 h-3 text-amber-600" /> Only Admin Can Change
+                    </span>
                   )}
-                </select>
+                </div>
+
+                {isAdmin ? (
+                  <select
+                    value={roleId}
+                    onChange={(e) => setRoleId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-2xs cursor-pointer"
+                  >
+                    {roles.length > 0 ? (
+                      roles.map((r) => {
+                        const rId = r.role_id || r.id;
+                        return (
+                          <option key={rId} value={rId}>
+                            {r.role_name || r.name || rId} ({rId})
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <option value="EDUGATE_STAFF">Staff (EDUGATE_STAFF)</option>
+                        <option value="EDUGATE_ADMIN">Admin (EDUGATE_ADMIN)</option>
+                        <option value="EDUGATE_SUPER_ADMIN">Super Admin (EDUGATE_SUPER_ADMIN)</option>
+                      </>
+                    )}
+                  </select>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={formattedRoleLabel}
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-not-allowed select-none shadow-2xs"
+                    />
+                    <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                )}
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Select the system permissions tier for this user account
+                  {isAdmin
+                    ? 'Select the system permissions tier for this user account'
+                    : 'System permissions tier assigned to this account. Only administrators can change roles.'}
+                </p>
+              </div>
+
+              {/* Branch Location */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Allocated Branch {isAdmin && <span className="text-rose-500">*</span>}
+                  </label>
+                  {!isAdmin && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                      <Lock className="w-3 h-3 text-slate-400" /> Managed by Admin
+                    </span>
+                  )}
+                </div>
+
+                {isAdmin ? (
+                  <select
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-2xs cursor-pointer"
+                  >
+                    {branches.length > 0 ? (
+                      branches.map((b) => {
+                        const bId = b.branch_id || b.id;
+                        return (
+                          <option key={bId} value={bId}>
+                            {b.name || b.branch_name || `Branch #${bId}`} (ID: {bId})
+                          </option>
+                        );
+                      })
+                    ) : (
+                      <option value="1">Central Branch Office (ID: 1)</option>
+                    )}
+                  </select>
+                ) : (
+                  <div className="relative">
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={branchDisplayLabel}
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-slate-100/90 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 cursor-not-allowed select-none shadow-2xs"
+                    />
+                    <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                )}
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {isAdmin
+                    ? 'Allocate this user (admin or staff member) to a regional office or headquarters'
+                    : 'Assigned branch affiliation for this user account.'}
                 </p>
               </div>
 
@@ -293,14 +429,24 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
 
               {/* Account Status */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Account Status
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Account Status
+                  </label>
+                  {!isAdmin && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                      <Lock className="w-3 h-3 text-slate-400" /> Managed by Admin
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     type="button"
+                    disabled={!isAdmin}
                     onClick={() => setStatus('ACTIVE')}
-                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                      !isAdmin ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                    } ${
                       status === 'ACTIVE'
                         ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-2xs'
                         : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -310,8 +456,11 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
                   </button>
                   <button
                     type="button"
+                    disabled={!isAdmin}
                     onClick={() => setStatus('INACTIVE')}
-                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                    className={`flex-1 py-2 px-3 rounded-xl border text-xs font-semibold transition-all ${
+                      !isAdmin ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'
+                    } ${
                       status === 'INACTIVE'
                         ? 'border-blue-500 bg-blue-50 text-blue-900 shadow-2xs'
                         : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -320,6 +469,11 @@ export default function UserUpdateModal({ isOpen, user, onClose, onSuccess }) {
                     Inactive
                   </button>
                 </div>
+                {!isAdmin && (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Your account is currently {status === 'ACTIVE' ? 'active' : 'inactive'}. Account status changes require administrator authorization.
+                  </p>
+                )}
               </div>
             </div>
           </form>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser } from '../../../../actions/Admin/userActions';
 import { fetchRoles } from '../../../../actions/Admin/roleActions';
+import { fetchBranches } from '../../../../actions/Admin/branchAction';
 import Button from '../../../ui/Button';
 import { X, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
@@ -9,9 +10,11 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { submitting, error } = useSelector((state) => state.users);
   const { roles = [] } = useSelector((state) => state.roles ?? {});
+  const { list: branches = [] } = useSelector((state) => state.branch ?? {});
 
   const [name, setName] = useState('');
   const [roleId, setRoleId] = useState('');
+  const [branchId, setBranchId] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,14 +26,23 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
       if (!roles || roles.length === 0) {
         dispatch(fetchRoles());
       }
+      if (!branches || branches.length === 0) {
+        dispatch(fetchBranches());
+      }
     }
-  }, [isOpen, roles, dispatch]);
+  }, [isOpen, roles, branches, dispatch]);
 
   useEffect(() => {
     if (roles && roles.length > 0 && !roleId) {
       setRoleId(roles[0].role_id || roles[0].id || 'EDUGATE_STAFF');
     }
   }, [roles, roleId]);
+
+  useEffect(() => {
+    if (branches && branches.length > 0 && !branchId) {
+      setBranchId(branches[0].branch_id || branches[0].id || 1);
+    }
+  }, [branches, branchId]);
 
   if (!isOpen) return null;
 
@@ -39,6 +51,7 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
     setEmail('');
     setPassword('');
     setLocalError('');
+    setBranchId(branches[0]?.branch_id || branches[0]?.id || 1);
     onClose();
   };
 
@@ -54,6 +67,10 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
       setLocalError('Please select a system role.');
       return;
     }
+    if (!branchId) {
+      setLocalError('Please select a branch location.');
+      return;
+    }
     if (!email.trim()) {
       setLocalError('Email address is required.');
       return;
@@ -64,7 +81,7 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
     }
 
     const payload = {
-      branch_id: 1,
+      branch_id: Number(branchId) || branchId || 1,
       name: name.trim(),
       email: email.trim(),
       password: password.trim(),
@@ -182,6 +199,34 @@ export default function UserAddModal({ isOpen, onClose, onSuccess }) {
                 </select>
                 <p className="text-[11px] text-slate-400 mt-1">
                   Select the system permissions tier for this user account
+                </p>
+              </div>
+
+              {/* Branch Location */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Allocated Branch <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-2xs cursor-pointer"
+                >
+                  {branches.length > 0 ? (
+                    branches.map((b) => {
+                      const bId = b.branch_id || b.id;
+                      return (
+                        <option key={bId} value={bId}>
+                          {b.name || b.branch_name || `Branch #${bId}`} (ID: {bId})
+                        </option>
+                      );
+                    })
+                  ) : (
+                    <option value="1">Central Branch Office (ID: 1)</option>
+                  )}
+                </select>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Select regional branch or head office for this staff or admin member
                 </p>
               </div>
 

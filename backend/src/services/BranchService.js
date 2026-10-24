@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { BranchRepository } from '../repositories/BranchRepository.js';
+import { UserRepository } from '../repositories/UsersRepository.js';
 import { userService } from './UsersService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +27,7 @@ const saveStatusMap = (map) => {
 
 export const BranchService = {
 
-    async createBranch({ name, address, phone, status = 'Active' }) {
+    async createBranch({ name, address, phone, status = 'Active', admin_id = null }) {
         const branchData = {
             name: name,
             address: address,
@@ -38,6 +39,15 @@ export const BranchService = {
             const statusMap = getStatusMap();
             statusMap[created.branch_id] = status || 'Active';
             saveStatusMap(statusMap);
+
+            if (admin_id) {
+                try {
+                    await UserRepository.updateuser(admin_id, { branch_id: Number(created.branch_id) });
+                } catch (e) {
+                    console.warn('[BranchService] Failed to assign admin to new branch:', e.message);
+                }
+            }
+
             return { ...created, status: status || 'Active' };
         }
         return created;
@@ -46,25 +56,66 @@ export const BranchService = {
     async getAllBranches() {
         const branches = await BranchRepository.getAllBranches();
         const statusMap = getStatusMap();
-        return (branches || []).map(b => ({
-            ...b,
-            status: b.status || statusMap[b.branch_id] || 'Active'
-        }));
+
+        let allUsers = [];
+        try {
+            allUsers = await UserRepository.findusers();
+        } catch (e) {
+            console.warn('[BranchService] Failed to load users for allocated admin lookup:', e.message);
+        }
+
+        const adminUsers = (allUsers || []).filter(u => {
+            const r = String(u.role_id || '').toUpperCase();
+            return r.includes('ADMIN') || r.includes('SUPER') || r === 'MANAGER';
+        });
+
+        return (branches || []).map(b => {
+            const branchAdmin = adminUsers.find(u => String(u.branch_id) === String(b.branch_id));
+            return {
+                ...b,
+                status: b.status || statusMap[b.branch_id] || 'Active',
+                allocated_admin: branchAdmin ? {
+                    user_id: branchAdmin.user_id,
+                    name: branchAdmin.name,
+                    email: branchAdmin.email,
+                    role_id: branchAdmin.role_id
+                } : null
+            };
+        });
     },
 
     async getBranchById(branch_id) {
         const branch = await BranchRepository.getBranchById(branch_id);
         if (branch) {
             const statusMap = getStatusMap();
+            let allocatedAdmin = null;
+            try {
+                const allUsers = await UserRepository.findusers();
+                const found = (allUsers || []).find(u => {
+                    const r = String(u.role_id || '').toUpperCase();
+                    const isAdmin = r.includes('ADMIN') || r.includes('SUPER') || r === 'MANAGER';
+                    return isAdmin && String(u.branch_id) === String(branch.branch_id);
+                });
+                if (found) {
+                    allocatedAdmin = {
+                        user_id: found.user_id,
+                        name: found.name,
+                        email: found.email,
+                        role_id: found.role_id,
+                    };
+                }
+            } catch (e) {}
+
             return {
                 ...branch,
-                status: branch.status || statusMap[branch.branch_id] || 'Active'
+                status: branch.status || statusMap[branch.branch_id] || 'Active',
+                allocated_admin: allocatedAdmin,
             };
         }
         return branch;
     },
 
-    async updateBranch(branch_id, { name, address, phone, status = null }) {
+    async updateBranch(branch_id, { name, address, phone, status = null, admin_id = null }) {
         const branchData = {
             name: name,
             address: address,
@@ -76,6 +127,15 @@ export const BranchService = {
             statusMap[branch_id] = status;
             saveStatusMap(statusMap);
         }
+
+        if (admin_id) {
+            try {
+                await UserRepository.updateuser(admin_id, { branch_id: Number(branch_id) });
+            } catch (e) {
+                console.warn('[BranchService] Failed to assign admin to branch:', e.message);
+            }
+        }
+
         return {
             ...updated,
             status: status || statusMap[branch_id] || 'Active'

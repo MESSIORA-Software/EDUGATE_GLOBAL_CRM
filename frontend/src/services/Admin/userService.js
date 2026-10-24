@@ -27,6 +27,7 @@ const getUserById = async (user_id) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({ user_id }),
   });
@@ -44,6 +45,7 @@ const createUser = async (userData) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(userData),
   });
@@ -61,6 +63,7 @@ const updateUser = async (userData) => {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(userData),
   });
@@ -78,6 +81,7 @@ const deleteUser = async (user_id) => {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({ user_id }),
   });

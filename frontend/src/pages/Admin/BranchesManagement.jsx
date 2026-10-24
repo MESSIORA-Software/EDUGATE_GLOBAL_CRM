@@ -40,6 +40,8 @@ export default function BranchesManagement() {
     setUsersBranch,
     deletingBranch,
     setDeletingBranch,
+    adminUsers,
+    getAllocatedAdminForBranch,
     toast,
     showToast,
     handleRefresh,
@@ -149,6 +151,7 @@ export default function BranchesManagement() {
                 <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   <th className="py-3.5 px-4">Branch ID</th>
                   <th className="py-3.5 px-4">Branch Name</th>
+                  <th className="py-3.5 px-4">Allocated Admin</th>
                   <th className="py-3.5 px-4">Contact</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -158,6 +161,7 @@ export default function BranchesManagement() {
                 {filteredBranches.map((b, index) => {
                   const branchName = b.branch_name || b.name || `Branch #${b.branch_id || index + 1}`;
                   const badge = getBadgeCode(branchName);
+                  const allocatedAdmin = getAllocatedAdminForBranch(b);
 
                   return (
                     <tr key={b.branch_id || index} className="hover:bg-slate-50/70 transition-colors">
@@ -173,6 +177,28 @@ export default function BranchesManagement() {
                             <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
                             <span className="truncate max-w-xs">{b.address}</span>
                           </p>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {allocatedAdmin ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-lg bg-blue-100 text-blue-800 font-bold text-[10px] flex items-center justify-center shrink-0">
+                              {(allocatedAdmin.name || 'A').charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-slate-800 truncate">
+                                {allocatedAdmin.name}
+                              </p>
+                              <p className="text-[10px] text-slate-400 truncate">
+                                {allocatedAdmin.email || 'Branch Administrator'}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>Admin should assign</span>
+                          </span>
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-slate-600">
@@ -223,6 +249,7 @@ export default function BranchesManagement() {
       {/* Modals & Drawers */}
       <BranchAddModal
         isOpen={isAddOpen}
+        adminUsers={adminUsers}
         onClose={() => setIsAddOpen(false)}
         onSuccess={(msg) => showToast(msg)}
       />
@@ -230,6 +257,7 @@ export default function BranchesManagement() {
       <BranchUpdateModal
         isOpen={!!editingBranch}
         branch={editingBranch}
+        adminUsers={adminUsers}
         onClose={() => setEditingBranch(null)}
         onSuccess={(msg) => showToast(msg)}
       />
