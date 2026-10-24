@@ -11,7 +11,6 @@ import {
   Users,
   UserCheck,
   LayoutDashboard,
-  Settings,
   LogOut,
   HardDrive,
   Kanban,
@@ -49,7 +48,6 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },
         { name: 'My Profile', path: '/profile', icon: UserCheck },
-        { name: 'Settings', path: '/settings', icon: Settings },
       ]
     : isAdmin
     ? [

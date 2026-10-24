@@ -116,4 +116,71 @@ export const ReferrerController = {
       next(error);
     }
   },
+
+  async getPaymentSettings(req, res, next) {
+    try {
+      const data = await ReferrerService.getPaymentSettings();
+      res.status(200).json({
+        status: 'success',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async updatePaymentSettings(req, res, next) {
+    try {
+      const { rate_per_student, currency, apply_to_all } = req.body;
+      const data = await ReferrerService.updatePaymentSettings({
+        rate_per_student,
+        currency,
+        apply_to_all,
+      });
+      res.status(200).json({
+        status: 'success',
+        message: 'Referrer payment settings updated successfully',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async addPayout(req, res, next) {
+    try {
+      const referrer_id = req.params.id || req.body.referrer_id;
+      const { amount, payment_method, reference_note } = req.body;
+      const paid_by = req.user?.user_id || null;
+
+      const payout = await ReferrerService.createPayout({
+        referrer_id,
+        amount,
+        payment_method,
+        reference_note,
+        paid_by,
+      });
+
+      res.status(201).json({
+        status: 'success',
+        message: 'Payment recorded successfully',
+        data: payout,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getPayouts(req, res, next) {
+    try {
+      const referrer_id = req.params.id || req.query.referrer_id;
+      const payouts = await ReferrerService.getPayouts(referrer_id);
+      res.status(200).json({
+        status: 'success',
+        data: payouts,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

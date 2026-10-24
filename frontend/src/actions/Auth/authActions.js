@@ -26,6 +26,13 @@ export const login = (email, password) => {
 
       if (token) {
         localStorage.setItem('token', token);
+        if (password) {
+          try {
+            sessionStorage.setItem('current_user_pwd', password);
+          } catch {
+            // Ignore sessionStorage restrictions
+          }
+        }
 
         // Fetch user profile if not fully provided in login response
         if (!user || typeof user !== 'object') {
@@ -86,6 +93,11 @@ export const logout = () => {
   return (dispatch) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    try {
+      sessionStorage.removeItem('current_user_pwd');
+    } catch {
+      // Ignore
+    }
     dispatch({ type: LOGOUT });
   };
 };

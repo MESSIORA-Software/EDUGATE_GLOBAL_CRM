@@ -103,16 +103,12 @@ export default function useEvent() {
     return res;
   };
 
-  const handleDeleteEvent = async (eventId, eventTitle = '') => {
-    const label = eventTitle ? `"${eventTitle}"` : `Event ${formatEventId(eventId)}`;
-    if (!window.confirm(`Are you sure you want to delete ${label}?`)) {
-      return { success: false };
-    }
+  const handleDeleteEvent = async (eventId) => {
     const res = await dispatch(deleteEvent(eventId));
     if (res?.success) {
-      showToast(`Event deleted successfully!`);
+      showToast('Event deleted successfully!');
     } else {
-      showToast(res?.error || `Failed to delete Event`, 'error');
+      showToast(res?.error || 'Failed to delete Event', 'error');
     }
     return res;
   };

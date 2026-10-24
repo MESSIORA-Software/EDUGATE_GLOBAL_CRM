@@ -3,14 +3,13 @@ import ReferrerService from '../../services/Admin/referrerService';
 import AddReferrerModal from '../../components/Modals/Admin/Referrer/AddReferrerModal';
 import EditReferrerModal from '../../components/Modals/Admin/Referrer/EditReferrerModal';
 import ReferrerDetailModal from '../../components/Modals/Admin/Referrer/ReferrerDetailModal';
-import ReferrerDeleteModal from '../../components/Modals/Admin/Referrer/ReferrerDeleteModal';
+import ManageReferrerPaymentsModal from '../../components/Modals/Admin/Referrer/ManageReferrerPaymentsModal';
 import {
   Award,
   Plus,
   Search,
   RefreshCw,
   Edit2,
-  Trash2,
   Eye,
   Mail,
   Phone,
@@ -24,20 +23,23 @@ import {
   ChevronDown,
   X,
   UserPlus,
+  Wallet,
+  Calendar,
 } from 'lucide-react';
 
 export default function ReferrersManagement() {
   const [referrers, setReferrers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('ALL');
+  const [selectedMonth, setSelectedMonth] = useState('ALL');
   const [toast, setToast] = useState(null);
 
   // Drawer Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingReferrer, setEditingReferrer] = useState(null);
   const [detailReferrer, setDetailReferrer] = useState(null);
-  const [deletingReferrer, setDeletingReferrer] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -67,10 +69,19 @@ export default function ReferrersManagement() {
 
   const filteredReferrers = useMemo(() => {
     return referrers.filter((r) => {
-      // Status filter
-      if (statusFilter !== 'ALL') {
-        const itemStatus = (r.status || 'Active').toUpperCase();
-        if (itemStatus !== statusFilter.toUpperCase()) return false;
+      // Payment Status filter
+      if (paymentStatusFilter !== 'ALL') {
+        const pStatus = (r.payment_status || 'No Due').toUpperCase();
+        if (paymentStatusFilter === 'PENDING' && !pStatus.includes('PENDING')) return false;
+        if (paymentStatusFilter === 'PAID' && pStatus !== 'PAID') return false;
+        if (paymentStatusFilter === 'PARTIALLY_PAID' && pStatus !== 'PARTIALLY PAID') return false;
+        if (paymentStatusFilter === 'NO_DUE' && pStatus !== 'NO DUE') return false;
+      }
+
+      // Month filter
+      if (selectedMonth !== 'ALL') {
+        const date = r.created_at ? new Date(r.created_at) : null;
+        if (!date || date.getMonth() !== Number(selectedMonth)) return false;
       }
 
       // Search term
@@ -94,7 +105,7 @@ export default function ReferrersManagement() {
         note.includes(term)
       );
     });
-  }, [referrers, searchTerm, statusFilter]);
+  }, [referrers, searchTerm, paymentStatusFilter, selectedMonth]);
 
   return (
     <div className="space-y-4 max-w-full mx-auto">
@@ -138,6 +149,14 @@ export default function ReferrersManagement() {
           </button>
           <button
             type="button"
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs shrink-0"
+          >
+            <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Manage Payments</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setIsAddOpen(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
           >
@@ -150,6 +169,7 @@ export default function ReferrersManagement() {
       {/* Filter & Action Toolbar */}
       <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row gap-3 justify-between items-center">
         <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto flex-1">
+          {/* Search input */}
           <div className="relative w-full sm:w-80 group">
             <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -171,19 +191,61 @@ export default function ReferrersManagement() {
             )}
           </div>
 
+          {/* Payment Status Filter Dropdown */}
           <div className="relative w-full sm:w-44">
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={paymentStatusFilter}
+              onChange={(e) => setPaymentStatusFilter(e.target.value)}
               className="appearance-none w-full pl-8 pr-8 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-semibold text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-xs"
             >
               <option value="ALL">All Statuses</option>
-              <option value="ACTIVE">Active Partners</option>
-              <option value="INACTIVE">Inactive Partners</option>
+              <option value="PENDING">Pending Payment</option>
+              <option value="PAID">Paid</option>
+              <option value="PARTIALLY_PAID">Partially Paid</option>
+              <option value="NO_DUE">No Due</option>
             </select>
             <Filter className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5 pointer-events-none" />
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
           </div>
+
+          {/* Month Filter Dropdown */}
+          <div className="relative w-full sm:w-40">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="appearance-none w-full pl-8 pr-8 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-semibold text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-xs"
+            >
+              <option value="ALL">All Months</option>
+              <option value="0">January</option>
+              <option value="1">February</option>
+              <option value="2">March</option>
+              <option value="3">April</option>
+              <option value="4">May</option>
+              <option value="5">June</option>
+              <option value="6">July</option>
+              <option value="7">August</option>
+              <option value="8">September</option>
+              <option value="9">October</option>
+              <option value="10">November</option>
+              <option value="11">December</option>
+            </select>
+            <Calendar className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5 pointer-events-none" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+          </div>
+
+          {(paymentStatusFilter !== 'ALL' || selectedMonth !== 'ALL') && (
+            <button
+              type="button"
+              onClick={() => {
+                setPaymentStatusFilter('ALL');
+                setSelectedMonth('ALL');
+              }}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer px-2 py-1 shrink-0"
+              title="Reset Filters"
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -198,7 +260,7 @@ export default function ReferrersManagement() {
                 <th className="py-3.5 px-4">Contact Info</th>
                 <th className="py-3.5 px-4">Home Address</th>
                 <th className="py-3.5 px-4">Note / Partnership</th>
-                <th className="py-3.5 px-4 text-center">Status</th>
+                <th className="py-3.5 px-4 text-center">Payment Status</th>
                 <th className="py-3.5 px-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -217,11 +279,11 @@ export default function ReferrersManagement() {
                       <Award className="w-10 h-10 text-slate-300 mx-auto" />
                       <p className="font-bold text-sm text-slate-700">No Referrers Found</p>
                       <p className="text-xs text-slate-400">
-                        {searchTerm || statusFilter !== 'ALL'
+                        {searchTerm || paymentStatusFilter !== 'ALL' || selectedMonth !== 'ALL'
                           ? 'No referrers match your search or filter criteria.'
                           : 'Get started by adding your first referral partner.'}
                       </p>
-                      {!searchTerm && statusFilter === 'ALL' && (
+                      {!searchTerm && paymentStatusFilter === 'ALL' && selectedMonth === 'ALL' && (
                         <button
                           type="button"
                           onClick={() => setIsAddOpen(true)}
@@ -328,24 +390,29 @@ export default function ReferrersManagement() {
                         )}
                       </td>
 
-                      {/* Status */}
+                      {/* Payment Status Column */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                            (ref.status || 'Active').toUpperCase() === 'ACTIVE'
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-slate-100 text-slate-600 border border-slate-200'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              (ref.status || 'Active').toUpperCase() === 'ACTIVE'
-                                ? 'bg-emerald-500'
-                                : 'bg-slate-400'
-                            }`}
-                          />
-                          {(ref.status || 'Active').toUpperCase() === 'ACTIVE' ? 'Active' : 'Inactive'}
-                        </span>
+                        {ref.payment_status === 'Paid' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                            Paid
+                          </span>
+                        ) : ref.payment_status === 'Partially Paid' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            Partially Paid
+                          </span>
+                        ) : ref.payment_status === 'Pending Payment' ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Pending Payment
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                            No Due
+                          </span>
+                        )}
                       </td>
 
                       {/* Actions */}
@@ -366,14 +433,6 @@ export default function ReferrersManagement() {
                             title="Edit Referrer"
                           >
                             <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeletingReferrer(ref)}
-                            className="p-1.5 text-slate-400 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete Referrer"
-                          >
-                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -409,14 +468,16 @@ export default function ReferrersManagement() {
       <ReferrerDetailModal
         isOpen={!!detailReferrer}
         referrer={detailReferrer}
-        onClose={() => setDetailReferrer(null)}
+        onClose={() => {
+          setDetailReferrer(null);
+          fetchReferrers();
+        }}
         onEdit={(ref) => setEditingReferrer(ref)}
       />
 
-      <ReferrerDeleteModal
-        isOpen={!!deletingReferrer}
-        referrer={deletingReferrer}
-        onClose={() => setDeletingReferrer(null)}
+      <ManageReferrerPaymentsModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
         onSuccess={(msg) => {
           showToast(msg);
           fetchReferrers();

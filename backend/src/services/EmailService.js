@@ -424,8 +424,31 @@ class EmailManager {
                 const subject = parsed.subject || '(No Subject)';
                 const bodyText = (parsed.text || parsed.textAsHtml || parsed.html || '').trim();
 
-                // Skip automated emails from google or empty addresses
-                if (!senderAddress || senderAddress.includes('no-reply@') || senderAddress === this.user.toLowerCase()) {
+                // Skip automated emails, system bots, or empty addresses
+                const BOT_DOMAINS = [
+                    'facebookmail.com', 'instagram.com', 'openai.com', 'chatgpt.com',
+                    'github.com', 'google.com', 'clickup.com', 'tasks.clickup.com',
+                    'mail.clickup.com', 'make.com', 'railway.app', 'namecheap.com',
+                    'supabase.com', 'vercel.com', 'netlify.com', 'stripe.com', 'linkedin.com',
+                    'twitter.com', 'x.com', 'discord.com', 'slack.com'
+                ];
+
+                const isBotDomain = BOT_DOMAINS.some(domain => senderAddress.endsWith(`@${domain}`) || senderAddress.includes(`.${domain}`));
+                const isNoReply = senderAddress.includes('no-reply') || senderAddress.includes('noreply') || senderAddress.includes('donotreply') || senderAddress.includes('notification');
+
+                if (!senderAddress || isBotDomain || isNoReply || senderAddress === this.user.toLowerCase()) {
+                    continue;
+                }
+
+                // CRITICAL: Only sync emails from registered students/clients in CRM!
+                const { data: studentClient } = await supabase
+                    .from('clients')
+                    .select('client_id, name, email')
+                    .ilike('email', senderAddress)
+                    .maybeSingle();
+
+                if (!studentClient) {
+                    // Not a registered student in the CRM, skip fetching
                     continue;
                 }
 
@@ -486,14 +509,14 @@ class EmailManager {
                     await ConversationService.handleInboundCommunication({
                         channel: 'email',
                         channelClientId: senderAddress,
-                        clientName: senderName,
+                        clientName: studentClient.name || senderName,
                         clientEmail: senderAddress,
                         content: formattedContent,
                         messageType: messageType,
                         media_url: mediaUrl
                     });
                     processedCount++;
-                    console.log(`[EmailService] Ingested email from ${senderAddress}: "${subject}"`);
+                    console.log(`[EmailService] Ingested email from student ${studentClient.name} (${senderAddress}): "${subject}"`);
                 } catch (saveError) {
                     console.error('[EmailService] Error saving inbound email:', saveError);
                 }

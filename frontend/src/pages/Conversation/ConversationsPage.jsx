@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  AlertCircle, CheckCheck, CheckCircle2, ChevronDown, Download, FileText, Forward, ImagePlus, Inbox,
-  LoaderCircle, Mail, Maximize2, MessageCircle, Minimize2, Paperclip, PhoneCall, Plus,
-  QrCode, RefreshCw, Reply, Search, Send, Star, Target, Trash2, UserRound, X,
+  AlertCircle, AlignLeft, Bold, Check, CheckCheck, CheckCircle2, ChevronDown, Download,
+  FileText, Filter, Forward, Heart, Image, ImagePlus, Inbox, Italic, Link2, List, ListOrdered,
+  LoaderCircle, Lock, Mail, Maximize2, MessageCircle, Minimize2, Minus, MoreVertical,
+  Paperclip, PenLine, PhoneCall, Plus, QrCode, Quote, Redo2, RefreshCw, Reply, RotateCcw,
+  RotateCw, Search, Send, Smile, Star, Strikethrough, Target, ThumbsUp, Trash2, Underline, Undo2,
+  UserRound, X,
 } from 'lucide-react';
 import conversationService from '../../services/Conversation/conversationService';
 import AddOpportunityModal from '../../components/Modals/Admin/Student/AddOpportunityModal';
@@ -11,10 +14,10 @@ import useAuth from '../../hooks/Auth/useAuth';
 import { getUserRole } from '../../utils/roleUtils';
 
 const channelConfig = {
-  messenger: { label: 'Messenger', activeClass: 'border-blue-500 bg-blue-50/80 text-blue-800' },
-  whatsapp: { label: 'WhatsApp', activeClass: 'border-emerald-500 bg-emerald-50/80 text-emerald-800' },
-  email: { label: 'Email', activeClass: 'border-violet-500 bg-violet-50/80 text-violet-800' },
-  sms: { label: 'Messages & calls', activeClass: 'border-rose-500 bg-rose-50/80 text-rose-800' },
+  messenger: { label: 'Messenger', activeClass: 'border-blue-300 bg-blue-50/50 text-blue-900 font-bold' },
+  whatsapp: { label: 'WhatsApp', activeClass: 'border-blue-300 bg-blue-50/50 text-blue-900 font-bold' },
+  email: { label: 'Email', activeClass: 'border-blue-300 bg-blue-50/50 text-blue-900 font-bold' },
+  sms: { label: 'Messages & calls', activeClass: 'border-blue-300 bg-blue-50/50 text-blue-900 font-bold' },
 };
 
 const renderChannelIcon = (channelId, className = 'h-4 w-4 shrink-0') => {
@@ -98,12 +101,45 @@ const parseEmailContent = (rawContent) => {
   return { subject: '', body: rawContent };
 };
 
+const MESSENGER_REACTIONS = [
+  { emoji: '👍', label: 'Like' },
+  { emoji: '❤️', label: 'Love' },
+  { emoji: '😂', label: 'Haha' },
+  { emoji: '😮', label: 'Wow' },
+  { emoji: '😢', label: 'Sad' },
+  { emoji: '😡', label: 'Angry' },
+];
+
+const parseMessageContent = (rawContent) => {
+  if (!rawContent) return { replyQuote: null, body: '' };
+  if (rawContent.startsWith('[Reply:')) {
+    const endIdx = rawContent.indexOf(']\n\n');
+    if (endIdx !== -1) {
+      const header = rawContent.substring(7, endIdx);
+      const colonIdx = header.indexOf(':');
+      const sender = colonIdx !== -1 ? header.substring(0, colonIdx).trim() : 'Replied';
+      const quote = colonIdx !== -1 ? header.substring(colonIdx + 1).trim() : header.trim();
+      return {
+        replyQuote: { sender, text: quote },
+        body: rawContent.substring(endIdx + 3).trim(),
+      };
+    }
+  }
+  return { replyQuote: null, body: rawContent };
+};
+
 function ConversationList({ conversations, selectedId, onSelect, search, channel, emailFolder }) {
   const isWhatsApp = channel === 'whatsapp';
   const isEmail = channel === 'email';
   const isSentFolder = isEmail && emailFolder === 'sent';
+  const isReceivedFolder = isEmail && emailFolder === 'received';
+  const isStarredFolder = isEmail && emailFolder === 'starred';
   const defaultLabel = isWhatsApp ? 'WhatsApp User' : isEmail ? 'Email Contact' : 'Facebook user';
-  const channelLabel = isWhatsApp ? 'WhatsApp' : isEmail ? (isSentFolder ? 'sent email' : 'inbox email') : 'Messenger';
+  const channelLabel = isWhatsApp
+    ? 'WhatsApp'
+    : isEmail
+      ? (isSentFolder ? 'sent email' : isReceivedFolder ? 'received email' : isStarredFolder ? 'starred email' : 'inbox email')
+      : 'Messenger';
 
   const filtered = conversations.filter((item) => {
     const name = item.clients?.name || (item.channel_client_id ? (isWhatsApp ? `+${item.channel_client_id}` : item.channel_client_id) : defaultLabel);
@@ -119,20 +155,9 @@ function ConversationList({ conversations, selectedId, onSelect, search, channel
       ) : filtered.map((item) => {
         const name = item.clients?.name || (item.channel_client_id ? (isWhatsApp ? `+${item.channel_client_id}` : item.channel_client_id) : defaultLabel);
         const isSelected = selectedId === item.conversation_id;
-
-        const activeBg = isWhatsApp
-          ? 'bg-emerald-50/70 border-r-2 border-emerald-600'
-          : isEmail
-          ? 'bg-violet-50/70 border-r-2 border-violet-600'
-          : 'bg-blue-50 border-r-2 border-blue-600';
-
-        const hoverBg = isWhatsApp ? 'hover:bg-emerald-50/40' : isEmail ? 'hover:bg-violet-50/40' : 'hover:bg-blue-50/60';
-
-        const avatarColor = isWhatsApp
-          ? 'bg-emerald-100 text-emerald-700'
-          : isEmail
-          ? isSentFolder ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'
-          : 'bg-blue-100 text-blue-700';
+        const activeBg = 'bg-blue-50/50 border-r-2 border-blue-600';
+        const hoverBg = 'hover:bg-slate-50/80';
+        const avatarColor = 'bg-slate-100 text-slate-700 border border-slate-200';
 
         const parsedLast = isEmail ? parseEmailContent(item.last_message) : null;
         const lastSubject = parsedLast?.subject;
@@ -142,14 +167,20 @@ function ConversationList({ conversations, selectedId, onSelect, search, channel
             key={item.conversation_id}
             type="button"
             onClick={() => onSelect(item)}
-            className={`w-full p-4 text-left transition ${isSelected ? activeBg : hoverBg}`}
+            className={`w-full p-4 text-left transition cursor-pointer ${isSelected ? activeBg : hoverBg}`}
           >
             <div className="flex items-start gap-3">
-              <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${avatarColor}`}>
+              <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${avatarColor} shadow-2xs`}>
                 {isEmail ? (
-                  isSentFolder ? <Send className="h-4 w-4" /> : <Mail className="h-5 w-5" />
+                  isSentFolder ? (
+                    <Send className="h-4 w-4 text-slate-600" />
+                  ) : isStarredFolder ? (
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+                  ) : (
+                    <Mail className="h-4 w-4 text-slate-600" />
+                  )
                 ) : (
-                  <UserRound className="h-5 w-5" />
+                  <UserRound className="h-5 w-5 text-slate-600" />
                 )}
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
               </div>
@@ -163,7 +194,7 @@ function ConversationList({ conversations, selectedId, onSelect, search, channel
                   </time>
                 </div>
                 <p className="mt-1 truncate text-xs text-slate-500">
-                  {lastSubject ? lastSubject : (item.status === 'open' ? (isSentFolder ? 'Sent email' : 'Open conversation') : item.status)}
+                  {lastSubject ? lastSubject : (item.status === 'open' ? (isSentFolder ? 'Sent email' : isReceivedFolder ? 'Received email' : isStarredFolder ? 'Starred email' : 'Open conversation') : item.status)}
                 </p>
               </div>
             </div>
@@ -174,7 +205,7 @@ function ConversationList({ conversations, selectedId, onSelect, search, channel
   );
 }
 
-// Gmail-style New Message Compose Popup Modal
+// Gmail-style New Message Compose Popup Modal (matches authentic Gmail interface)
 function EmailComposeModal({
   isOpen,
   onClose,
@@ -196,7 +227,14 @@ function EmailComposeModal({
   const [sending, setSending] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const [showFormatting, setShowFormatting] = useState(true);
+  const [fontFamily, setFontFamily] = useState('font-sans');
+  const [fontSize, setFontSize] = useState('text-xs');
+  const [textAlign, setTextAlign] = useState('text-left');
+  const [isConfidential, setIsConfidential] = useState(false);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const textareaRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -209,6 +247,7 @@ function EmailComposeModal({
       setShowCc(false);
       setShowBcc(false);
       setIsMinimized(false);
+      setIsConfidential(false);
     }
   }, [isOpen, initialTo, initialSubject, initialBody]);
 
@@ -223,7 +262,9 @@ function EmailComposeModal({
     setAttachment(null);
     setShowCc(false);
     setShowBcc(false);
+    setIsConfidential(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (imageInputRef.current) imageInputRef.current.value = '';
   };
 
   const handleDiscard = () => {
@@ -260,7 +301,6 @@ function EmailComposeModal({
         content: body.trim(),
         attachment: attachment || null,
       });
-      // Clear compose form completely and give as new for next time
       handleClearForm();
       onClose();
     } catch (err) {
@@ -270,70 +310,129 @@ function EmailComposeModal({
     }
   };
 
+  // Text formatting helpers
+  const wrapSelection = (before, after = before) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const current = body;
+    const selected = current.substring(start, end);
+    const replacement = before + (selected || 'text') + after;
+    const next = current.substring(0, start) + replacement + current.substring(end);
+    setBody(next);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + before.length, start + before.length + (selected ? selected.length : 4));
+    }, 0);
+  };
+
+  const insertPrefixToLines = (prefix) => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const current = body;
+    const selected = current.substring(start, end) || 'List item';
+    const lines = selected.split('\n').map((l, idx) => (typeof prefix === 'function' ? `${prefix(idx + 1)}${l}` : `${prefix}${l}`));
+    const replacement = lines.join('\n');
+    const next = current.substring(0, start) + replacement + current.substring(end);
+    setBody(next);
+    setTimeout(() => {
+      el.focus();
+    }, 0);
+  };
+
+  const handleInsertLink = () => {
+    const url = window.prompt('Enter link URL (e.g. https://example.com):', 'https://');
+    if (url && url !== 'https://') {
+      wrapSelection('[', `](${url})`);
+    }
+  };
+
+  const handleInsertEmoji = (emoji = '😊') => {
+    const el = textareaRef.current;
+    if (!el) {
+      setBody((prev) => prev + emoji);
+      return;
+    }
+    const start = el.selectionStart;
+    const next = body.substring(0, start) + emoji + body.substring(start);
+    setBody(next);
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + emoji.length, start + emoji.length);
+    }, 0);
+  };
+
+  const handleInsertSignature = () => {
+    const signature = '\n\n--\nEdugate Global CRM\nsupport@edugate.lk';
+    setBody((prev) => prev + signature);
+  };
+
   return (
     <div
-      className={`fixed z-50 bg-white shadow-2xl border border-slate-300 transition-all duration-200 flex flex-col ${
-        isMaximized
-          ? 'inset-6 rounded-2xl'
-          : isMinimized
-          ? 'bottom-0 right-6 w-80 rounded-t-xl'
-          : 'bottom-0 right-6 w-[580px] max-w-[90vw] h-[540px] max-h-[85vh] rounded-t-2xl'
-      }`}
+      className={`fixed z-50 bg-white shadow-2xl border border-slate-300 transition-all duration-200 flex flex-col ${isMaximized
+        ? 'inset-6 sm:inset-10 rounded-2xl'
+        : isMinimized
+          ? 'bottom-0 right-6 w-80 h-10 rounded-t-xl'
+          : 'bottom-0 right-6 w-[580px] max-w-[92vw] h-[560px] max-h-[88vh] rounded-t-xl'
+        }`}
     >
-      {/* Header Bar */}
-      <div className="flex h-11 items-center justify-between rounded-t-2xl bg-slate-900 px-4 text-white">
-        <span className="text-xs font-semibold truncate">
+      {/* Header Bar - Authentic Gmail Soft Off-White Header */}
+      <div className="flex h-10 items-center justify-between rounded-t-xl bg-[#f2f6fc] border-b border-slate-200/90 px-4 text-slate-800 select-none">
+        <span className="text-xs font-semibold truncate text-slate-800">
           {subject.trim() ? subject : 'New Message'}
         </span>
-        <div className="flex items-center gap-1.5 text-slate-300">
+        <div className="flex items-center gap-1 text-slate-500">
           <button
             type="button"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="p-1 hover:text-white rounded"
+            className="p-1 hover:bg-slate-200/80 hover:text-slate-900 rounded transition cursor-pointer"
             title={isMinimized ? 'Expand' : 'Minimize'}
           >
-            <Minimize2 className="h-3.5 w-3.5" />
+            <Minus className="h-3.5 w-3.5" />
           </button>
           {!isMinimized && (
             <button
               type="button"
               onClick={() => setIsMaximized(!isMaximized)}
-              className="p-1 hover:text-white rounded"
+              className="p-1 hover:bg-slate-200/80 hover:text-slate-900 rounded transition cursor-pointer"
               title={isMaximized ? 'Restore' : 'Maximize'}
             >
-              <Maximize2 className="h-3.5 w-3.5" />
+              <Maximize2 className="h-3 w-3" />
             </button>
           )}
           <button
             type="button"
             onClick={handleDiscard}
-            className="p-1 hover:text-white rounded"
-            title="Close and Clear"
+            className="p-1 hover:bg-slate-200/80 hover:text-slate-900 rounded transition cursor-pointer"
+            title="Close"
           >
-            <X className="h-4 w-4" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
       {!isMinimized && (
-        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden bg-white">
           {/* To Field */}
-          <div className="flex items-center border-b border-slate-100 px-4 py-2 text-sm">
-            <span className="w-12 text-slate-400 font-medium text-xs">To</span>
+          <div className="flex items-center border-b border-slate-200/70 px-4 py-1.5 text-xs">
+            <span className="w-8 text-slate-500 font-normal">To</span>
             <input
               type="email"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              placeholder="Recipient email address"
+              placeholder=""
               required
-              className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 text-sm"
+              className="flex-1 bg-transparent outline-none text-slate-800 text-xs py-1"
             />
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <div className="flex items-center gap-2.5 text-xs font-normal text-slate-500">
               {!showCc && (
                 <button
                   type="button"
                   onClick={() => setShowCc(true)}
-                  className="hover:text-blue-600 hover:underline"
+                  className="hover:text-slate-900 hover:underline cursor-pointer"
                 >
                   Cc
                 </button>
@@ -342,7 +441,7 @@ function EmailComposeModal({
                 <button
                   type="button"
                   onClick={() => setShowBcc(true)}
-                  className="hover:text-blue-600 hover:underline"
+                  className="hover:text-slate-900 hover:underline cursor-pointer"
                 >
                   Bcc
                 </button>
@@ -352,46 +451,59 @@ function EmailComposeModal({
 
           {/* Cc Field */}
           {showCc && (
-            <div className="flex items-center border-b border-slate-100 px-4 py-2 text-sm">
-              <span className="w-12 text-slate-400 font-medium text-xs">Cc</span>
+            <div className="flex items-center border-b border-slate-200/70 px-4 py-1.5 text-xs animate-in fade-in duration-100">
+              <span className="w-8 text-slate-500 font-normal">Cc</span>
               <input
                 type="text"
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 placeholder="Cc recipients (comma separated)"
-                className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 text-sm"
+                className="flex-1 bg-transparent outline-none text-slate-800 text-xs py-1"
               />
             </div>
           )}
 
           {/* Bcc Field */}
           {showBcc && (
-            <div className="flex items-center border-b border-slate-100 px-4 py-2 text-sm">
-              <span className="w-12 text-slate-400 font-medium text-xs">Bcc</span>
+            <div className="flex items-center border-b border-slate-200/70 px-4 py-1.5 text-xs animate-in fade-in duration-100">
+              <span className="w-8 text-slate-500 font-normal">Bcc</span>
               <input
                 type="text"
                 value={bcc}
                 onChange={(e) => setBcc(e.target.value)}
                 placeholder="Bcc recipients (comma separated)"
-                className="flex-1 bg-transparent outline-none text-slate-800 placeholder:text-slate-400 text-sm"
+                className="flex-1 bg-transparent outline-none text-slate-800 text-xs py-1"
               />
             </div>
           )}
 
           {/* Subject Field */}
-          <div className="border-b border-slate-100 px-4 py-2.5">
+          <div className="border-b border-slate-200/70 px-4 py-2">
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="Subject"
-              className="w-full bg-transparent outline-none text-slate-900 font-medium text-sm placeholder:text-slate-400"
+              className="w-full bg-transparent outline-none text-slate-800 font-normal text-xs placeholder:text-slate-400"
             />
           </div>
 
+          {/* Confidential Mode Banner */}
+          {isConfidential && (
+            <div className="mx-4 mt-2 flex items-center justify-between rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-800 border border-blue-200">
+              <div className="flex items-center gap-2">
+                <Lock className="h-3.5 w-3.5 text-blue-600" />
+                <span className="font-semibold text-[11px]">Confidential mode: Recipients won't have options to forward, copy, or print.</span>
+              </div>
+              <button type="button" onClick={() => setIsConfidential(false)} className="text-blue-500 hover:text-blue-800 cursor-pointer">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
           {/* Attachment list if added */}
           {attachment && (
-            <div className="mx-4 mt-2 flex items-center justify-between rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-700">
+            <div className="mx-4 mt-2 flex items-center justify-between rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-slate-700 border border-slate-200/80">
               <div className="flex items-center gap-2 truncate">
                 <FileText className="h-3.5 w-3.5 text-slate-500" />
                 <span className="truncate font-medium">{attachment.name}</span>
@@ -400,33 +512,198 @@ function EmailComposeModal({
               <button
                 type="button"
                 onClick={() => setAttachment(null)}
-                className="text-slate-400 hover:text-slate-700"
+                className="text-slate-400 hover:text-slate-700 cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
 
-          {/* Email Body */}
+          {/* Email Body Canvas */}
           <textarea
+            ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Compose your email here..."
-            className="flex-1 resize-none p-4 text-sm text-slate-800 outline-none leading-relaxed placeholder:text-slate-400"
+            className={`flex-1 resize-none p-4 text-xs text-slate-800 outline-none leading-relaxed placeholder:text-slate-400 ${fontFamily} ${fontSize} ${textAlign}`}
           />
 
-          {/* Bottom Action Toolbar (Gmail Style) */}
-          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50/50 px-4 py-2.5">
-            <div className="flex items-center gap-2">
+          {/* Gmail Formatting Bar (Above action bar, toggled by 'Aa') */}
+          {showFormatting && (
+            <div className="flex items-center gap-1 border-t border-slate-200/80 bg-slate-50/70 px-3 py-1.5 text-xs text-slate-600 overflow-x-auto">
               <button
-                type="submit"
-                disabled={sending || !to.trim()}
-                className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition"
+                type="button"
+                onClick={() => {
+                  textareaRef.current?.focus();
+                  document.execCommand('undo');
+                }}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-600 hover:text-slate-900 cursor-pointer"
+                title="Undo"
               >
-                {sending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                Send
+                <Undo2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  textareaRef.current?.focus();
+                  document.execCommand('redo');
+                }}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-600 hover:text-slate-900 cursor-pointer"
+                title="Redo"
+              >
+                <Redo2 className="h-3.5 w-3.5" />
               </button>
 
+              <div className="h-4 w-[1px] bg-slate-300 mx-1" />
+
+              {/* Font Family selector */}
+              <select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="bg-transparent border-0 text-slate-700 text-xs py-0.5 px-1 font-medium hover:bg-slate-200/70 rounded cursor-pointer outline-none"
+              >
+                <option value="font-sans">Sans Serif</option>
+                <option value="font-serif">Serif</option>
+                <option value="font-mono">Monospace</option>
+              </select>
+
+              {/* Font Size selector */}
+              <select
+                value={fontSize}
+                onChange={(e) => setFontSize(e.target.value)}
+                className="bg-transparent border-0 text-slate-700 text-xs py-0.5 px-1 font-medium hover:bg-slate-200/70 rounded cursor-pointer outline-none"
+              >
+                <option value="text-[11px]">Small</option>
+                <option value="text-xs">Normal</option>
+                <option value="text-sm">Large</option>
+                <option value="text-base">Huge</option>
+              </select>
+
+              <div className="h-4 w-[1px] bg-slate-300 mx-1" />
+
+              {/* Bold */}
+              <button
+                type="button"
+                onClick={() => wrapSelection('**')}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer font-bold"
+                title="Bold (Ctrl+B)"
+              >
+                <Bold className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Italic */}
+              <button
+                type="button"
+                onClick={() => wrapSelection('*')}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer italic"
+                title="Italic (Ctrl+I)"
+              >
+                <Italic className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Underline */}
+              <button
+                type="button"
+                onClick={() => wrapSelection('<u>', '</u>')}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer underline"
+                title="Underline (Ctrl+U)"
+              >
+                <Underline className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Strikethrough */}
+              <button
+                type="button"
+                onClick={() => wrapSelection('~~')}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer"
+                title="Strikethrough"
+              >
+                <Strikethrough className="h-3.5 w-3.5" />
+              </button>
+
+              <div className="h-4 w-[1px] bg-slate-300 mx-1" />
+
+              {/* Align Left / Center */}
+              <button
+                type="button"
+                onClick={() => setTextAlign((prev) => (prev === 'text-left' ? 'text-center' : 'text-left'))}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer"
+                title="Align"
+              >
+                <AlignLeft className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Numbered List */}
+              <button
+                type="button"
+                onClick={() => insertPrefixToLines((n) => `${n}. `)}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer"
+                title="Numbered list"
+              >
+                <ListOrdered className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Bulleted List */}
+              <button
+                type="button"
+                onClick={() => insertPrefixToLines('• ')}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer"
+                title="Bulleted list"
+              >
+                <List className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Quote */}
+              <button
+                type="button"
+                onClick={() => insertPrefixToLines('> ')}
+                className="p-1 hover:bg-slate-200/70 rounded text-slate-700 hover:text-slate-900 cursor-pointer"
+                title="Quote"
+              >
+                <Quote className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Bottom Action Toolbar - Matching Gmail Image 2 */}
+          <div className="flex items-center justify-between border-t border-slate-200 bg-white px-3 py-2">
+            <div className="flex items-center gap-1">
+              {/* Blue Pill Send Button with split dropdown arrow */}
+              <div className="inline-flex items-center rounded-full bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs overflow-hidden mr-1.5 transition">
+                <button
+                  type="submit"
+                  disabled={sending || !to.trim()}
+                  className="px-4 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="Send email"
+                >
+                  {sending ? (
+                    <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <span>Send</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => alert('Email is set to send immediately on Send click.')}
+                  className="px-2 py-1.5 hover:bg-[#0842a0] border-l border-blue-400/30 cursor-pointer"
+                  title="More send options"
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </div>
+
+              {/* Formatting toggle icon 'Aa' */}
+              <button
+                type="button"
+                onClick={() => setShowFormatting(!showFormatting)}
+                className={`p-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${showFormatting ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                title="Formatting options"
+              >
+                Aa
+              </button>
+
+              {/* Attach files */}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -436,30 +713,101 @@ function EmailComposeModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-lg p-2 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition"
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
                 title="Attach files"
               >
                 <Paperclip className="h-4 w-4" />
               </button>
 
+              {/* Insert link */}
+              <button
+                type="button"
+                onClick={handleInsertLink}
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                title="Insert link"
+              >
+                <Link2 className="h-4 w-4" />
+              </button>
+
+              {/* Insert emoji */}
+              <button
+                type="button"
+                onClick={() => handleInsertEmoji('😊')}
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                title="Insert emoji"
+              >
+                <Smile className="h-4 w-4" />
+              </button>
+
+              {/* Insert image / photo */}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+              />
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                title="Insert photo"
+              >
+                <Image className="h-4 w-4" />
+              </button>
+
+              {/* Toggle confidential mode */}
+              <button
+                type="button"
+                onClick={() => setIsConfidential(!isConfidential)}
+                className={`p-1.5 rounded-lg transition cursor-pointer ${isConfidential ? 'bg-blue-100 text-blue-700' : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                title="Toggle confidential mode"
+              >
+                <Lock className="h-4 w-4" />
+              </button>
+
+              {/* Insert signature */}
+              <button
+                type="button"
+                onClick={handleInsertSignature}
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                title="Insert signature"
+              >
+                <PenLine className="h-4 w-4" />
+              </button>
+
+              {/* More options */}
+              <button
+                type="button"
+                onClick={() => alert('Email composer configured for Edugate CRM Gmail workspace.')}
+                className="p-1.5 rounded-lg text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                title="More options"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Right side: Save Draft & Trash */}
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleDraftSave}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200 hover:text-slate-800 transition"
+                className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
                 title="Save as Draft"
               >
                 Save Draft
               </button>
-            </div>
 
-            <button
-              type="button"
-              onClick={handleDiscard}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-200 hover:text-red-600 transition"
-              title="Discard draft"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={handleDiscard}
+                className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition cursor-pointer"
+                title="Discard draft"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </form>
       )}
@@ -495,6 +843,51 @@ export default function ConversationsPage() {
   const fileInput = useRef(null);
   const messagesEnd = useRef(null);
 
+  // Messenger Reaction, Reply & Thumbs Up states
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [activeReactionPickerId, setActiveReactionPickerId] = useState(null);
+  const [messageReactions, setMessageReactions] = useState(() => {
+    try {
+      const saved = localStorage.getItem('edugate_messenger_reactions');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleToggleReaction = (messageId, emoji) => {
+    setMessageReactions((prev) => {
+      const list = prev[messageId] || [];
+      const exists = list.includes(emoji);
+      const updated = exists ? list.filter((e) => e !== emoji) : [...list, emoji];
+      const next = { ...prev, [messageId]: updated };
+      try {
+        localStorage.setItem('edugate_messenger_reactions', JSON.stringify(next));
+      } catch { }
+      return next;
+    });
+    setActiveReactionPickerId(null);
+  };
+
+  const sendThumbsUp = async () => {
+    if (!selected || sending) return;
+    setSending(true);
+    setError('');
+    try {
+      await conversationService.sendMessage(selected.conversation_id, {
+        content: '👍',
+        media_source: 'system_storage',
+        message_type: 'text',
+      });
+      await loadMessages(selected);
+      await loadConversations(activeChannel);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    } finally {
+      setSending(false);
+    }
+  };
+
   // Email specific states
   const [emailFolder, setEmailFolder] = useState('inbox'); // 'inbox' | 'sent' | 'draft'
   const [showFullThreadInSent, setShowFullThreadInSent] = useState(false);
@@ -504,6 +897,33 @@ export default function ConversationsPage() {
   const [composeInitial, setComposeInitial] = useState({ to: '', subject: '', body: '', conversationId: null });
   const [isOpportunityModalOpen, setIsOpportunityModalOpen] = useState(false);
   const [successBanner, setSuccessBanner] = useState('');
+  const [openDetailsMessageId, setOpenDetailsMessageId] = useState(null);
+  const [isFolderDropdownOpen, setIsFolderDropdownOpen] = useState(false);
+  const [starredEmails, setStarredEmails] = useState(() => {
+    try {
+      const saved = localStorage.getItem('edugate_starred_emails');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleStarMessage = (message) => {
+    const messageId = message.message_id;
+    const convId = selected?.conversation_id;
+    setStarredEmails((prev) => {
+      const exists = prev.some((item) => item.messageId === messageId);
+      const next = exists
+        ? prev.filter((item) => item.messageId !== messageId)
+        : [...prev, { messageId, conversationId: convId }];
+      try {
+        localStorage.setItem('edugate_starred_emails', JSON.stringify(next));
+      } catch { }
+      setSuccessBanner(exists ? 'Removed from saved list' : 'Already added to saved list');
+      setTimeout(() => setSuccessBanner(''), 3000);
+      return next;
+    });
+  };
 
   // Sync activeChannel if location state channel updates
   useEffect(() => {
@@ -720,7 +1140,7 @@ export default function ConversationsPage() {
     if (activeChannel === 'messenger') {
       conversationService.getMessengerStatus().then((res) => {
         if (res?.data?.data) setMessengerStatus(res.data.data);
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [activeChannel]);
 
@@ -735,7 +1155,12 @@ export default function ConversationsPage() {
   }, [conversations, isSuperAdmin, user?.user_id]);
 
   // Categorize conversations for Email filters
-  const inboxConversations = useMemo(() => {
+  const allEmailConversations = useMemo(() => {
+    if (activeChannel !== 'email') return scopedConversations;
+    return scopedConversations;
+  }, [scopedConversations, activeChannel]);
+
+  const receivedConversations = useMemo(() => {
     if (activeChannel !== 'email') return scopedConversations;
     return scopedConversations.filter((conv) => {
       if (Array.isArray(conv.messages) && conv.messages.length > 0) {
@@ -755,39 +1180,132 @@ export default function ConversationsPage() {
     });
   }, [scopedConversations, activeChannel]);
 
+  const starredConversations = useMemo(() => {
+    if (activeChannel !== 'email') return scopedConversations;
+    return scopedConversations.filter((conv) => {
+      // Check if conversation messages or starred list includes this conversation
+      return starredEmails.some((item) => String(item.conversationId) === String(conv.conversation_id));
+    });
+  }, [scopedConversations, activeChannel, starredEmails]);
+
   const displayedConversations = useMemo(() => {
     if (activeChannel !== 'email') return scopedConversations;
     if (emailFolder === 'sent') return sentConversations;
-    if (emailFolder === 'inbox') return inboxConversations;
+    if (emailFolder === 'received') return receivedConversations;
+    if (emailFolder === 'starred') return starredConversations;
+    if (emailFolder === 'inbox') return allEmailConversations;
     return scopedConversations;
-  }, [activeChannel, emailFolder, scopedConversations, sentConversations, inboxConversations]);
+  }, [activeChannel, emailFolder, scopedConversations, sentConversations, receivedConversations, starredConversations, allEmailConversations]);
 
   const counts = useMemo(() => ({
     current: activeChannel === 'email'
-      ? (emailFolder === 'sent' ? sentConversations.length : inboxConversations.length)
+      ? (emailFolder === 'sent'
+        ? sentConversations.length
+        : emailFolder === 'received'
+          ? receivedConversations.length
+          : emailFolder === 'starred'
+            ? starredConversations.length
+            : allEmailConversations.length)
       : scopedConversations.length,
-    inbox: inboxConversations.length,
+    inbox: allEmailConversations.length,
+    received: receivedConversations.length,
     sent: sentConversations.length,
+    starred: starredConversations.length,
     draft: draftsList.length,
-  }), [activeChannel, emailFolder, scopedConversations.length, inboxConversations.length, sentConversations.length, draftsList.length]);
+  }), [activeChannel, emailFolder, scopedConversations.length, allEmailConversations.length, receivedConversations.length, sentConversations.length, starredConversations.length, draftsList.length]);
 
   const handleSelectEmailFolder = (folder) => {
     setEmailFolder(folder);
     setShowFullThreadInSent(false);
     if (folder === 'inbox') {
-      if (!inboxConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
-        setSelected(inboxConversations[0] || null);
+      if (!allEmailConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
+        setSelected(allEmailConversations[0] || null);
+      }
+    } else if (folder === 'received') {
+      if (!receivedConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
+        setSelected(receivedConversations[0] || null);
       }
     } else if (folder === 'sent') {
       if (!sentConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
         setSelected(sentConversations[0] || null);
       }
+    } else if (folder === 'starred') {
+      if (!starredConversations.some((c) => c.conversation_id === selected?.conversation_id)) {
+        setSelected(starredConversations[0] || null);
+      }
     }
   };
 
+  // Filter messages displayed in email thread view based on active email folder
+  const emailThreadMessages = useMemo(() => {
+    if (activeChannel !== 'email') return messages;
+    if (emailFolder === 'received') {
+      // In Received folder: only view received emails (sender_type === 'client')
+      return messages.filter((m) => m.sender_type === 'client');
+    }
+    if (emailFolder === 'sent' && !showFullThreadInSent) {
+      // In Sent folder: show staff sent emails
+      return messages.filter((m) => m.sender_type === 'staff');
+    }
+    if (emailFolder === 'starred') {
+      // In Starred folder: show only starred/saved emails
+      return messages.filter((m) => starredEmails.some((s) => s.messageId === m.message_id));
+    }
+    // In Inbox folder: show all sent and received emails in thread
+    return messages;
+  }, [activeChannel, emailFolder, messages, showFullThreadInSent, starredEmails]);
+
+  // Email folder definitions with metadata and counts for dropdown
+  const emailFolders = useMemo(() => [
+    {
+      id: 'inbox',
+      label: 'Inbox',
+      subtitle: 'All sent & received emails',
+      icon: Inbox,
+      iconColor: 'text-blue-600',
+      count: allEmailConversations.length,
+    },
+    {
+      id: 'received',
+      label: 'Received',
+      subtitle: 'Only student received emails',
+      icon: Mail,
+      iconColor: 'text-emerald-600',
+      count: receivedConversations.length,
+    },
+    {
+      id: 'sent',
+      label: 'Sent',
+      subtitle: 'Staff sent emails',
+      icon: Send,
+      iconColor: 'text-slate-600',
+      count: sentConversations.length,
+    },
+    {
+      id: 'starred',
+      label: 'Starred',
+      subtitle: 'Saved favorites list',
+      icon: Star,
+      iconColor: 'text-amber-500 fill-amber-400',
+      count: starredConversations.length,
+    },
+    {
+      id: 'draft',
+      label: 'Draft',
+      subtitle: 'Saved email drafts',
+      icon: FileText,
+      iconColor: 'text-slate-600',
+      count: draftsList.length,
+    },
+  ], [allEmailConversations.length, receivedConversations.length, sentConversations.length, starredConversations.length, draftsList.length]);
+
+  const currentFolder = useMemo(() => {
+    return emailFolders.find((f) => f.id === emailFolder) || emailFolders[0];
+  }, [emailFolders, emailFolder]);
+
   // Send message via Chat Bubble bar (WhatsApp / Messenger / Quick Email)
   const send = async (event) => {
-    event.preventDefault();
+    event?.preventDefault();
     if (!selected || (!draft.trim() && !attachment) || sending) return;
     setSending(true);
     setError('');
@@ -800,19 +1318,29 @@ export default function ConversationsPage() {
         messageType = attachment.type.startsWith('image/')
           ? 'image'
           : attachment.type.startsWith('video/')
-          ? 'video'
-          : attachment.type.startsWith('audio/')
-          ? 'audio'
-          : 'document';
+            ? 'video'
+            : attachment.type.startsWith('audio/')
+              ? 'audio'
+              : 'document';
       }
+
+      let finalContent = draft.trim();
+      if (replyingTo) {
+        const quotedSender = replyingTo.sender_type === 'staff' ? 'You' : (selected.clients?.name || selected.channel_client_id || 'User');
+        const parsedReplied = parseMessageContent(replyingTo.content);
+        const quotedText = (parsedReplied.body || '').replace(/\n/g, ' ').substring(0, 80);
+        finalContent = `[Reply: ${quotedSender}: ${quotedText}]\n\n${finalContent}`;
+      }
+
       await conversationService.sendMessage(selected.conversation_id, {
-        content: draft.trim(),
+        content: finalContent,
         media_url: mediaUrl,
         media_source: 'system_storage',
         message_type: messageType,
       });
       setDraft('');
       setAttachment(null);
+      setReplyingTo(null);
       await loadMessages(selected);
       await loadConversations(activeChannel);
     } catch (requestError) {
@@ -915,8 +1443,8 @@ export default function ConversationsPage() {
   const badgeBgClass = isWhatsApp
     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
     : isEmail
-    ? 'bg-violet-50 text-violet-700 border-violet-200'
-    : 'bg-blue-50 text-blue-700 border-blue-200';
+      ? 'bg-violet-50 text-violet-700 border-violet-200'
+      : 'bg-blue-50 text-blue-700 border-blue-200';
 
   const clientDisplayName = selected?.clients?.name ||
     (isWhatsApp && selected?.channel_client_id ? `+${selected.channel_client_id}` : (selected?.channel_client_id || (isWhatsApp ? 'WhatsApp User' : isEmail ? 'Email Contact' : 'Facebook user')));
@@ -926,35 +1454,35 @@ export default function ConversationsPage() {
       {/* Top Header Bar */}
       <header className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Conversations</h1>
-            
+
             {isWhatsAppConnected && waPhoneNumber && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 Linked: +{waPhoneNumber}
               </span>
             )}
             {isEmail && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-800">
-                <span className="h-2 w-2 rounded-full bg-violet-500" />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
+                <span className="h-2 w-2 rounded-full bg-blue-500" />
                 Gmail: {emailStatus.email || 'messiorasolutions@gmail.com'}
               </span>
             )}
             {activeChannel === 'messenger' && messengerStatus.connected && messengerStatus.pageName && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
                 <span className="h-2 w-2 rounded-full bg-blue-500" />
                 Page: {messengerStatus.pageName}
               </span>
             )}
             {activeChannel === 'messenger' && messengerStatus.configured && !messengerStatus.connected && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800" title={messengerStatus.error || 'Token expired'}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 shadow-2xs" title={messengerStatus.error || 'Token expired'}>
                 <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                 Token Expired / Reconnect Needed
               </span>
             )}
             {activeChannel === 'messenger' && !messengerStatus.configured && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 shadow-2xs">
                 Setup Required
               </span>
             )}
@@ -963,12 +1491,12 @@ export default function ConversationsPage() {
             Manage incoming {config.label} conversations from one workspace.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {isWhatsAppConnected && (
             <button
               type="button"
               onClick={handleDisconnectWhatsApp}
-              className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 bg-white text-rose-600 text-xs font-semibold hover:bg-rose-50 hover:border-rose-300 transition-all cursor-pointer shadow-2xs"
               title="Unlink Phone"
             >
               Unlink Device
@@ -978,32 +1506,32 @@ export default function ConversationsPage() {
             <>
               <button
                 type="button"
-                onClick={handleOpenComposeNew}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-violet-700 transition"
-                title="Compose New Email"
+                onClick={handleSyncEmails}
+                disabled={emailSyncing}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs shrink-0 disabled:opacity-50"
+                title="Sync New Emails"
               >
-                <Plus className="h-3.5 w-3.5" />
-                Compose Email
+                <RefreshCw className={`w-3.5 h-3.5 text-slate-600 ${emailSyncing ? 'animate-spin text-blue-600' : ''}`} />
+                <span>{emailSyncing ? 'Syncing...' : 'Sync Emails'}</span>
               </button>
               <button
                 type="button"
-                onClick={handleSyncEmails}
-                disabled={emailSyncing}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-xs font-semibold text-violet-700 hover:bg-violet-100 transition disabled:opacity-50"
-                title="Sync New Emails"
+                onClick={handleOpenComposeNew}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
+                title="Compose New Email"
               >
-                <RefreshCw className={`h-3.5 w-3.5 ${emailSyncing ? 'animate-spin' : ''}`} />
-                {emailSyncing ? 'Checking...' : 'Sync Emails'}
+                <Plus className="w-3.5 h-3.5 text-blue-600" />
+                <span>Compose Email</span>
               </button>
             </>
           )}
           <button
             type="button"
             onClick={() => loadConversations(activeChannel)}
-            className="rounded-xl border border-slate-200 p-2.5 text-slate-600 hover:bg-slate-50"
+            className="p-2 rounded-xl border border-blue-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50/40 transition-colors cursor-pointer shrink-0 shadow-2xs"
             title="Refresh"
           >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
         </div>
       </header>
@@ -1020,16 +1548,15 @@ export default function ConversationsPage() {
                 setActiveChannel(id);
                 setSelected(null);
               }}
-              className={`flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition shadow-2xs ${
-                isActive
-                  ? item.activeClass
-                  : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-              }`}
+              className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-semibold transition cursor-pointer shadow-2xs ${isActive
+                ? item.activeClass
+                : 'border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-900'
+                }`}
             >
               {renderChannelIcon(id)}
               <span>{item.label}</span>
               {isActive && (
-                <span className="text-xs opacity-75 font-medium">({counts.current})</span>
+                <span className="text-[11px] opacity-80 font-bold">({counts.current})</span>
               )}
             </button>
           );
@@ -1047,16 +1574,16 @@ export default function ConversationsPage() {
       )}
 
       {activeChannel === 'messenger' && messengerStatus.configured && !messengerStatus.connected && (
-        <div className="flex items-start justify-between rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 shadow-xs">
+        <div className="flex items-start justify-between rounded-2xl border border-amber-300 bg-amber-50/70 p-4 text-xs text-amber-900 shadow-2xs">
           <div className="flex gap-2.5">
             <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
             <div>
-              <p className="font-semibold text-amber-950">Facebook Messenger Needs Reconnection (Access Token Expired)</p>
+              <p className="font-bold text-amber-950">Facebook Messenger Needs Reconnection (Access Token Expired)</p>
               <p className="mt-0.5 text-amber-800">
                 {messengerStatus.error || 'The Facebook Page Access Token configured in backend/.env has expired or was revoked by Facebook.'}
               </p>
               <p className="mt-1 font-medium text-amber-700">
-                To fix: Open Meta for Developers &rarr; Graph API Explorer / Page Access Tokens, generate a fresh Page Access Token, and set <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">FACEBOOK_PAGE_ACCESS_TOKEN</code> in <code className="bg-amber-100 px-1 py-0.5 rounded text-amber-900 font-mono">backend/.env</code>.
+                To fix: Open Meta for Developers &rarr; Graph API Explorer / Page Access Tokens, generate a fresh Page Access Token, and set <code className="bg-amber-100/80 px-1 py-0.5 rounded text-amber-900 font-mono">FACEBOOK_PAGE_ACCESS_TOKEN</code> in <code className="bg-amber-100/80 px-1 py-0.5 rounded text-amber-900 font-mono">backend/.env</code>.
               </p>
             </div>
           </div>
@@ -1064,9 +1591,14 @@ export default function ConversationsPage() {
       )}
 
       {error && (
-        <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError('')}><X className="h-4 w-4" /></button>
+        <div className="flex items-center justify-between rounded-2xl border border-rose-200 bg-rose-50/70 px-4 py-2.5 text-xs font-semibold text-rose-800 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button type="button" onClick={() => setError('')} className="p-1 hover:bg-rose-100 rounded text-rose-600 cursor-pointer">
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       )}
 
@@ -1137,73 +1669,110 @@ export default function ConversationsPage() {
         </div>
       ) : (
         /* Main Workspace: Left Sidebar + Right Conversation Pane */
-        <main className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:grid-cols-[330px_minmax(0,1fr)]">
+        <main className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xs lg:grid-cols-[330px_minmax(0,1fr)]">
           {/* Left Sidebar */}
           <aside className="flex flex-col border-b border-slate-200 lg:border-b-0 lg:border-r">
             {/* Search Input Bar */}
-            <div className="border-b border-slate-100 p-3">
-              <div className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 bg-slate-50/50">
-                <Search className="h-4 w-4 text-slate-400 shrink-0" />
+            <div className="border-b border-slate-100 p-3 space-y-2.5">
+              <div className="relative w-full group">
+                <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
+                  type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder={`Search ${config.label} messages`}
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                  placeholder={`Search ${config.label} messages...`}
+                  className="w-full pl-9 pr-8 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-medium text-slate-700 placeholder:text-slate-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-xs"
                 />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1 rounded-md transition-all cursor-pointer"
+                    title="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
 
-              {/* Email Filter Buttons: Inbox, Sent, Draft */}
+              {/* Email Filter Dropdown Selector */}
               {isEmail && (
-                <div className="mt-2.5 flex items-center gap-1">
+                <div className="relative">
                   <button
                     type="button"
-                    onClick={() => handleSelectEmailFolder('inbox')}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition ${
-                      emailFolder === 'inbox'
-                        ? 'bg-violet-100 text-violet-800 border border-violet-200 shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                    onClick={() => setIsFolderDropdownOpen((prev) => !prev)}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/90 hover:border-blue-400 rounded-xl text-xs font-semibold text-slate-800 transition cursor-pointer shadow-2xs"
                   >
-                    <Inbox className="h-3.5 w-3.5" />
-                    Inbox
-                    <span className="rounded-full bg-violet-200 px-1.5 py-0.2 text-[10px] font-bold text-violet-800">
-                      {inboxConversations.length}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectEmailFolder('sent')}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition ${
-                      emailFolder === 'sent'
-                        ? 'bg-violet-100 text-violet-800 border border-violet-200 shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Send className="h-3.5 w-3.5" />
-                    Sent
-                    <span className="rounded-full bg-slate-100 px-1.5 py-0.2 text-[10px] text-slate-600">
-                      {sentConversations.length}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleSelectEmailFolder('draft')}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition ${
-                      emailFolder === 'draft'
-                        ? 'bg-violet-100 text-violet-800 border border-violet-200 shadow-xs'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    Draft
-                    {draftsList.length > 0 && (
-                      <span className="rounded-full bg-slate-200 px-1.5 py-0.2 text-[10px] text-slate-700">
-                        {draftsList.length}
+                    <div className="flex items-center gap-2 truncate">
+                      <span className="font-bold text-slate-900 text-xs truncate">
+                        {currentFolder.label}
                       </span>
-                    )}
+                      <span className="rounded-full bg-slate-200/80 px-2 py-0.2 text-[10px] font-bold text-slate-700">
+                        {currentFolder.count}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-slate-500 text-xs shrink-0">
+                      <span className="text-[11px] font-semibold text-slate-600">Filter</span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 transition-transform duration-200 ${isFolderDropdownOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'
+                          }`}
+                      />
+                    </div>
                   </button>
+
+                  {/* Dropdown Menu Modal */}
+                  {isFolderDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-30"
+                        onClick={() => setIsFolderDropdownOpen(false)}
+                      />
+                      <div className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden py-1 divide-y divide-slate-100 animate-in fade-in slide-in-from-top-1 duration-150">
+                        {emailFolders.map((folder) => {
+                          const isSelected = emailFolder === folder.id;
+                          return (
+                            <button
+                              key={folder.id}
+                              type="button"
+                              onClick={() => {
+                                handleSelectEmailFolder(folder.id);
+                                setIsFolderDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left transition cursor-pointer ${isSelected ? 'bg-blue-50/70 text-blue-900' : 'hover:bg-slate-50 text-slate-700'
+                                }`}
+                            >
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-900">{folder.label}</span>
+                                  {isSelected && (
+                                    <span className="rounded-md bg-blue-100 px-1.5 py-0.2 text-[9px] font-bold text-blue-800 uppercase tracking-wider">
+                                      Active
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                  {folder.subtitle}
+                                </p>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${isSelected
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-slate-100 text-slate-700'
+                                    }`}
+                                >
+                                  {folder.count}
+                                </span>
+                                {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1212,9 +1781,7 @@ export default function ConversationsPage() {
             <div className="flex-1 overflow-y-auto max-h-[34rem]">
               {loading ? (
                 <div className="flex justify-center p-8">
-                  <LoaderCircle className={`h-5 w-5 animate-spin ${
-                    isWhatsApp ? 'text-emerald-600' : isEmail ? 'text-violet-600' : 'text-blue-600'
-                  }`} />
+                  <LoaderCircle className="h-5 w-5 animate-spin text-blue-600" />
                 </div>
               ) : isEmail && emailFolder === 'draft' ? (
                 /* Saved Drafts View */
@@ -1226,10 +1793,10 @@ export default function ConversationsPage() {
                     <button
                       type="button"
                       onClick={handleOpenComposeNew}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-violet-700"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 px-3 py-1.5 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 shadow-2xs transition cursor-pointer"
                     >
-                      <Plus className="h-3.5 w-3.5" />
-                      New Draft
+                      <Plus className="h-3.5 w-3.5 text-blue-600" />
+                      <span>New Draft</span>
                     </button>
                   </div>
                 ) : (
@@ -1237,14 +1804,14 @@ export default function ConversationsPage() {
                     {draftsList.map((d, index) => (
                       <div
                         key={index}
-                        className="group flex items-start justify-between p-3.5 hover:bg-violet-50/50 transition cursor-pointer"
+                        className="group flex items-start justify-between p-3.5 hover:bg-slate-50 transition cursor-pointer"
                         onClick={() => handleOpenDraft(d, index)}
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-xs font-bold text-slate-800">
                             {d.to || '(No Recipient)'}
                           </p>
-                          <p className="truncate text-xs font-semibold text-violet-700">
+                          <p className="truncate text-xs font-semibold text-slate-700">
                             {d.subject || '(Draft No Subject)'}
                           </p>
                           <p className="truncate text-[11px] text-slate-500 mt-0.5">
@@ -1257,7 +1824,7 @@ export default function ConversationsPage() {
                             e.stopPropagation();
                             deleteDraftItem(index);
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-600 p-1 rounded"
+                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-600 p-1 rounded transition cursor-pointer"
                           title="Delete draft"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -1279,7 +1846,7 @@ export default function ConversationsPage() {
             </div>
           </aside>
 
-          {/* Right Pane: Conversation Details / Actual Gmail Dashboard */}
+          {/* Right Pane: Conversation Details */}
           <section className="flex min-h-[34rem] min-w-0 flex-1 flex-col overflow-hidden bg-white">
             {!selected ? (
               <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
@@ -1289,61 +1856,67 @@ export default function ConversationsPage() {
                   <MessageCircle className="mb-3 h-12 w-12 text-slate-200" />
                 )}
                 <p className="font-semibold text-slate-700">Select a conversation</p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-xs text-slate-400">
                   Incoming {config.label} messages will appear here.
                 </p>
               </div>
             ) : (
               <>
-                {/* Header: Displays Thread Subject for Email (Gmail style) or Contact Name for WhatsApp/Messenger */}
-                <div className="border-b border-slate-100 p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-                        isWhatsApp ? 'bg-emerald-100 text-emerald-700' : isEmail ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {isEmail ? <Mail className="h-5 w-5" /> : <UserRound className="h-5 w-5" />}
+                {/* Header */}
+                <div className="border-b border-slate-100 p-4 bg-white">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs font-bold text-xs">
+                        {isEmail ? (
+                          <Mail className="h-5 w-5 text-slate-600" />
+                        ) : isWhatsApp ? (
+                          renderChannelIcon('whatsapp', 'h-5 w-5')
+                        ) : (
+                          renderChannelIcon('messenger', 'h-5 w-5')
+                        )}
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h2 className="truncate font-bold text-slate-900 text-base">
-                            {isEmail ? (threadSubject || clientDisplayName) : clientDisplayName}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h2 className="truncate font-bold text-slate-900 text-sm sm:text-base">
+                            {clientDisplayName}
                           </h2>
                           {isEmail && (
-                            <span className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase ${
-                              emailFolder === 'sent'
-                                ? 'bg-violet-100 text-violet-700 border border-violet-200'
-                                : 'bg-blue-100 text-blue-700 border border-blue-200'
-                            }`}>
-                              {emailFolder === 'sent' ? 'Sent' : 'Inbox'}
+                            <span className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 border border-slate-200">
+                              {emailFolder === 'sent' ? 'Sent' : emailFolder === 'received' ? 'Received' : emailFolder === 'starred' ? 'Starred' : 'Inbox'}
                             </span>
                           )}
                         </div>
-                        <p className="truncate text-xs text-slate-500">
-                          {isWhatsApp
-                            ? `WhatsApp · +${selected.channel_client_id}`
-                            : isEmail
-                            ? `Email · ${selected.channel_client_id}`
-                            : 'Facebook Messenger'}
+                        <p className="truncate text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                          {isWhatsApp ? (
+                            <span>WhatsApp · +{selected.channel_client_id}</span>
+                          ) : isEmail ? (
+                            <span>Email · {selected.channel_client_id}{threadSubject ? ` · ${threadSubject}` : ''}</span>
+                          ) : (
+                            <>
+                              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                              <span>Active on Facebook Messenger</span>
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
                       {selected?.has_opportunity || selected?.opportunity ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-700 shadow-xs">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                          Already Added to Opportunity
+                        <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 shadow-2xs">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                          <span>Already Added to Opportunity</span>
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => setIsOpportunityModalOpen(true)}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs"
                           title="Add Opportunity from this contact"
                         >
-                          <Target className="h-3.5 w-3.5" />
-                          Add Opportunity
+                          <Target className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Add Opportunity</span>
                         </button>
                       )}
 
@@ -1351,24 +1924,22 @@ export default function ConversationsPage() {
                         <button
                           type="button"
                           onClick={() => handleReply({ to: selected.channel_client_id, subject: threadSubject })}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-violet-700 transition"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 bg-blue-50/40 text-blue-900 text-xs font-semibold hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs shrink-0"
                           title="Open Email Composer"
                         >
-                          <Plus className="h-3.5 w-3.5" />
-                          Compose / Reply
+                          <Plus className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Compose / Reply</span>
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Messages Body Area: Authentic Gmail Dashboard for Email; Chat Bubbles for WhatsApp/Messenger */}
+                {/* Messages Body Area */}
                 <div className="flex-1 min-w-0 space-y-4 overflow-y-auto overflow-x-hidden bg-slate-50/50 p-4">
                   {messagesLoading ? (
                     <div className="flex justify-center p-8">
-                      <LoaderCircle className={`h-5 w-5 animate-spin ${
-                        isWhatsApp ? 'text-emerald-600' : isEmail ? 'text-violet-600' : 'text-blue-600'
-                      }`} />
+                      <LoaderCircle className="h-5 w-5 animate-spin text-blue-600" />
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="flex h-full flex-col items-center justify-center p-8 text-center text-slate-400">
@@ -1376,11 +1947,11 @@ export default function ConversationsPage() {
                       <p className="text-xs">No messages in this thread yet.</p>
                     </div>
                   ) : isEmail ? (
-                    /* Actual Gmail Right Dashboard Layout */
+                    /* Email Layout */
                     <div className="space-y-4 min-w-0 max-w-full">
                       {/* Sent Folder toggle banner if full thread has client messages too */}
                       {emailFolder === 'sent' && messages.some((m) => m.sender_type === 'client') && (
-                        <div className="flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-2 text-xs text-violet-800">
+                        <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-700 shadow-2xs">
                           <span>
                             {showFullThreadInSent
                               ? `Viewing full thread (${messages.length} total messages)`
@@ -1389,195 +1960,440 @@ export default function ConversationsPage() {
                           <button
                             type="button"
                             onClick={() => setShowFullThreadInSent((prev) => !prev)}
-                            className="font-semibold underline hover:text-violet-900 transition"
+                            className="font-semibold underline hover:text-slate-900 transition cursor-pointer"
                           >
                             {showFullThreadInSent ? 'Show sent only' : 'View full thread with replies'}
                           </button>
                         </div>
                       )}
 
-                      {(emailFolder === 'sent' && !showFullThreadInSent
-                        ? messages.filter((m) => m.sender_type === 'staff')
-                        : messages
-                      ).map((message) => {
-                        const isStaff = message.sender_type === 'staff';
-                        const parsed = parseEmailContent(message.content);
-                        const senderName = isStaff ? 'Edugate Global CRM' : (selected.clients?.name || selected.channel_client_id);
-                        const senderEmail = isStaff ? emailStatus.email : selected.channel_client_id;
+                      {emailThreadMessages.length === 0 ? (
+                        <div className="flex h-48 flex-col items-center justify-center p-8 text-center text-slate-400">
+                          <Mail className="mb-2 h-8 w-8 text-slate-300" />
+                          <p className="text-xs">
+                            {emailFolder === 'received'
+                              ? 'No received emails in this thread.'
+                              : emailFolder === 'sent'
+                                ? 'No sent emails in this thread.'
+                                : emailFolder === 'starred'
+                                  ? 'No starred emails in this thread.'
+                                  : 'No messages in this thread yet.'}
+                          </p>
+                        </div>
+                      ) : (
+                        emailThreadMessages.map((message) => {
+                          const isStaff = message.sender_type === 'staff';
+                          const parsed = parseEmailContent(message.content);
+                          const senderName = isStaff ? 'Edugate Global CRM' : (selected.clients?.name || selected.channel_client_id);
+                          const senderEmail = isStaff ? emailStatus.email : selected.channel_client_id;
+                          const recipientName = isStaff ? (selected.clients?.name || selected.channel_client_id) : 'Edugate Global CRM';
+                          const recipientEmail = isStaff ? selected.channel_client_id : emailStatus.email;
+                          const isStarred = starredEmails.some((item) => item.messageId === message.message_id);
+                          const isDetailsOpen = openDetailsMessageId === message.message_id;
 
-                        return (
-                          <div
-                            key={message.message_id}
-                            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300 min-w-0 max-w-full overflow-hidden"
-                          >
-                            {/* Email Sender Row */}
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold text-sm ${
-                                  isStaff ? 'bg-violet-600 text-white' : 'bg-blue-600 text-white'
-                                }`}>
-                                  {senderName[0]?.toUpperCase() || 'E'}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 truncate">
-                                    <span className="text-sm font-bold text-slate-900 truncate">{senderName}</span>
-                                    <span className="text-xs text-slate-500 truncate">&lt;{senderEmail}&gt;</span>
-                                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                                      isStaff ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'
+                          return (
+                            <div
+                              key={message.message_id}
+                              className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-2xs transition hover:border-slate-300 min-w-0 max-w-full overflow-hidden"
+                            >
+                              {/* Email Sender Row */}
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold text-xs text-white shadow-2xs ${isStaff ? 'bg-slate-800' : 'bg-blue-800'
                                     }`}>
-                                      {isStaff ? 'Sent' : 'Received'}
-                                    </span>
+                                    {senderName[0]?.toUpperCase() || 'E'}
                                   </div>
-                                  <div className="flex items-center gap-1 text-xs text-slate-400">
-                                    <span>to {isStaff ? selected.channel_client_id : 'me'}</span>
-                                    <ChevronDown className="h-3 w-3" />
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 truncate">
+                                      <span className="text-xs font-bold text-slate-900 truncate">{senderName}</span>
+                                      <span className="text-xs text-slate-500 truncate">&lt;{senderEmail}&gt;</span>
+                                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${isStaff ? 'bg-slate-100 text-slate-700 border border-slate-200' : 'bg-blue-50 text-blue-800 border border-blue-200'
+                                        }`}>
+                                        {isStaff ? 'Sent' : 'Received'}
+                                      </span>
+                                    </div>
+                                    <div className="relative">
+                                      <button
+                                        type="button"
+                                        onClick={() => setOpenDetailsMessageId(isDetailsOpen ? null : message.message_id)}
+                                        className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 mt-0.5 cursor-pointer hover:underline transition"
+                                        title="Click to view details"
+                                      >
+                                        <span>to {isStaff ? selected.channel_client_id : 'me'}</span>
+                                        <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isDetailsOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                                      </button>
+
+                                      {isDetailsOpen && (
+                                        <div className="mt-2.5 rounded-xl border border-slate-200 bg-slate-50/95 p-3.5 text-xs text-slate-700 shadow-sm space-y-2 max-w-md">
+                                          <div className="flex items-center justify-between border-b border-slate-200/70 pb-1.5">
+                                            <span className="font-bold text-slate-900">Email Details</span>
+                                            <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isStaff ? 'bg-slate-200/80 text-slate-800' : 'bg-blue-100 text-blue-900'
+                                              }`}>
+                                              {isStaff ? 'Sent Email' : 'Received Email'}
+                                            </span>
+                                          </div>
+                                          <div className="grid grid-cols-[72px_1fr] gap-1.5 items-baseline">
+                                            <span className="font-semibold text-slate-500">From:</span>
+                                            <span className="font-medium text-slate-900 break-all">{senderName} &lt;{senderEmail}&gt;</span>
+                                          </div>
+                                          <div className="grid grid-cols-[72px_1fr] gap-1.5 items-baseline">
+                                            <span className="font-semibold text-slate-500">To:</span>
+                                            <span className="font-medium text-slate-900 break-all">{recipientName} &lt;{recipientEmail}&gt;</span>
+                                          </div>
+                                          <div className="grid grid-cols-[72px_1fr] gap-1.5 items-baseline">
+                                            <span className="font-semibold text-slate-500">Date & Time:</span>
+                                            <span className="text-slate-800 font-medium">{formatEmailDate(message.created_at)}</span>
+                                          </div>
+                                          <div className="grid grid-cols-[72px_1fr] gap-1.5 items-baseline">
+                                            <span className="font-semibold text-slate-500">Subject:</span>
+                                            <span className="text-slate-800 font-medium">{parsed.subject || threadSubject || '(No Subject)'}</span>
+                                          </div>
+                                          <div className="grid grid-cols-[72px_1fr] gap-1.5 items-baseline">
+                                            <span className="font-semibold text-slate-500">Direction:</span>
+                                            <span className="text-slate-800">
+                                              {isStaff ? 'Sent (Staff to Student)' : 'Received (Student to Edugate CRM)'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-xs text-slate-400 shrink-0">
+                                  <time>{formatEmailDate(message.created_at)}</time>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleStarMessage(message)}
+                                    className={`transition cursor-pointer text-xs ${isStarred
+                                      ? 'px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200/80 border border-slate-200 shadow-2xs'
+                                      : 'p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md'
+                                      }`}
+                                    title={isStarred ? 'Click to remove from saved list' : 'Add to saved list'}
+                                  >
+                                    {isStarred ? (
+                                      <span className="text-[11px] font-semibold text-black">
+                                        Already added to saved list
+                                      </span>
+                                    ) : (
+                                      <Star className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReply({ to: senderEmail, subject: parsed.subject || threadSubject })}
+                                    className="p-1 hover:text-slate-800 rounded cursor-pointer"
+                                    title="Reply"
+                                  >
+                                    <Reply className="h-4 w-4" />
+                                  </button>
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 text-xs text-slate-400 shrink-0">
-                                <time>{formatEmailDate(message.created_at)}</time>
-                                <button type="button" className="p-1 hover:text-amber-500 rounded" title="Star">
-                                  <Star className="h-4 w-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleReply({ to: senderEmail, subject: parsed.subject || threadSubject })}
-                                  className="p-1 hover:text-slate-800 rounded"
-                                  title="Reply"
-                                >
-                                  <Reply className="h-4 w-4" />
-                                </button>
+                              {/* Email Message Content */}
+                              <div className="mt-4 text-xs leading-relaxed text-slate-800 whitespace-pre-wrap break-words [word-break:break-word] overflow-x-auto max-h-[500px] overflow-y-auto">
+                                {parsed.body || '(No text content)'}
                               </div>
-                            </div>
 
-                            {/* Email Message Content: Fixed size and wrapped so big content does not stretch screen */}
-                            <div className="mt-4 text-sm leading-relaxed text-slate-800 whitespace-pre-wrap break-words [word-break:break-word] overflow-x-auto max-h-[500px] overflow-y-auto">
-                              {parsed.body || '(No text content)'}
-                            </div>
-
-                            {/* Downloadable Attachment Preview */}
-                            {message.media_url && (
-                              <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 max-w-md">
-                                <div className="flex items-center gap-3 truncate">
-                                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
-                                    <FileText className="h-5 w-5" />
+                              {/* Downloadable Attachment Preview */}
+                              {message.media_url && (
+                                <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3 max-w-md shadow-2xs">
+                                  <div className="flex items-center gap-3 truncate">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 shadow-2xs">
+                                      <FileText className="h-5 w-5" />
+                                    </div>
+                                    <div className="truncate">
+                                      <p className="truncate text-xs font-semibold text-slate-800">
+                                        {message.media_url.split('/').pop() || 'Email Attachment'}
+                                      </p>
+                                      <span className="text-[10px] text-slate-400">Downloadable attachment</span>
+                                    </div>
                                   </div>
-                                  <div className="truncate">
-                                    <p className="truncate text-xs font-semibold text-slate-800">
-                                      {message.media_url.split('/').pop() || 'Email Attachment'}
-                                    </p>
-                                    <span className="text-[10px] text-slate-400">Downloadable attachment</span>
-                                  </div>
+                                  <a
+                                    href={message.media_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-2xs transition"
+                                  >
+                                    <Download className="h-3.5 w-3.5" />
+                                    <span>Download</span>
+                                  </a>
                                 </div>
-                                <a
-                                  href={message.media_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  download
-                                  className="inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-violet-700 transition"
-                                >
-                                  <Download className="h-3.5 w-3.5" />
-                                  Download
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
 
-                      {/* Bottom Quick Reply & Forward Buttons (Gmail Style) */}
-                      <div className="flex items-center gap-3 pt-2">
+                      {/* Bottom Quick Reply & Forward Buttons */}
+                      <div className="flex items-center gap-2.5 pt-2">
                         <button
                           type="button"
                           onClick={() => handleReply({ to: selected.channel_client_id, subject: threadSubject })}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs"
                         >
-                          <Reply className="h-4 w-4" />
-                          Reply
+                          <Reply className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Reply</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleForward({ subject: threadSubject, content: messages[messages.length - 1]?.content })}
-                          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-xs"
+                          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs"
                         >
-                          <Forward className="h-4 w-4" />
-                          Forward
+                          <Forward className="w-3.5 h-3.5 text-slate-600" />
+                          <span>Forward</span>
                         </button>
                       </div>
                     </div>
                   ) : (
                     /* WhatsApp & Messenger Bubble Chat View */
-                    messages.map((message) => {
-                      const isStaff = message.sender_type === 'staff';
-                      const content = message.content || '';
+                    <div className="space-y-3 p-2">
+                      {messages.map((message) => {
+                        const isStaff = message.sender_type === 'staff';
+                        const rawContent = message.content || '';
+                        const parsed = parseMessageContent(rawContent);
+                        const isThumbsUpOnly = parsed.body.trim() === '👍';
+                        const clientName = selected.clients?.name || selected.channel_client_id || 'User';
+                        const senderInitial = isStaff ? 'E' : (clientName[0]?.toUpperCase() || 'U');
+                        const reactions = messageReactions[message.message_id] || [];
+                        const isReactionPickerOpen = activeReactionPickerId === message.message_id;
 
-                      return (
-                        <div key={message.message_id} className={`flex ${isStaff ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-xs ${
-                            isStaff
-                              ? isWhatsApp
-                                ? 'rounded-br-sm bg-emerald-600 text-white'
-                                : 'rounded-br-sm bg-blue-600 text-white'
-                              : 'rounded-bl-sm bg-white text-slate-800 border border-slate-100'
-                          }`}>
-                            {content && (
-                              <p className="whitespace-pre-wrap leading-relaxed text-xs">
-                                {content}
-                              </p>
-                            )}
-
-                            {message.media_url && (
-                              <div className={`mt-3 flex items-center justify-between gap-3 rounded-xl p-2.5 ${
-                                isStaff ? 'bg-white/10 text-white' : 'bg-slate-50 border border-slate-200 text-slate-800'
-                              }`}>
-                                <div className="flex items-center gap-2 truncate">
-                                  <FileText className={`h-4 w-4 shrink-0 ${isStaff ? 'text-white' : 'text-emerald-600'}`} />
-                                  <span className="truncate text-xs font-medium">Attachment</span>
-                                </div>
-                                <a
-                                  href={message.media_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  download
-                                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold shadow-xs transition ${
-                                    isStaff
-                                      ? 'bg-white text-emerald-700 hover:bg-slate-100'
-                                      : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                                  }`}
-                                >
-                                  <Download className="h-3 w-3" />
-                                  Download
-                                </a>
+                        return (
+                          <div
+                            key={message.message_id}
+                            className={`group relative flex items-end gap-2 ${isStaff ? 'justify-end' : 'justify-start'
+                              }`}
+                          >
+                            {/* Inbound Customer Avatar */}
+                            {!isStaff && (
+                              <div
+                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-700 font-bold text-[11px] select-none mb-1 shadow-2xs"
+                                title={clientName}
+                              >
+                                {senderInitial}
                               </div>
                             )}
 
-                            <div className={`mt-1.5 flex items-center justify-end gap-1 text-[10px] ${
-                              isStaff
-                                ? isWhatsApp ? 'text-emerald-100' : 'text-blue-100'
-                                : 'text-slate-400'
-                            }`}>
-                              {new Date(message.created_at).toLocaleString()}
-                              {isStaff && <CheckCheck className="h-3 w-3" />}
+                            {/* Floating Action Bar on Hover (For Staff on left, For Client on right) */}
+                            {isStaff && (
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-0.5 bg-white/95 backdrop-blur-xs border border-slate-200 shadow-2xs rounded-full p-0.5 mr-1 self-center relative z-20">
+                                <button
+                                  type="button"
+                                  onClick={() => setReplyingTo(message)}
+                                  className="p-1 text-slate-500 hover:text-[#0084ff] hover:bg-slate-100 rounded-full transition cursor-pointer"
+                                  title="Reply to message"
+                                >
+                                  <Reply className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveReactionPickerId(isReactionPickerOpen ? null : message.message_id)}
+                                  className="p-1 text-slate-500 hover:text-amber-500 hover:bg-slate-100 rounded-full transition cursor-pointer"
+                                  title="React with emoji"
+                                >
+                                  <Smile className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Message Bubble Container */}
+                            <div className="relative max-w-[80%] sm:max-w-[70%]">
+                              {/* Messenger Reaction Picker Popover */}
+                              {isReactionPickerOpen && (
+                                <div
+                                  className={`absolute -top-11 ${isStaff ? 'right-0' : 'left-0'
+                                    } z-30 flex items-center gap-1.5 bg-white px-2.5 py-1.5 rounded-full shadow-lg border border-slate-200 animate-in zoom-in-95 duration-150`}
+                                >
+                                  {MESSENGER_REACTIONS.map((r) => {
+                                    const hasSelected = reactions.includes(r.emoji);
+                                    return (
+                                      <button
+                                        key={r.emoji}
+                                        type="button"
+                                        onClick={() => handleToggleReaction(message.message_id, r.emoji)}
+                                        className={`text-base hover:scale-130 transition-transform cursor-pointer p-0.5 ${hasSelected ? 'scale-110 drop-shadow-xs' : ''
+                                          }`}
+                                        title={r.label}
+                                      >
+                                        {r.emoji}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Quoted Reply Preview inside bubble */}
+                              {parsed.replyQuote && (
+                                <div
+                                  className={`mb-1 flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] border-l-2 ${isStaff
+                                    ? 'bg-blue-600/60 text-blue-100 border-white/60'
+                                    : 'bg-slate-200/90 text-slate-700 border-slate-400'
+                                    }`}
+                                >
+                                  <Reply className="h-3 w-3 shrink-0" />
+                                  <span className="truncate">
+                                    <strong>{parsed.replyQuote.sender}:</strong> {parsed.replyQuote.text}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Message Content: Thumbs Up or Normal Text Bubble */}
+                              {isThumbsUpOnly ? (
+                                <div className="py-1 px-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleReaction(message.message_id, '👍')}
+                                    className="hover:scale-115 active:scale-95 transition-transform cursor-pointer block"
+                                    title="Thumbs up"
+                                  >
+                                    <ThumbsUp className="h-10 w-10 text-[#0084ff] fill-[#0084ff] drop-shadow-xs" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div
+                                  className={`px-3.5 py-2 text-[13px] leading-relaxed shadow-2xs ${isStaff
+                                    ? 'rounded-[18px] rounded-br-[4px] bg-[#0084ff] text-white'
+                                    : 'rounded-[18px] rounded-bl-[4px] bg-[#f0f2f5] text-[#050505]'
+                                    }`}
+                                >
+                                  {parsed.body && (
+                                    <p className="whitespace-pre-wrap break-words">
+                                      {parsed.body}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Downloadable Media Attachment */}
+                              {message.media_url && (
+                                <div
+                                  className={`mt-1.5 flex items-center justify-between gap-3 rounded-xl p-2.5 text-xs ${isStaff
+                                    ? 'bg-blue-600/70 text-white'
+                                    : 'bg-slate-200/80 text-slate-800'
+                                    }`}
+                                >
+                                  <div className="flex items-center gap-2 truncate">
+                                    <FileText className="h-4 w-4 shrink-0" />
+                                    <span className="truncate font-medium">Attachment</span>
+                                  </div>
+                                  <a
+                                    href={message.media_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    download
+                                    className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-semibold text-slate-900 shadow-xs hover:bg-slate-100 transition"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    <span>Download</span>
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* Attached Reactions Badge overlapping bubble */}
+                              {reactions.length > 0 && (
+                                <div
+                                  onClick={() => setActiveReactionPickerId(isReactionPickerOpen ? null : message.message_id)}
+                                  className={`absolute -bottom-2 ${isStaff ? 'right-2' : 'left-2'
+                                    } z-10 flex items-center gap-0.5 rounded-full border border-slate-200 bg-white px-1.5 py-0.5 shadow-xs text-xs cursor-pointer hover:scale-105 transition`}
+                                  title="Reactions"
+                                >
+                                  {reactions.map((emoji, idx) => (
+                                    <span key={idx} className="text-xs">{emoji}</span>
+                                  ))}
+                                  {reactions.length > 1 && (
+                                    <span className="text-[10px] font-bold text-slate-500 ml-0.5">{reactions.length}</span>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Time & Delivery Check */}
+                              <div
+                                className={`mt-1 flex items-center gap-1 text-[10px] text-slate-400 ${isStaff ? 'justify-end pr-1' : 'justify-start pl-1'
+                                  }`}
+                              >
+                                <span>
+                                  {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                {isStaff && <CheckCheck className="h-3 w-3 text-[#0084ff]" />}
+                              </div>
                             </div>
+
+                            {/* Floating Action Bar on Hover (For Client on right) */}
+                            {!isStaff && (
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex items-center gap-0.5 bg-white/95 backdrop-blur-xs border border-slate-200 shadow-2xs rounded-full p-0.5 ml-1 self-center relative z-20">
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveReactionPickerId(isReactionPickerOpen ? null : message.message_id)}
+                                  className="p-1 text-slate-500 hover:text-amber-500 hover:bg-slate-100 rounded-full transition cursor-pointer"
+                                  title="React with emoji"
+                                >
+                                  <Smile className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setReplyingTo(message)}
+                                  className="p-1 text-slate-500 hover:text-[#0084ff] hover:bg-slate-100 rounded-full transition cursor-pointer"
+                                  title="Reply to message"
+                                >
+                                  <Reply className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      );
-                    })
+                        );
+                      })}
+                    </div>
                   )}
                   <div ref={messagesEnd} />
                 </div>
 
-                {/* Bottom Quick Reply Bar (WhatsApp & Messenger only - Email replies via Compose/Reply modal) */}
+                {/* Bottom Messenger Reply & Action Bar */}
                 {!isEmail && (
-                  <form onSubmit={send} className="border-t border-slate-100 p-3 bg-white">
-                    {attachment && (
-                      <div className="mb-2 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                        <span className="truncate">{attachment.name}</span>
-                        <button type="button" onClick={() => setAttachment(null)}><X className="h-4 w-4" /></button>
+                  <div className="border-t border-slate-200/90 bg-white">
+                    {/* Replying Banner Preview */}
+                    {replyingTo && (
+                      <div className="flex items-center justify-between border-b border-slate-200/70 bg-[#f0f2f5] px-4 py-2 text-xs animate-in slide-in-from-bottom-2 duration-150">
+                        <div className="flex items-center gap-2 truncate">
+                          <Reply className="h-3.5 w-3.5 text-[#0084ff] shrink-0" />
+                          <span className="text-slate-500">
+                            Replying to <strong className="text-slate-900">{replyingTo.sender_type === 'staff' ? 'yourself' : (selected.clients?.name || selected.channel_client_id)}</strong>:
+                          </span>
+                          <span className="truncate italic text-slate-600 max-w-xs">
+                            “{parseMessageContent(replyingTo.content).body.replace(/\n/g, ' ').substring(0, 50)}”
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo(null)}
+                          className="rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700 transition cursor-pointer"
+                          title="Cancel reply"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     )}
-                    <div className="flex items-end gap-2">
+
+                    {/* Attachment preview banner */}
+                    {attachment && (
+                      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-700">
+                        <div className="flex items-center gap-2 truncate">
+                          <FileText className="h-4 w-4 text-blue-600 shrink-0" />
+                          <span className="truncate font-medium">{attachment.name}</span>
+                          <span className="text-slate-400">({(attachment.size / 1024).toFixed(1)} KB)</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setAttachment(null)}
+                          className="text-slate-400 hover:text-slate-700 cursor-pointer p-1"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Authentic Messenger Input Container */}
+                    <form onSubmit={send} className="flex items-center gap-2 px-3 py-2.5">
                       <input
                         ref={fileInput}
                         type="file"
@@ -1585,39 +2401,67 @@ export default function ConversationsPage() {
                         hidden
                         onChange={(event) => setAttachment(event.target.files?.[0] || null)}
                       />
+
+                      {/* Attach Photo / Media */}
                       <button
                         type="button"
                         onClick={() => fileInput.current?.click()}
-                        className="rounded-xl p-2.5 text-slate-500 hover:bg-slate-100"
-                        title="Attach media"
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#0084ff] hover:bg-blue-50 transition cursor-pointer shrink-0"
+                        title="Attach photos or files"
                       >
                         <ImagePlus className="h-5 w-5" />
                       </button>
-                      <textarea
-                        value={draft}
-                        onChange={(event) => setDraft(event.target.value)}
-                        rows="1"
-                        placeholder={`Write a ${config.label} reply...`}
-                        className={`max-h-28 min-h-[42px] flex-1 resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none ${
-                          isWhatsApp
-                            ? 'focus:border-emerald-500'
-                            : 'focus:border-blue-500'
-                        }`}
-                      />
+
+                      {/* Insert Smile / Emoji */}
                       <button
-                        type="submit"
-                        disabled={sending || (!draft.trim() && !attachment)}
-                        className={`rounded-xl p-2.5 text-white disabled:cursor-not-allowed disabled:opacity-50 transition ${
-                          isWhatsApp
-                            ? 'bg-emerald-600 hover:bg-emerald-700'
-                            : 'bg-blue-600 hover:bg-blue-700'
-                        }`}
-                        title="Send"
+                        type="button"
+                        onClick={() => setDraft((prev) => prev + '😊')}
+                        className="flex h-9 w-9 items-center justify-center rounded-full text-[#0084ff] hover:bg-blue-50 transition cursor-pointer shrink-0"
+                        title="Insert emoji"
                       >
-                        <Send className="h-5 w-5" />
+                        <Smile className="h-5 w-5" />
                       </button>
-                    </div>
-                  </form>
+
+                      {/* Pill Input Box */}
+                      <div className="flex-1 flex items-center rounded-full bg-[#f0f2f5] hover:bg-[#e4e6eb] focus-within:bg-white focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 border border-transparent px-4 py-1.5 transition">
+                        <input
+                          type="text"
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              send(e);
+                            }
+                          }}
+                          placeholder={activeChannel === 'messenger' ? 'Aa' : `Write a ${config.label} reply...`}
+                          className="w-full bg-transparent text-xs text-slate-800 outline-none placeholder:text-slate-400"
+                        />
+                      </div>
+
+                      {/* Dynamic Send vs Thumbs Up Button */}
+                      {draft.trim() || attachment ? (
+                        <button
+                          type="submit"
+                          disabled={sending}
+                          className="flex h-9 w-9 items-center justify-center rounded-full bg-[#0084ff] hover:bg-[#0073e6] text-white shadow-xs transition hover:scale-105 active:scale-95 cursor-pointer shrink-0 disabled:opacity-50"
+                          title="Send message"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={sendThumbsUp}
+                          disabled={sending}
+                          className="flex h-9 w-9 items-center justify-center rounded-full text-[#0084ff] hover:bg-blue-50 hover:scale-115 active:scale-90 transition cursor-pointer shrink-0 disabled:opacity-50"
+                          title="Send a thumbs up 👍"
+                        >
+                          <ThumbsUp className="h-5 w-5 fill-[#0084ff]" />
+                        </button>
+                      )}
+                    </form>
+                  </div>
                 )}
               </>
             )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReferrerService from '../../../../services/Admin/referrerService';
 import useAuth from '../../../../hooks/Auth/useAuth';
 import authService from '../../../../services/Auth/authService';
+import Button from '../../../ui/Button';
 import { X, Loader2, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
 
 const REASON_OPTIONS = [

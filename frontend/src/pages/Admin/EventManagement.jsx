@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import useEvent, { formatEventId } from '../../hooks/Admin/Event/useEvent';
 import EventAddModal from '../../components/Modals/Admin/Event/EventAddModal';
 import EventUpdateModal from '../../components/Modals/Admin/Event/EventUpdateModal';
 import EventDetailModal from '../../components/Modals/Admin/Event/EventDetailModal';
+import EventDeleteModal from '../../components/Modals/Admin/Event/EventDeleteModal';
 import Button from '../../components/ui/Button';
 import Badge from '../../components/ui/Badge';
 import { COLORS } from '../../constants/colors';
@@ -55,6 +56,7 @@ export default function EventManagement() {
   } = useEvent();
   const usersList = useSelector((state) => state.users?.users || []);
   const clientsList = useSelector((state) => state.client?.list || []);
+  const [eventToDelete, setEventToDelete] = useState(null);
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
@@ -118,7 +120,7 @@ export default function EventManagement() {
             <Search className="w-4 h-4 text-blue-600 group-focus-within:text-[#1E3A8A] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" strokeWidth={2.2} />
             <input
               type="text"
-              placeholder="Search events by title or reason..."
+              placeholder="Search events by title, ID, or reason..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -139,47 +141,6 @@ export default function EventManagement() {
               </button>
             )}
           </div>
-
-          <div className="hidden md:block h-6 w-[1px] bg-slate-200"></div>
-
-          {/* Find By Event ID Form */}
-          <form onSubmit={handleFindById} className="flex items-center w-full md:w-auto relative group">
-            <div className="relative flex-1 md:w-64">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 font-mono text-[10px] font-bold border border-blue-200/80 pointer-events-none select-none">
-                ID
-              </span>
-              <input
-                type="text"
-                placeholder="e.g. EDG-0001"
-                value={findIdInput}
-                onChange={(e) => setFindIdInput(e.target.value)}
-                style={{
-                  backgroundColor: COLORS.background,
-                  borderColor: COLORS.border,
-                  color: COLORS.foreground,
-                }}
-                className="w-full pl-11 pr-20 py-2 border rounded-xl text-xs font-mono font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-2xs hover:border-slate-300"
-              />
-              {findIdInput && (
-                <button
-                  type="button"
-                  onClick={() => setFindIdInput('')}
-                  className="absolute right-16 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md transition-colors cursor-pointer"
-                  title="Clear ID search"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={isFinding || !findIdInput.trim()}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 bg-slate-100 hover:bg-[#1E3A8A] hover:text-white text-slate-700 rounded-lg text-[10.5px] font-bold tracking-wider transition-all disabled:opacity-40 disabled:hover:bg-slate-100 disabled:hover:text-slate-700 disabled:cursor-not-allowed flex items-center gap-1 border border-slate-200 cursor-pointer shadow-2xs active:scale-95"
-              >
-                {isFinding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />}
-                <span>FIND</span>
-              </button>
-            </div>
-          </form>
         </div>
 
         <div className="text-xs font-medium text-slate-500 hidden lg:block px-2">
@@ -308,7 +269,7 @@ export default function EventManagement() {
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteEvent(e.event_id, e.title)}
+                        onClick={() => setEventToDelete(e)}
                         style={{ color: COLORS.muted, borderColor: COLORS.border }}
                         className="p-1.5 rounded-lg border hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                         title="Delete Event"
@@ -324,7 +285,7 @@ export default function EventManagement() {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Slide-over Side Drawers & Password-Verified Delete Modal */}
       <EventAddModal
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
@@ -347,6 +308,17 @@ export default function EventManagement() {
         event={detailEvent}
         onClose={() => setDetailEvent(null)}
         onEdit={(e) => setEditingEvent(e)}
+        onDelete={(e) => setEventToDelete(e)}
+      />
+
+      <EventDeleteModal
+        isOpen={!!eventToDelete}
+        event={eventToDelete}
+        onClose={() => setEventToDelete(null)}
+        onConfirm={async (ev) => {
+          await handleDeleteEvent(ev.event_id);
+        }}
+        submitting={submitting}
       />
     </div>
   );

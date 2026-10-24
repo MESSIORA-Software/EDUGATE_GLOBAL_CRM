@@ -98,7 +98,6 @@ export default function useMedia() {
   };
 
   const deleteMedia = async (id, provider) => {
-    if (!window.confirm('Are you sure you want to delete this file?')) return;
     try {
       const googleAccessToken = provider === 'google_drive' ? localStorage.getItem('google_access_token') : null;
       await mediaService.deleteMedia(id, googleAccessToken);
@@ -108,8 +107,10 @@ export default function useMedia() {
       } else {
         fetchMedia(currentPage);
       }
+      return true;
     } catch (err) {
       showToast(err.message || 'Delete failed', 'error');
+      throw err;
     }
   };
 

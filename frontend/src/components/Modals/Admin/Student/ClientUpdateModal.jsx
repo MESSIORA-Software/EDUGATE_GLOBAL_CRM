@@ -318,9 +318,6 @@ export default function ClientUpdateModal({ isOpen, client, onClose, onSuccess }
                         <Award className="w-4 h-4 text-amber-600" />
                         Select Referee / Referrer <span className="text-rose-500">*</span>
                       </label>
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
-                        10 Pts Per Student
-                      </span>
                     </div>
 
                     <select
