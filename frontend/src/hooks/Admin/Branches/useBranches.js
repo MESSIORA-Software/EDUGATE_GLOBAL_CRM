@@ -8,6 +8,7 @@ import {
   fetchUsersByBranch,
   findBranchById,
 } from '../../../actions/Admin/branchAction';
+import { fetchUsers } from '../../../actions/Admin/userActions';
 
 
 export default function useBranches() {
@@ -24,6 +25,8 @@ export default function useBranches() {
     usersLoading = false,
     error = null,
   } = useSelector((state) => state.branch ?? {});
+
+  const { list: users = [] } = useSelector((state) => state.users ?? {});
 
   const submitting = adding || updating || deleting;
 
@@ -51,11 +54,13 @@ export default function useBranches() {
   // ── Load on mount ──────────────────────────────────────────
   useEffect(() => {
     dispatch(fetchBranches());
+    dispatch(fetchUsers());
   }, [dispatch]);
 
   // ── Refresh ────────────────────────────────────────────────
   const handleRefresh = useCallback(() => {
     dispatch(fetchBranches());
+    dispatch(fetchUsers());
     showToast('Branch list refreshed');
   }, [dispatch, showToast]);
 
@@ -136,6 +141,30 @@ export default function useBranches() {
   const totalCount  = branches.length;
   const activeCount = branches.length;
 
+  const adminUsers = useMemo(() => {
+    return (users || []).filter((u) => {
+      const r = String(u.role_id || u.role || '').toUpperCase();
+      return r.includes('ADMIN') || r.includes('SUPER') || r === 'MANAGER';
+    });
+  }, [users]);
+
+  const getAllocatedAdminForBranch = useCallback(
+    (branch) => {
+      if (!branch) return null;
+      if (branch.allocated_admin) return branch.allocated_admin;
+      const bId = branch.branch_id ?? branch.id;
+      return (
+        (users || []).find((u) => {
+          const matchesBranch = String(u.branch_id || u.branch) === String(bId);
+          const r = String(u.role_id || u.role || '').toUpperCase();
+          const isAdminRole = r.includes('ADMIN') || r.includes('SUPER') || r === 'MANAGER';
+          return matchesBranch && isAdminRole;
+        }) || null
+      );
+    },
+    [users]
+  );
+
   const filteredBranches = useMemo(() => {
     if (!searchTerm.trim()) return [...branches];
     const q = searchTerm.toLowerCase().trim();
@@ -173,7 +202,10 @@ export default function useBranches() {
     usersBranch,   setUsersBranch,
     deletingBranch, setDeletingBranch,
 
-    // Users
+    // Users & Admin allocation
+    users,
+    adminUsers,
+    getAllocatedAdminForBranch,
     branchUsers,
     usersLoading,
     handleViewBranchUsers,

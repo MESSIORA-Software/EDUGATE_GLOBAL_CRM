@@ -5,8 +5,8 @@ export const BranchController = {
 
 async createBranch(req, res, next) {
     try {
-        const { name, address, phone, status } = req.body; 
-        const newBranch = await BranchService.createBranch({ name, address, phone, status });
+        const { name, address, phone, status, admin_id } = req.body; 
+        const newBranch = await BranchService.createBranch({ name, address, phone, status, admin_id });
         res.status(201).json({
             status: 'success',
             message: 'Branch created successfully',
@@ -52,14 +52,14 @@ async getBranchById(req, res, next) {
 },
  async updateBranch(req, res, next) {
         try {
-            const { branch_id, name, address, phone, status } = req.body; 
+            const { branch_id, name, address, phone, status, admin_id } = req.body; 
             if (!branch_id) {
                 return res.status(400).json({
                     status: 'error',
                     message: 'Field "branch_id" is required in request body.',
                 });
             }
-            const updatedBranch = await BranchService.updateBranch(branch_id, { name, address, phone, status });
+            const updatedBranch = await BranchService.updateBranch(branch_id, { name, address, phone, status, admin_id });
             res.status(200).json({
                 status: 'success',
                 message: 'Branch updated successfully',

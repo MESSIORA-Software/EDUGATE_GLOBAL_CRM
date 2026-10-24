@@ -1,4 +1,5 @@
 import { userService } from '../services/UsersService.js';
+import { config } from '../config/index.js';
 
 export const usersController = {
     async getAll(req, res, next) {
@@ -85,7 +86,34 @@ export const usersController = {
                     message: 'Field "user_id" is required in request body.',
                 });
             }
-            const updatePayload = { branch_id, name, email, role_id, status };
+
+            // Only administrators are allowed to change user roles or account status
+            let finalRoleId = role_id;
+            let finalStatus = status;
+
+            if (req.user) {
+                const requesterRole = String(req.user.role_id || req.user.role || '').toUpperCase();
+                const isRequesterAdmin = config.roles.adminRoleIds.some(
+                    (adminRole) => requesterRole.includes(adminRole.toUpperCase()) || requesterRole.endsWith('ADMIN')
+                );
+
+                if (!isRequesterAdmin) {
+                    const existingUser = await userService.getUserById(user_id);
+                    if (existingUser) {
+                        if (role_id !== undefined && String(role_id) !== String(existingUser.role_id)) {
+                            return res.status(403).json({
+                                status: 'error',
+                                message: 'Access denied: Only administrators can modify user roles.',
+                            });
+                        }
+                        // Non-admins retain their existing role and status
+                        finalRoleId = existingUser.role_id;
+                        finalStatus = existingUser.status;
+                    }
+                }
+            }
+
+            const updatePayload = { branch_id, name, email, role_id: finalRoleId, status: finalStatus };
             const finalPassword = password_hash !== undefined ? password_hash : password;
             if (finalPassword !== undefined) {
                 updatePayload.password_hash = finalPassword;

@@ -4,14 +4,21 @@ import { addBranch } from '../../../../actions/Admin/branchAction';
 import Button from '../../../ui/Button';
 import { X, AlertCircle } from 'lucide-react';
 
-export default function BranchAddModal({ isOpen, onClose, onSuccess }) {
+export default function BranchAddModal({ isOpen, adminUsers = [], onClose, onSuccess }) {
   const dispatch = useDispatch();
   const { adding } = useSelector((state) => state.branch ?? {});
+  const { list: allUsers = [] } = useSelector((state) => state.users ?? {});
+
+  const availableAdmins = adminUsers.length > 0 ? adminUsers : allUsers.filter((u) => {
+    const r = String(u.role_id || u.role || '').toUpperCase();
+    return r.includes('ADMIN') || r.includes('SUPER') || r === 'MANAGER';
+  });
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState('Active');
+  const [adminId, setAdminId] = useState('');
   const [submitError, setSubmitError] = useState('');
 
   if (!isOpen) return null;
@@ -34,6 +41,7 @@ export default function BranchAddModal({ isOpen, onClose, onSuccess }) {
     setAddress('');
     setPhone('');
     setStatus('Active');
+    setAdminId('');
     setSubmitError('');
   };
 
@@ -63,7 +71,9 @@ export default function BranchAddModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
-    const res = await dispatch(addBranch(trimmedName, trimmedAddress, trimmedPhone, status));
+    const res = await dispatch(
+      addBranch(trimmedName, trimmedAddress, trimmedPhone, status, adminId ? Number(adminId) || adminId : null)
+    );
     if (res?.success) {
       resetForm();
       onSuccess?.(`Branch "${trimmedName}" created successfully!`);
@@ -172,6 +182,28 @@ export default function BranchAddModal({ isOpen, onClose, onSuccess }) {
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
+              </div>
+
+              {/* Allocated Branch Admin */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Allocated Branch Admin
+                </label>
+                <select
+                  value={adminId}
+                  onChange={(e) => setAdminId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600 transition-all shadow-2xs cursor-pointer"
+                >
+                  <option value="">-- No Admin Allocated (Assign Later) --</option>
+                  {availableAdmins.map((admin) => (
+                    <option key={admin.user_id || admin.id} value={admin.user_id || admin.id}>
+                      {admin.name} ({admin.email || admin.role_id})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-400 font-normal">
+                  Optionally designate an administrator to manage operations for this branch
+                </p>
               </div>
 
               {/* Contact Phone */}
