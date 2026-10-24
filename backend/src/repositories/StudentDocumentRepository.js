@@ -99,22 +99,30 @@ export const StudentDocumentRepository = {
      */
     async countByClientIds(clientIds) {
         if (!clientIds || clientIds.length === 0) return [];
-        const { data, error } = await supabase
-            .from('student_documents')
-            .select('client_id', { count: 'exact', head: false })
-            .in('client_id', clientIds);
+        try {
+            const { data, error } = await supabase
+                .from('student_documents')
+                .select('client_id')
+                .in('client_id', clientIds);
 
-        if (error) throw error;
+            if (error) {
+                console.warn('[StudentDocumentRepository] countByClientIds warning:', error.message);
+                return [];
+            }
 
-        // Aggregate in JS (Supabase JS SDK doesn't expose GROUP BY directly)
-        const counts = {};
-        for (const row of data || []) {
-            counts[row.client_id] = (counts[row.client_id] || 0) + 1;
+            // Aggregate in JS (Supabase JS SDK doesn't expose GROUP BY directly)
+            const counts = {};
+            for (const row of data || []) {
+                counts[row.client_id] = (counts[row.client_id] || 0) + 1;
+            }
+            return Object.entries(counts).map(([cid, cnt]) => ({
+                client_id: parseInt(cid),
+                count: cnt,
+            }));
+        } catch (e) {
+            console.warn('[StudentDocumentRepository] countByClientIds caught:', e.message);
+            return [];
         }
-        return Object.entries(counts).map(([cid, cnt]) => ({
-            client_id: parseInt(cid),
-            count: cnt,
-        }));
     },
 
     /**

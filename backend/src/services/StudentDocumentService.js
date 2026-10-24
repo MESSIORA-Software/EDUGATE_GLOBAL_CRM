@@ -11,32 +11,55 @@ import { roleRepository } from '../repositories/UserRoleRepository.js';
 
 /**
  * Resolve whether the current user is an admin/super admin.
- * Mirrors the same logic in MediaService.
+ * Robustly checks both role_id (e.g. EDUGATE_SUPER_ADMIN, SUPER_ADMIN, EDUGATE_ADMIN, ADMIN)
+ * and role_name if available.
  */
 async function isAdmin(currentUser) {
+    if (!currentUser) return false;
+
+    const roleId = String(currentUser.role_id || '').toUpperCase();
+    if (
+        roleId === 'SUPER_ADMIN' ||
+        roleId === 'ADMIN' ||
+        roleId.endsWith('ADMIN') ||
+        roleId.includes('ADMIN') ||
+        roleId.includes('SUPER') ||
+        roleId === 'MANAGER'
+    ) {
+        return true;
+    }
+
     let roleName = currentUser.role_name;
     if (!roleName && currentUser.role_id) {
-        const role = await roleRepository.findById(currentUser.role_id);
-        roleName = role?.role_name;
+        try {
+            const role = await roleRepository.findById(currentUser.role_id);
+            roleName = role?.role_name;
+        } catch (_) {}
     }
-    const normalized = (roleName || '').toLowerCase();
-    return normalized === 'admin' || normalized === 'super admin';
+
+    const normalized = String(roleName || '').toLowerCase();
+    return (
+        normalized === 'admin' ||
+        normalized === 'super admin' ||
+        normalized.endsWith('admin') ||
+        normalized.includes('admin') ||
+        normalized.includes('super')
+    );
 }
 
 /**
  * Verify that the current user is authorized to access documents for a given client.
  * - Admins: always authorized.
- * - Staff: authorized only if the client is assigned to them via
- *   opportunities.assigned_staff_id OR conversations.assigned_staff_id.
+ * - Staff: authorized if the client is assigned to them via
+ *   opportunities.assigned_staff_id, conversations.assigned_staff_id, or created_by.
  *
  * Throws 403 if not authorized.
- * Throws 404 if client doesn't exist (via Supabase query returning empty).
  */
 async function assertStudentAccess(currentUser, clientId) {
     const adminUser = await isAdmin(currentUser);
     if (adminUser) return; // Admin sees everything
 
-    // Confirm the client is assigned to this staff member
+    // Confirm the client is assigned to this staff member via opportunities
     const { data: opps } = await supabase
         .from('opportunities')
         .select('client_id')
@@ -46,6 +69,7 @@ async function assertStudentAccess(currentUser, clientId) {
 
     if (opps && opps.length > 0) return; // Authorized via opportunity
 
+    // Confirm the client is assigned to this staff member via conversations
     const { data: convs } = await supabase
         .from('conversations')
         .select('client_id')
@@ -54,6 +78,20 @@ async function assertStudentAccess(currentUser, clientId) {
         .limit(1);
 
     if (convs && convs.length > 0) return; // Authorized via conversation
+
+    // Confirm if client was created by this staff member
+    try {
+        const { data: client } = await supabase
+            .from('clients')
+            .select('client_id, created_by')
+            .eq('client_id', clientId)
+            .limit(1)
+            .maybeSingle();
+
+        if (client && Number(client.created_by) === Number(currentUser.user_id)) {
+            return; // Authorized as creator
+        }
+    } catch (_) {}
 
     const err = new Error('You are not authorized to access documents for this student.');
     err.statusCode = 403;
@@ -146,13 +184,25 @@ export const StudentDocumentService = {
             .range(from, to);
 
         // Apply search filters
-        if (clientId) {
-            const numId = parseInt(clientId);
-            if (!isNaN(numId)) {
-                query = query.eq('client_id', numId);
+        let parsedId = null;
+        if (clientId !== undefined && clientId !== null && clientId !== '') {
+            const digits = String(clientId).replace(/^(std|student|client|cl)?[\s-#_]*/i, '').trim();
+            if (/^\d+$/.test(digits)) {
+                parsedId = parseInt(digits, 10);
             }
+        }
+
+        if (parsedId !== null) {
+            query = query.eq('client_id', parsedId);
         } else if (name) {
-            query = query.ilike('name', `%${name}%`);
+            const trimmedName = String(name).trim();
+            const digits = trimmedName.replace(/^(std|student|client|cl)?[\s-#_]*/i, '').trim();
+            if (/^\d+$/.test(digits)) {
+                const numId = parseInt(digits, 10);
+                query = query.or(`client_id.eq.${numId},name.ilike.%${trimmedName}%`);
+            } else {
+                query = query.ilike('name', `%${trimmedName}%`);
+            }
         }
 
         // Non-admins: restrict to assigned clients
@@ -167,9 +217,19 @@ export const StudentDocumentService = {
                 .select('client_id')
                 .eq('assigned_staff_id', currentUser.user_id);
 
+            let createdClientIds = [];
+            try {
+                const { data: createdClients } = await supabase
+                    .from('clients')
+                    .select('client_id')
+                    .eq('created_by', currentUser.user_id);
+                createdClientIds = (createdClients || []).map(c => c.client_id);
+            } catch (_) {}
+
             const assignedClientIds = Array.from(new Set([
                 ...(opps  || []).map(o => o.client_id),
                 ...(convs || []).map(c => c.client_id),
+                ...createdClientIds,
             ])).filter(Boolean);
 
             if (assignedClientIds.length === 0) {
@@ -181,9 +241,14 @@ export const StudentDocumentService = {
         const { data: clients, error, count } = await query;
         if (error) throw error;
 
-        // Attach document counts
+        // Attach document counts safely
         const clientIds = (clients || []).map(c => c.client_id);
-        const docCounts = await StudentDocumentRepository.countByClientIds(clientIds);
+        let docCounts = [];
+        try {
+            docCounts = await StudentDocumentRepository.countByClientIds(clientIds);
+        } catch (err) {
+            console.warn('[StudentDocumentService] countByClientIds warning:', err.message);
+        }
         const countMap  = Object.fromEntries(docCounts.map(r => [r.client_id, r.count]));
 
         const enriched = (clients || []).map(c => ({

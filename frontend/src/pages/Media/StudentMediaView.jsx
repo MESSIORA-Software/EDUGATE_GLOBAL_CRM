@@ -82,6 +82,11 @@ export default function StudentMediaView() {
     toast,
   } = useStudentDocuments();
 
+  // Load initial accessible students on mount so folders are visible immediately
+  useEffect(() => {
+    searchStudents({ page: 1 });
+  }, [searchStudents]);
+
   // When a student folder is opened, load their documents
   useEffect(() => {
     if (activeStudent) {
@@ -90,13 +95,39 @@ export default function StudentMediaView() {
   }, [activeStudent]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSearch = (e) => {
-    e.preventDefault();
-    setSearchTerm(searchInput.trim());
-    const isNumeric = /^\d+$/.test(searchInput.trim());
+    e?.preventDefault();
+    const raw = searchInput.trim();
+    setSearchTerm(raw);
+    if (!raw) {
+      searchStudents({ page: 1 });
+      return;
+    }
+
+    // Extract digits if input is "1", "#1", "STD-1", "std 1", "Client 1", etc.
+    const digitsOnly = raw.replace(/^(std|student|client|cl)?[\s-#_]*/i, '').trim();
+    const isNumeric = /^\d+$/.test(digitsOnly);
+
     if (isNumeric) {
-      searchStudents({ clientId: searchInput.trim() });
+      searchStudents({ clientId: parseInt(digitsOnly, 10), name: raw, page: 1 });
     } else {
-      searchStudents({ name: searchInput.trim() });
+      searchStudents({ name: raw, page: 1 });
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput('');
+    setSearchTerm('');
+    searchStudents({ page: 1 });
+  };
+
+  const handleStudentPageChange = (targetPage) => {
+    const raw = searchInput.trim();
+    const digitsOnly = raw.replace(/^(std|student|client|cl)?[\s-#_]*/i, '').trim();
+    const isNumeric = /^\d+$/.test(digitsOnly);
+    if (isNumeric) {
+      searchStudents({ clientId: parseInt(digitsOnly, 10), name: raw, page: targetPage });
+    } else {
+      searchStudents({ name: raw || undefined, page: targetPage });
     }
   };
 
@@ -457,11 +488,11 @@ export default function StudentMediaView() {
       {/* Search toolbar */}
       <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
         <form onSubmit={handleSearch} className="flex items-center gap-2.5 flex-wrap">
-          <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <div className="relative flex-1 min-w-[220px] max-w-md">
             <Search className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search by Student ID or Name…"
+              placeholder="Search by Student ID (e.g. 1 or STD-1) or Name…"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full pl-9 pr-9 py-2 border border-blue-200/80 bg-white rounded-xl text-xs text-slate-700 placeholder:text-slate-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-xs"
@@ -469,10 +500,11 @@ export default function StudentMediaView() {
             {searchInput && (
               <button
                 type="button"
-                onClick={() => { setSearchInput(''); setSearchTerm(''); }}
+                onClick={handleClearSearch}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition-all cursor-pointer"
+                title="Clear search"
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
@@ -482,6 +514,15 @@ export default function StudentMediaView() {
           >
             Search Students
           </button>
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={handleClearSearch}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 text-xs font-semibold hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              Show All
+            </button>
+          )}
         </form>
       </div>
 
@@ -497,19 +538,27 @@ export default function StudentMediaView() {
       {studentsLoading ? (
         <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
           <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
-          <p className="font-semibold text-xs">Searching Students…</p>
+          <p className="font-semibold text-xs">Loading Students…</p>
         </div>
       ) : students.length === 0 ? (
         <div className="p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col items-center">
           <UserCircle className="w-12 h-12 mb-3 text-slate-300" />
           <p className="font-bold text-sm text-slate-700">
-            {searchTerm ? 'No Students Found' : 'Search for a Student'}
+            {searchTerm ? 'No Students Found' : 'No Students Available'}
           </p>
           <p className="text-xs mt-1 text-slate-400">
             {searchTerm
-              ? `No students match "${searchTerm}". Try a different name or ID.`
-              : 'Enter a student name or ID above to find their document folder.'}
+              ? `No student found matching "${searchTerm}". Try entering a student ID number (e.g. 1) or full name.`
+              : 'There are currently no accessible student records.'}
           </p>
+          {searchTerm && (
+            <button
+              onClick={handleClearSearch}
+              className="mt-3 px-3.5 py-1.5 rounded-xl border border-blue-300 bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors"
+            >
+              Clear Search and Show All
+            </button>
+          )}
         </div>
       ) : (
         <>
@@ -554,14 +603,14 @@ export default function StudentMediaView() {
               </p>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => searchStudents({ name: searchInput.trim() || undefined, clientId: /^\d+$/.test(searchInput.trim()) ? searchInput.trim() : undefined, page: studentsPage - 1 })}
+                  onClick={() => handleStudentPageChange(studentsPage - 1)}
                   disabled={studentsPage === 1}
                   className="p-1.5 rounded-lg border border-blue-200 text-slate-600 hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => searchStudents({ name: searchInput.trim() || undefined, clientId: /^\d+$/.test(searchInput.trim()) ? searchInput.trim() : undefined, page: studentsPage + 1 })}
+                  onClick={() => handleStudentPageChange(studentsPage + 1)}
                   disabled={studentsPage === studentsTotalPages}
                   className="p-1.5 rounded-lg border border-blue-200 text-slate-600 hover:bg-blue-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
                 >
