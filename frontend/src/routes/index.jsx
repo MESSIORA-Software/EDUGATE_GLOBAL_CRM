@@ -10,6 +10,7 @@ import UsersManagement from '../pages/Admin/UsersManagement';
 import BranchesManagement from '../pages/Admin/BranchesManagement';
 import ClientsManagement from '../pages/Admin/ClientsManagement';
 import StudentPipeline from '../pages/Admin/StudentPipeline';
+import StudentJourneyPage from '../pages/StudentJourney/StudentJourneyPage';
 import ConversationsPage from '../pages/Conversation/ConversationsPage';
 import MediaManagement from '../pages/Media/MediaManagement';
 import GoogleCallback from '../pages/Media/GoogleCallback';
@@ -138,6 +139,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <StudentPipeline />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student-journey"
+        element={
+          <ProtectedRoute>
+            <StudentJourneyPage />
           </ProtectedRoute>
         }
       />

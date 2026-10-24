@@ -27,9 +27,8 @@ export const config = {
     },
 
     // Stable role IDs (user_roles.role_id) treated as administrators.
-    // Never match on display names ("Admin", "Super Administrator", ...).
     roles: {
-        adminRoleIds: ['MANAGER', 'SUPER_ADMIN'],
+        adminRoleIds: ['MANAGER', 'SUPER_ADMIN', 'EDUGATE_SUPER_ADMIN', 'EDUGATE_ADMIN', 'ADMIN'],
     },
 
     // Module 11 — Notifications. The worker endpoint is disabled (503) unless
@@ -66,5 +65,3 @@ export const config = {
         appPassword: process.env.GMAIL_APP_PASSWORD || '',
     },
 };
-
-

@@ -197,7 +197,8 @@ export default function NotificationDropdown({
   }, [isOpen, onClose]);
 
   const handleNotificationClick = (notif) => {
-    if (!notif.is_read && onMarkAsRead) {
+    const isUnread = !notif.is_read && !notif.read_at;
+    if (isUnread && onMarkAsRead) {
       onMarkAsRead(notif.notification_id);
     }
     onClose();

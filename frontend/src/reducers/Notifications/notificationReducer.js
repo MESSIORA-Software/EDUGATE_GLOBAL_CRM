@@ -75,11 +75,16 @@ export default function notificationReducer(state = initialState, action) {
       };
 
     case NOTIFICATION_MARK_READ_SUCCESS: {
-      const targetId = action.payload;
+      const targetId = String(action.payload);
+      let found = false;
       let wasUnread = false;
+
       const updatedList = state.notifications.map((item) => {
-        if (item.notification_id === targetId) {
-          if (!item.is_read) wasUnread = true;
+        if (String(item.notification_id) === targetId) {
+          found = true;
+          if (!item.is_read && !item.read_at) {
+            wasUnread = true;
+          }
           return {
             ...item,
             is_read: true,
@@ -89,10 +94,13 @@ export default function notificationReducer(state = initialState, action) {
         return item;
       });
 
+      // If the item was explicitly unread, or if it wasn't in the currently loaded list, decrement count safely
+      const shouldDecrement = found ? wasUnread : true;
+
       return {
         ...state,
         notifications: updatedList,
-        unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
+        unreadCount: shouldDecrement ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
       };
     }
 
