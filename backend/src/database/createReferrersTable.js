@@ -1,17 +1,10 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { getSanitizedDatabaseUrl } from './dbPool.js';
 dotenv.config();
 
 async function runMigration() {
-  const connectionString =
-    process.env.DATABASE_URL ||
-    'postgresql://postgres:Messiora%40EDU%40123@db.yfgheuhluzejuunsluvb.supabase.co:5432/postgres';
-
-  // Fix unencoded @ in password if needed
-  const sanitizedUrl = connectionString.includes('Messiora@EDU@123')
-    ? connectionString.replace('Messiora@EDU@123', 'Messiora%40EDU%40123')
-    : connectionString;
-
+  const sanitizedUrl = getSanitizedDatabaseUrl(process.env.DATABASE_URL);
   const client = new pg.Client({ connectionString: sanitizedUrl });
 
   try {

@@ -19,6 +19,7 @@ import {
   Calendar,
   Bell,
   Award,
+  Compass,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -44,6 +45,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'User Accounts', path: '/users', icon: Users },
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Student Journey', path: '/student-journey', icon: Compass },
         { name: 'Referrers', path: '/referrers', icon: Award },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
@@ -57,6 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Student Journey', path: '/student-journey', icon: Compass },
         { name: 'Referrers', path: '/referrers', icon: Award },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
@@ -67,6 +70,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
+        { name: 'Student Journey', path: '/student-journey', icon: Compass },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },

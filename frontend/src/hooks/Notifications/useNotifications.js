@@ -107,6 +107,7 @@ export default function useNotifications(options = { autoPoll: true }) {
     async (notificationId) => {
       if (!token || !notificationId) return;
 
+      // Optimistic update in Redux store
       dispatch({
         type: NOTIFICATION_MARK_READ_SUCCESS,
         payload: notificationId,
@@ -114,6 +115,8 @@ export default function useNotifications(options = { autoPoll: true }) {
 
       try {
         await notificationService.markAsRead(token, notificationId);
+        // Sync true database count immediately
+        await fetchUnreadCount();
       } catch {
         fetchUnreadCount();
       }
@@ -124,12 +127,15 @@ export default function useNotifications(options = { autoPoll: true }) {
   const markAllAsRead = useCallback(async () => {
     if (!token) return;
 
+    // Optimistic update in Redux store
     dispatch({
       type: NOTIFICATION_MARK_ALL_READ_SUCCESS,
     });
 
     try {
       await notificationService.markAllAsRead(token);
+      // Sync true database count immediately
+      await fetchUnreadCount();
     } catch {
       fetchUnreadCount();
       fetchNotifications(currentParamsRef.current);

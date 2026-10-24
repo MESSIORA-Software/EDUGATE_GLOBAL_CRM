@@ -16,6 +16,7 @@ import NotificationRoutes from './NotificationRoutes.js';
 import InternalNotificationRoutes from './InternalNotificationRoutes.js';
 import ReferrerRoutes from './ReferrerRoutes.js';
 import StudentDocumentRoutes from './StudentDocumentRoutes.js';
+import StudentJourneyRoutes from './StudentJourneyRoutes.js';
 
 const router = Router();
 
@@ -46,5 +47,6 @@ router.use('/notifications', NotificationRoutes);
 router.use('/internal/notifications', InternalNotificationRoutes);
 router.use('/referrers', ReferrerRoutes);
 router.use('/student-documents', StudentDocumentRoutes);
+router.use('/student-journey', StudentJourneyRoutes);
 
 export default router;

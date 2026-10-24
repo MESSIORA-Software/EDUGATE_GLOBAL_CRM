@@ -459,7 +459,7 @@ export default function NotificationsPage() {
                 {group.items.map((notif) => {
                   const visuals = getNotificationVisuals(notif);
                   const Icon = visuals.icon;
-                  const isUnread = !notif.is_read;
+                  const isUnread = !notif.is_read && !notif.read_at;
                   const title = getNotificationTitle(notif);
                   const contextNote = getNotificationContext(notif);
 
