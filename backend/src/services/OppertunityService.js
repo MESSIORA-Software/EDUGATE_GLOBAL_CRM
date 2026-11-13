@@ -14,7 +14,23 @@ export const OppertunityService = {
             updated_by : updated_by,
         };
 
-        return await OppertunityRepository.createOppertunity(oppertunityData);
+        const created = await OppertunityRepository.createOppertunity(oppertunityData);
+
+        // Check if new opportunity qualifies a referred student
+        if (client_id && status_id) {
+            try {
+                const { ReferralService } = await import('./ReferralService.js');
+                await ReferralService.checkAndQualifyReferral({
+                    clientId: Number(client_id),
+                    statusId: Number(status_id),
+                    actorId: created_by,
+                });
+            } catch (qualErr) {
+                console.warn('[OppertunityService] Referral qualification check notice:', qualErr.message);
+            }
+        }
+
+        return created;
     },
 
     async updateOppertunity(opportunity_id, {client_id, assigned_staff_id, status_id, note_id, is_archived, created_by, updated_by }) {
@@ -28,7 +44,35 @@ export const OppertunityService = {
         if (created_by !== undefined) updatedData.created_by = created_by;
         if (updated_by !== undefined) updatedData.updated_by = updated_by;
 
-        return await OppertunityRepository.updateOppertunity(opportunity_id, updatedData);
+        const updated = await OppertunityRepository.updateOppertunity(opportunity_id, updatedData);
+
+        // Whenever stage/status changes, trigger referral qualification check
+        if (status_id !== undefined) {
+            let targetClientId = client_id;
+            if (!targetClientId) {
+                try {
+                    const existing = await OppertunityRepository.getOppertunityById(opportunity_id);
+                    targetClientId = existing?.client_id;
+                } catch (e) {
+                    // ignore
+                }
+            }
+
+            if (targetClientId) {
+                try {
+                    const { ReferralService } = await import('./ReferralService.js');
+                    await ReferralService.checkAndQualifyReferral({
+                        clientId: Number(targetClientId),
+                        statusId: Number(status_id),
+                        actorId: updated_by,
+                    });
+                } catch (qualErr) {
+                    console.warn('[OppertunityService] Referral qualification check notice:', qualErr.message);
+                }
+            }
+        }
+
+        return updated;
 
     },
 
