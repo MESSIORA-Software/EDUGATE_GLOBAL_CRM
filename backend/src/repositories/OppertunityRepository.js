@@ -5,7 +5,9 @@ export const OppertunityRepository = {
     async createOppertunity(oppertunityData) {
         const { data, error } = await supabase
             .from('opportunities')
-            .insert([oppertunityData]);
+            .insert([oppertunityData])
+            .select()
+            .single();
 
         if (error) {
             throw new Error(`Error creating opportunity: ${error.message}`);
@@ -18,7 +20,9 @@ export const OppertunityRepository = {
         const { data, error } = await supabase
             .from('opportunities')
             .update(updatedData)
-            .eq('opportunity_id', opportunity_id);
+            .eq('opportunity_id', opportunity_id)
+            .select()
+            .single();
         if (error) {
             throw new Error(`Error updating opportunity: ${error.message}`);
         }

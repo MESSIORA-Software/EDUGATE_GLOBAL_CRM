@@ -46,6 +46,7 @@ router.use('/calendar', CalendarRoutes);
 router.use('/notifications', NotificationRoutes);
 router.use('/internal/notifications', InternalNotificationRoutes);
 router.use('/referrers', ReferrerRoutes);
+router.use('/referrals', ReferrerRoutes);
 router.use('/student-documents', StudentDocumentRoutes);
 router.use('/student-journey', StudentJourneyRoutes);
 

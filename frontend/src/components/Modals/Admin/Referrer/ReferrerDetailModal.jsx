@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import referrerService from '../../../../services/Admin/referrerService';
+import useAuth from '../../../../hooks/Auth/useAuth';
 import {
   X,
   Mail,
@@ -15,13 +16,20 @@ import {
   Edit2,
   CreditCard,
   AlertCircle,
+  Share2,
 } from 'lucide-react';
 
 export default function ReferrerDetailModal({ isOpen, referrer, onClose, onEdit }) {
+  const { user } = useAuth();
+  const isAdmin = Boolean(
+    user && ['EDUGATE_SUPER_ADMIN', 'SUPER_ADMIN', 'EDUGATE_ADMIN', 'ADMIN'].includes(String(user.role_id || user.role_name || '').toUpperCase())
+  );
+
   const [students, setStudents] = useState([]);
   const [ratePerStudent, setRatePerStudent] = useState(1000);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [copyFeedback, setCopyFeedback] = useState('');
 
   // Settlement & Payout states
   const [payouts, setPayouts] = useState([]);
@@ -102,11 +110,48 @@ export default function ReferrerDetailModal({ isOpen, referrer, onClose, onEdit 
 
   if (!isOpen || !referrer) return null;
 
-  const handleCopy = (text, id) => {
+  const handleCopy = (text, id, msg = 'Copied to clipboard!') => {
     if (!text) return;
-    navigator.clipboard?.writeText(text);
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          document.execCommand('copy');
+        } catch (_) {}
+        document.body.removeChild(textarea);
+      });
+    }
     setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    setCopyFeedback(msg);
+    setTimeout(() => {
+      setCopiedId(null);
+      setCopyFeedback('');
+    }, 2500);
+  };
+
+  const handleShare = async () => {
+    if (!referrer?.referrer_code) return;
+    const link = `${window.location.origin}/register?ref=${encodeURIComponent(referrer.referrer_code)}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Referral Link',
+          text: 'Use my referral link to register.',
+          url: link,
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          handleCopy(link, 'share', 'Referral link copied. You can now share it.');
+        }
+      }
+    } else {
+      handleCopy(link, 'share', 'Referral link copied. You can now share it.');
+    }
   };
 
   const handleSettlePayment = async (e) => {
@@ -188,32 +233,129 @@ export default function ReferrerDetailModal({ isOpen, referrer, onClose, onEdit 
 
           {/* Drawer Body Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50/50">
-            {/* Referrer System ID Indicator */}
-            <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                  Referrer Unique Code
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-blue-900 bg-blue-50/70 border border-blue-200/80 px-3 py-1 rounded-lg shadow-2xs tracking-wider">
+            {/* Real-time Copy Feedback Alert */}
+            {copyFeedback && (
+              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-800 text-xs font-medium animate-in fade-in">
+                <Check className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>{copyFeedback}</span>
+              </div>
+            )}
+
+            {/* Referrer System ID & Sharing Bar */}
+            <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-4">
+              {/* Referral Code Box */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Referral Code
+                </label>
+                <div className="flex items-center justify-between bg-blue-50/70 border border-blue-200/90 rounded-xl p-3 group hover:border-blue-300 transition-colors">
+                  <span className="font-mono text-base font-bold text-blue-900 tracking-wider">
                     {referrer.referrer_code}
                   </span>
                   <button
                     type="button"
-                    onClick={() => handleCopy(referrer.referrer_code, 'ref-code')}
-                    className="p-1 text-slate-400 hover:text-blue-700 hover:bg-slate-100 rounded-md border border-slate-200 transition-colors cursor-pointer"
-                    title="Copy Referrer Code"
+                    onClick={() => handleCopy(referrer.referrer_code, 'code', 'Referral code copied!')}
+                    className="p-1.5 text-blue-700 hover:text-blue-900 hover:bg-blue-100/70 rounded-lg transition-colors cursor-pointer"
+                    title="Copy Code"
                   >
-                    {copiedId === 'ref-code' ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    {copiedId === 'code' ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="w-4 h-4" />
                     )}
                   </button>
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Students created with this code will contribute to this partner's commission payout.
+
+              {/* Referral Link Box */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+                  Referral Link
+                </label>
+                <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl p-3 gap-2 group hover:border-slate-300 transition-colors">
+                  <span className="font-mono text-xs text-slate-700 break-all select-all">
+                    {`${window.location.origin}/register?ref=${encodeURIComponent(referrer.referrer_code)}`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopy(
+                        `${window.location.origin}/register?ref=${encodeURIComponent(referrer.referrer_code)}`,
+                        'link',
+                        'Referral link copied!'
+                      )
+                    }
+                    className="shrink-0 p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-200/70 rounded-lg transition-colors cursor-pointer"
+                    title="Copy Referral Link"
+                  >
+                    {copiedId === 'link' ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Action buttons: [ Copy Code ] [ Copy Link ] */}
+              <div className="grid grid-cols-2 gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => handleCopy(referrer.referrer_code, 'code', 'Referral code copied!')}
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+                >
+                  {copiedId === 'code' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Copied Code</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Copy Code</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleCopy(
+                      `${window.location.origin}/register?ref=${encodeURIComponent(referrer.referrer_code)}`,
+                      'link',
+                      'Referral link copied!'
+                    )
+                  }
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all cursor-pointer shadow-2xs hover:border-slate-300"
+                >
+                  {copiedId === 'link' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Copied Link</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Copy Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Primary Share Action: [ Share Referral Link ] */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>{copiedId === 'share' ? 'Link Copied! Ready to share' : 'Share Referral Link'}</span>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-slate-400 text-center pt-1">
+                Staff can copy the code, copy the direct registration link, or share with the partner.
               </p>
             </div>
 
@@ -283,23 +425,30 @@ export default function ReferrerDetailModal({ isOpen, referrer, onClose, onEdit 
                   {/* Settle Pending Payment Action */}
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
                     {pendingAmount > 0 ? (
-                      <>
-                        <span className="text-[11px] text-slate-500">
-                          Rs. {pendingAmount.toLocaleString()} pending settlement.
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsSettlingPayment(true);
-                            setPayingAmount(String(pendingAmount));
-                            setPayoutError('');
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 text-blue-900 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
-                        >
-                          <CreditCard className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Settle Pending Payment</span>
-                        </button>
-                      </>
+                      isAdmin ? (
+                        <>
+                          <span className="text-[11px] text-slate-500">
+                            Rs. {pendingAmount.toLocaleString()} pending settlement.
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSettlingPayment(true);
+                              setPayingAmount(String(pendingAmount));
+                              setPayoutError('');
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50/50 hover:bg-blue-100/60 text-blue-900 text-xs font-semibold transition-all cursor-pointer shadow-2xs"
+                          >
+                            <CreditCard className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Settle Pending Payment</span>
+                          </button>
+                        </>
+                      ) : (
+                        <div className="text-[11px] font-medium text-amber-700 flex items-center gap-1.5 bg-amber-50 border border-amber-200/80 p-2.5 rounded-xl w-full">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span>Outstanding commission of Rs. {pendingAmount.toLocaleString()} is pending payout. Settlement is restricted to Administrators.</span>
+                        </div>
+                      )
                     ) : totalPayment > 0 ? (
                       <span className="text-[11px] font-medium text-emerald-700 flex items-center gap-1.5">
                         <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -524,13 +673,22 @@ export default function ReferrerDetailModal({ isOpen, referrer, onClose, onEdit 
                           </div>
                           <div className="min-w-0">
                             <p className="font-bold text-slate-900 truncate">{student.name}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                               <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-white text-slate-700 border border-slate-200">
                                 {formattedStudentId}
                               </span>
-                              {student.email && (
-                                <span className="text-[11px] text-slate-400 truncate">
-                                  {student.email}
+                              {student.referral_code && (
+                                <span className="font-mono text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                  {student.referral_code}
+                                </span>
+                              )}
+                              {student.qualification_date && (
+                                <span className="text-[10px] text-slate-400">
+                                  {new Date(student.qualification_date).toLocaleDateString('en-GB', {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}
                                 </span>
                               )}
                             </div>
@@ -538,8 +696,21 @@ export default function ReferrerDetailModal({ isOpen, referrer, onClose, onEdit 
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0 ml-3">
+                          {student.commission_status === 'PAID' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              PAID
+                            </span>
+                          ) : student.commission_status === 'PENDING' ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              PENDING
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                              In Pipeline
+                            </span>
+                          )}
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 border border-slate-200">
-                            +Rs. {ratePerStudent.toLocaleString()}
+                            Rs. {Number(student.commission_amount || ratePerStudent).toLocaleString()}
                           </span>
                           <button
                             type="button"

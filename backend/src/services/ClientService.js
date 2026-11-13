@@ -1,18 +1,34 @@
 import { ClientRepository } from '../repositories/ClientRepository.js';
+import { pool } from '../database/dbPool.js';
 
 export const ClientService = {
 
-async createClient({ name, email, dob, source, referrer_id = null }) {
-    const clientData = {
-        name: name,
-        email: email,
-        dob: dob,
-        source: source,
-        referrer_id: referrer_id ? Number(referrer_id) : null,
-        created_at: new Date()
-    };
+async createClient({ name, email, dob, source, referrer_id = null, referral_code = null }, currentUser = null, requestMeta = {}) {
+    let resolvedCode = referral_code ? String(referral_code).trim() : null;
 
-    return await ClientRepository.createClient(clientData);
+    // Backward-compatibility: If frontend passed referrer_id but not referral_code,
+    // authoritatively look up the active referral code assigned to that referrer.
+    if (!resolvedCode && referrer_id) {
+        const codeRes = await pool.query(
+            `SELECT code FROM public.referral_codes 
+             WHERE referrer_id = $1 AND status = 'ACTIVE' 
+             ORDER BY code_id DESC LIMIT 1;`,
+            [Number(referrer_id)]
+        );
+        if (codeRes.rows.length > 0) {
+            resolvedCode = codeRes.rows[0].code;
+        }
+    }
+
+    return await ClientRepository.createClientWithAtomicReferral({
+        name,
+        email,
+        dob,
+        source,
+        referralCode: resolvedCode,
+        currentUser,
+        requestMeta,
+    });
 },
 
 async getAllClients(currentUser = null) {
