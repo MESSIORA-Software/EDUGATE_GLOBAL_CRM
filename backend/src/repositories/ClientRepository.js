@@ -17,7 +17,7 @@ if (error) throw error;
 async getAllClients(currentUser = null) {
     let query = supabase
         .from('clients')
-        .select('*, referrers ( referrer_id, referrer_code, name, email, phone_number, whatsapp_number )');
+        .select('*');
 
     const isAdmin = currentUser && (
         String(currentUser.role_id || '').toUpperCase() === 'SUPER_ADMIN' ||
@@ -50,19 +50,57 @@ async getAllClients(currentUser = null) {
         query = query.in('client_id', assignedClientIds);
     }
 
-    const { data, error } = await query.order('client_id', { ascending: false });
+    const { data: clients, error } = await query.order('client_id', { ascending: false });
     if (error) throw error;
-    return data;
+    if (!clients || clients.length === 0) return [];
+
+    // Safely attach referrers without PostgREST foreign key relationship conflicts
+    const referrerIds = Array.from(new Set(clients.map(c => c.referrer_id).filter(Boolean)));
+    if (referrerIds.length > 0) {
+        try {
+            const { data: refList } = await supabase
+                .from('referrers')
+                .select('referrer_id, referrer_code, name, email, phone_number, whatsapp_number')
+                .in('referrer_id', referrerIds);
+            
+            const refMap = new Map((refList || []).map(r => [r.referrer_id, r]));
+            return clients.map(c => ({
+                ...c,
+                referrers: refMap.get(c.referrer_id) || null
+            }));
+        } catch {
+            return clients;
+        }
+    }
+
+    return clients;
 },
 
 async getClientById(client_id) {
-    const { data, error } = await supabase
+    const { data: client, error } = await supabase
         .from('clients')
-        .select('*, referrers ( referrer_id, referrer_code, name, email, phone_number, whatsapp_number )')
+        .select('*')
         .eq('client_id', client_id)
         .single();
     if (error) throw error;
-    return data;
+    if (!client) return null;
+
+    if (client.referrer_id) {
+        try {
+            const { data: ref } = await supabase
+                .from('referrers')
+                .select('referrer_id, referrer_code, name, email, phone_number, whatsapp_number')
+                .eq('referrer_id', client.referrer_id)
+                .maybeSingle();
+            client.referrers = ref || null;
+        } catch {
+            client.referrers = null;
+        }
+    } else {
+        client.referrers = null;
+    }
+
+    return client;
 },
 
 async updateClient(client_id, updatedData) {

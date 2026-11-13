@@ -8,6 +8,7 @@ import { fetchClients } from '../../../../actions/Admin/clientAction';
 import { fetchUsers } from '../../../../actions/Admin/userActions';
 import useAuth from '../../../../hooks/Auth/useAuth';
 import { getUserRole, isStaffUser } from '../../../../utils/roleUtils';
+import { getStaffAssignmentQueue, advanceStaffQueue } from '../../../../utils/staffQueueUtils';
 import Button from '../../../ui/Button';
 import {
   X,
@@ -55,6 +56,20 @@ export default function CreateOpportunityModal({
       return isActive && isStaffUser(u);
     });
   }, [staffUsers]);
+
+  // Track queue updates across forms
+  const [queueCounter, setQueueCounter] = useState(0);
+
+  useEffect(() => {
+    const handleQueueChange = () => setQueueCounter((prev) => prev + 1);
+    window.addEventListener('edugate-staff-queue-changed', handleQueueChange);
+    return () => window.removeEventListener('edugate-staff-queue-changed', handleQueueChange);
+  }, []);
+
+  // Compute staff queue order and recommended counselor (FIFO / Round-Robin)
+  const { orderedStaff, recommendedStaff } = useMemo(() => {
+    return getStaffAssignmentQueue(availableStaffUsers, opportunities);
+  }, [availableStaffUsers, opportunities, queueCounter]);
 
   const existingOppClientIds = useMemo(() => {
     return new Set(opportunities.map((o) => Number(o.client_id)));
@@ -149,6 +164,9 @@ export default function CreateOpportunityModal({
     );
 
     if (res?.success) {
+      if (assignedStaffId) {
+        advanceStaffQueue(assignedStaffId);
+      }
       onSuccess?.(`Opportunity created for "${clientName}" successfully!`);
       onClose();
     } else {
@@ -325,9 +343,11 @@ export default function CreateOpportunityModal({
               {/* Assign Staff (Hidden for Staff Users) */}
               {!isStaff && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                    Assign Staff Counselor (Optional)
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Assign Staff Counselor (Optional)
+                    </label>
+                  </div>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-3 pointer-events-none" />
                     <select
@@ -336,16 +356,45 @@ export default function CreateOpportunityModal({
                       className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-2xs cursor-pointer"
                     >
                       <option value="">-- Unassigned (General Pool) --</option>
-                      {availableStaffUsers.map((u) => {
+                      {orderedStaff.map((u) => {
                         const uId = u.user_id || u.id;
+                        const isRecommended =
+                          recommendedStaff &&
+                          String(recommendedStaff.user_id || recommendedStaff.id) === String(uId);
                         return (
                           <option key={uId} value={uId}>
-                            {u.name || u.email} {u.role ? `(${u.role})` : ''} - #{uId}
+                            {u.name || u.email} #{uId} {isRecommended ? '— Recommended (Next in Queue)' : ''}
                           </option>
                         );
                       })}
                     </select>
                   </div>
+
+                  {/* Clean Professional Recommendation Label (No Background Color) */}
+                  {recommendedStaff && (
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5 px-0.5">
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-semibold text-slate-700">Recommended:</span>
+                        <span className="text-slate-900 font-medium">
+                          {recommendedStaff.name || recommendedStaff.email}
+                        </span>
+                        <span className="text-slate-400 font-mono text-[10px]">
+                          (Next in assignment queue)
+                        </span>
+                      </span>
+                      {String(assignedStaffId) !== String(recommendedStaff.user_id || recommendedStaff.id) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAssignedStaffId(String(recommendedStaff.user_id || recommendedStaff.id))
+                          }
+                          className="text-[11px] font-semibold text-slate-700 hover:text-slate-900 underline cursor-pointer"
+                        >
+                          Select Recommended
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

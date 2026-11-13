@@ -71,12 +71,13 @@ export const addClient = (name, email, dob, source, referrer_id = null) => {
     dispatch({ type: CLIENT_ADD_START });
     try {
       const response = await ClientService.createClient(name, email, dob, source, referrer_id);
+      const createdClient = response.data?.data || { name, email, dob, source, referrer_id };
       dispatch({
         type: CLIENT_ADD_SUCCESS,
-        payload: response.data?.data || { name, email, dob, source, referrer_id },
+        payload: createdClient,
       });
       dispatch(fetchClients());
-      return { success: true };
+      return { success: true, data: createdClient };
     } catch (err) {
       const errorMsg = extractError(err);
       dispatch({ type: CLIENT_ADD_FAILURE, payload: errorMsg });
