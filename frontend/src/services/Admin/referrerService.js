@@ -142,6 +142,25 @@ const getPayouts = async (referrerId) => {
   });
 };
 
+// 12. Get Referral Commission Trigger Stage Configuration
+const getTriggerStage = async () => {
+  return apiRequest({
+    method: 'get',
+    url: `${BASE_URL}/referrals/settings/qualification-stage`,
+  });
+};
+
+// 13. Update Referral Commission Trigger Stage Configuration
+const updateTriggerStage = async (stageId) => {
+  return apiRequest({
+    method: 'put',
+    url: `${BASE_URL}/referrals/settings/qualification-stage`,
+    data: {
+      commission_trigger_stage_id: stageId,
+    },
+  });
+};
+
 export default {
   getNextCode,
   createReferrer,
@@ -154,4 +173,11 @@ export default {
   updatePaymentSettings,
   addPayout,
   getPayouts,
+  getTriggerStage,
+  updateTriggerStage,
+  // Section 22 method aliases
+  getReferralSettings: getPaymentSettings,
+  updateReferralSettings: updatePaymentSettings,
+  getReferralTriggerStage: getTriggerStage,
+  updateReferralTriggerStage: updateTriggerStage,
 };

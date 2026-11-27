@@ -7,8 +7,14 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test src/tests/studentJourney.test.js",
-    "reset:notifications": "node src/database/reset_notifications.js"
+    "test": "node --test --test-concurrency=1 src/tests/clientRelationshipDisambiguation.test.js src/tests/referralManagement.test.js src/tests/referralPipelineQualification.test.js",
+    "test:disambiguation": "node --test src/tests/clientRelationshipDisambiguation.test.js",
+    "test:pipeline-referral": "node --test src/tests/referralPipelineQualification.test.js",
+    "test:all": "node --test --test-concurrency=1 src/tests/*.test.js",
+    "test:journey": "node --test src/tests/studentJourney.test.js",
+    "test:referrals": "node --test src/tests/referralManagement.test.js",
+    "reset:notifications": "node src/database/reset_notifications.js",
+    "clean:test-data": "node scripts/clean-referral-test-data.js"
   },
   "keywords": [
     "crm",

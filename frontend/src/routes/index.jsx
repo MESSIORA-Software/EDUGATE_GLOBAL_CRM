@@ -19,6 +19,7 @@ import { getUserRole } from '../utils/roleUtils';
 import EventManagement from '../pages/Admin/EventManagement';
 import NotificationsPage from '../pages/Notifications/NotificationsPage';
 import ReferrersManagement from '../pages/Admin/ReferrersManagement';
+import ReferralSettings from '../pages/Admin/ReferralSettings';
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
@@ -154,8 +155,16 @@ function AppRoutes() {
         path="/referrers"
         element={
           <ProtectedRoute>
+            <ReferrersManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/referral-settings"
+        element={
+          <ProtectedRoute>
             <AdminRoute>
-              <ReferrersManagement />
+              <ReferralSettings />
             </AdminRoute>
           </ProtectedRoute>
         }

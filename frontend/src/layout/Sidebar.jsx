@@ -19,6 +19,7 @@ import {
   Bell,
   Award,
   Compass,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -46,6 +47,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Student Journey', path: '/student-journey', icon: Compass },
         { name: 'Referrers', path: '/referrers', icon: Award },
+        { name: 'Referral Settings', path: '/referral-settings', icon: SlidersHorizontal },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },
@@ -59,6 +61,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Student Journey', path: '/student-journey', icon: Compass },
         { name: 'Referrers', path: '/referrers', icon: Award },
+        { name: 'Referral Settings', path: '/referral-settings', icon: SlidersHorizontal },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },
@@ -69,6 +72,7 @@ export default function Sidebar({ isOpen, onClose }) {
         { name: 'Students / Clients', path: '/clients', icon: UserCheck },
         { name: 'Student Pipeline', path: '/pipeline', icon: Kanban },
         { name: 'Student Journey', path: '/student-journey', icon: Compass },
+        { name: 'Referrers', path: '/referrers', icon: Award },
         { name: 'Conversations', path: '/conversations', icon: MessageSquare },
         { name: 'Media Storage', path: '/media', icon: HardDrive },
         { name: 'Events', path: '/events', icon: Calendar },

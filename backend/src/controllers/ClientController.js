@@ -4,8 +4,16 @@ export const ClientController = {
     
 async createClient(req, res, next) {
     try {
-        const { name, email, dob, source, referrer_id } = req.body;  
-        const newClient = await ClientService.createClient({ name, email, dob, source, referrer_id });
+        const { name, email, dob, source, referrer_id, referral_code } = req.body;  
+        const requestMeta = {
+            ip: req.ip || req.headers['x-forwarded-for'],
+            userAgent: req.headers['user-agent'],
+        };
+        const newClient = await ClientService.createClient(
+            { name, email, dob, source, referrer_id, referral_code }, 
+            req.user,
+            requestMeta
+        );
         res.status(201).json({
             status: 'success',
             message: 'Client created successfully',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import ReferrerService from '../../services/Admin/referrerService';
+import useAuth from '../../hooks/Auth/useAuth';
 import AddReferrerModal from '../../components/Modals/Admin/Referrer/AddReferrerModal';
 import EditReferrerModal from '../../components/Modals/Admin/Referrer/EditReferrerModal';
 import ReferrerDetailModal from '../../components/Modals/Admin/Referrer/ReferrerDetailModal';
@@ -25,15 +26,22 @@ import {
   UserPlus,
   Wallet,
   Calendar,
+  Info,
+  Link,
+  Share2,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 export default function ReferrersManagement() {
+  const { user } = useAuth();
   const [referrers, setReferrers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('ALL');
   const [selectedMonth, setSelectedMonth] = useState('ALL');
   const [toast, setToast] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   // Drawer Modals state
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -41,10 +49,38 @@ export default function ReferrersManagement() {
   const [detailReferrer, setDetailReferrer] = useState(null);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+  const isAdmin = useMemo(() => {
+    if (!user) return false;
+    const r = String(user.role_id || user.role_name || '').toUpperCase();
+    return r.includes('ADMIN') || r.includes('SUPER');
+  }, [user]);
+
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   }, []);
+
+  const handleCopy = (text, id, msg = 'Copied to clipboard!') => {
+    if (!text) return;
+    navigator.clipboard?.writeText(text);
+    setCopiedId(id);
+    showToast(msg, 'success');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleShare = (ref) => {
+    const url = `${window.location.origin}/register?ref=${encodeURIComponent(ref.referrer_code || '')}`;
+    const text = `Join Edugate Global using referral code: ${ref.referrer_code}\n${url}`;
+    if (navigator.share) {
+      navigator.share({
+        title: `Edugate Global Referral - ${ref.name}`,
+        text: text,
+        url: url,
+      }).catch(() => {});
+    } else {
+      handleCopy(url, `share-${ref.referrer_id}`, 'Referral link copied for sharing!');
+    }
+  };
 
   const fetchReferrers = useCallback(async () => {
     try {
@@ -147,14 +183,16 @@ export default function ReferrersManagement() {
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-blue-600' : 'text-slate-600'}`} />
           </button>
-          <button
-            type="button"
-            onClick={() => setIsPaymentModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs shrink-0"
-          >
-            <Wallet className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Manage Payments</span>
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setIsPaymentModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer shadow-2xs shrink-0"
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Manage Payments</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setIsAddOpen(true)}
@@ -177,43 +215,41 @@ export default function ReferrersManagement() {
               placeholder="Search by code, name, phone, address..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-9 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-medium text-slate-700 placeholder:text-slate-400 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all shadow-xs"
+              className="w-full pl-9 pr-8 py-2 bg-slate-50/70 hover:bg-white focus:bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 transition-all"
             />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 p-1 rounded-md transition-all cursor-pointer"
-                title="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Payment Status Filter Dropdown */}
+          {/* Payment Status Filter */}
           <div className="relative w-full sm:w-44">
             <select
               value={paymentStatusFilter}
               onChange={(e) => setPaymentStatusFilter(e.target.value)}
-              className="appearance-none w-full pl-8 pr-8 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-semibold text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-xs"
+              className="appearance-none w-full pl-3 pr-8 py-2 border border-slate-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-2xs"
             >
-              <option value="ALL">All Statuses</option>
+              <option value="ALL">All Payment Status</option>
               <option value="PENDING">Pending Payment</option>
-              <option value="PAID">Paid</option>
               <option value="PARTIALLY_PAID">Partially Paid</option>
+              <option value="PAID">Fully Paid</option>
               <option value="NO_DUE">No Due</option>
             </select>
-            <Filter className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5 pointer-events-none" />
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Month Filter Dropdown */}
+          {/* Month Filter */}
           <div className="relative w-full sm:w-40">
             <select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="appearance-none w-full pl-8 pr-8 py-2 border border-blue-200/80 bg-white rounded-xl text-xs font-semibold text-slate-700 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 cursor-pointer shadow-xs"
+              className="appearance-none w-full pl-3 pr-8 py-2 border border-slate-200 bg-white rounded-xl text-xs font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 cursor-pointer shadow-2xs"
             >
               <option value="ALL">All Months</option>
               <option value="0">January</option>
@@ -229,23 +265,28 @@ export default function ReferrersManagement() {
               <option value="10">November</option>
               <option value="11">December</option>
             </select>
-            <Calendar className="w-3.5 h-3.5 text-blue-500 absolute left-2.5 top-2.5 pointer-events-none" />
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-2.5 pointer-events-none" />
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {(paymentStatusFilter !== 'ALL' || selectedMonth !== 'ALL') && (
+          {(searchTerm || paymentStatusFilter !== 'ALL' || selectedMonth !== 'ALL') && (
             <button
               type="button"
               onClick={() => {
+                setSearchTerm('');
                 setPaymentStatusFilter('ALL');
                 setSelectedMonth('ALL');
               }}
-              className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer px-2 py-1 shrink-0"
-              title="Reset Filters"
+              className="text-xs font-semibold text-rose-600 hover:text-rose-700 px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors"
             >
               Reset Filters
             </button>
           )}
+        </div>
+
+        {/* Counter Badge */}
+        <div className="text-[11px] font-semibold text-slate-500 self-end lg:self-center shrink-0">
+          Showing <span className="text-slate-900 font-bold">{filteredReferrers.length}</span> of{' '}
+          <span className="text-slate-900 font-bold">{referrers.length}</span> referrers
         </div>
       </div>
 
@@ -255,7 +296,7 @@ export default function ReferrersManagement() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                <th className="py-3.5 px-4">Referrer ID</th>
+                <th className="py-3.5 px-4">Referrer Code</th>
                 <th className="py-3.5 px-4">Referrer Name</th>
                 <th className="py-3.5 px-4">Contact Info</th>
                 <th className="py-3.5 px-4">Home Address</th>
@@ -315,9 +356,38 @@ export default function ReferrersManagement() {
                     >
                       {/* Referrer Unique Code */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-mono text-[11px] font-bold text-blue-800 bg-blue-50/80 border border-blue-200/80 px-2 py-0.5 rounded-md inline-block shadow-2xs">
-                          {ref.referrer_code}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono text-[11px] font-bold text-blue-800 bg-blue-50/80 border border-blue-200/80 px-2 py-0.5 rounded-md inline-block shadow-2xs">
+                            {ref.referrer_code}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(ref.referrer_code, `code-${ref.referrer_id}`, 'Referral code copied!')}
+                            className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Copy Code"
+                          >
+                            {copiedId === `code-${ref.referrer_id}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const link = `${window.location.origin}/register?ref=${encodeURIComponent(ref.referrer_code || '')}`;
+                              handleCopy(link, `link-${ref.referrer_id}`, 'Referral link copied!');
+                            }}
+                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                            title="Copy Referral Link"
+                          >
+                            {copiedId === `link-${ref.referrer_id}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Link className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
 
                       {/* Name */}
@@ -418,6 +488,14 @@ export default function ReferrersManagement() {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleShare(ref)}
+                            className="p-1.5 text-slate-400 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                            title="Share Referral Link"
+                          >
+                            <Share2 className="w-4 h-4" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => setDetailReferrer(ref)}

@@ -67,7 +67,7 @@ export const ReferrerController = {
   async updateReferrer(req, res, next) {
     try {
       const referrer_id = req.params.id || req.body.referrer_id;
-      const { name, email, home_address, whatsapp_number, phone_number, note, status } = req.body;
+      const { name, email, home_address, whatsapp_number, phone_number, note, status, payment_per_student } = req.body;
 
       const updated = await ReferrerService.updateReferrer(referrer_id, {
         name,
@@ -77,7 +77,8 @@ export const ReferrerController = {
         phone_number,
         note,
         status,
-      });
+        payment_per_student,
+      }, req.user);
 
       res.status(200).json({
         status: 'success',
