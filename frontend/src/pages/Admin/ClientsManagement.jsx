@@ -28,16 +28,80 @@ import {
   Award,
 } from 'lucide-react';
 
+const getPipelineStatusBadge = (statusName = '') => {
+  const name = String(statusName).toLowerCase();
+  if (name.includes('lead')) {
+    return {
+      badgeClass: 'bg-blue-50 text-blue-800 border-blue-200',
+      dotClass: 'bg-blue-600',
+    };
+  }
+  if (name.includes('contact') || name.includes('inquiry')) {
+    return {
+      badgeClass: 'bg-sky-50 text-sky-800 border-sky-200',
+      dotClass: 'bg-sky-600',
+    };
+  }
+  if (name.includes('review') || name.includes('progress') || name.includes('pending')) {
+    return {
+      badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+      dotClass: 'bg-amber-600',
+    };
+  }
+  if (name.includes('applied') || name.includes('submitted')) {
+    return {
+      badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+      dotClass: 'bg-indigo-600',
+    };
+  }
+  if (name.includes('admit') || name.includes('offer') || name.includes('enrolled') || name.includes('visa') || name.includes('success')) {
+    return {
+      badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      dotClass: 'bg-emerald-600',
+    };
+  }
+  if (name.includes('lost') || name.includes('rejected') || name.includes('cancel')) {
+    return {
+      badgeClass: 'bg-rose-50 text-rose-800 border-rose-200',
+      dotClass: 'bg-rose-600',
+    };
+  }
+  return {
+    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    dotClass: 'bg-emerald-600',
+  };
+};
+
 export default function ClientsManagement() {
   const dispatch = useDispatch();
   const [opportunityClient, setOpportunityClient] = useState(null);
   const [deletingClient, setDeletingClient] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('ALL');
-  const { opportunities = [] } = useSelector((state) => state.pipeline ?? {});
+  const { opportunities = [], statuses = [] } = useSelector((state) => state.pipeline ?? {});
 
   useEffect(() => {
     dispatch(fetchPipelineData());
   }, [dispatch]);
+
+  const clientOpportunityMap = useMemo(() => {
+    const statusMap = new Map();
+    (statuses || []).forEach((s) => {
+      statusMap.set(Number(s.status_id), s);
+    });
+
+    const map = new Map();
+    (opportunities || []).forEach((opp) => {
+      const cId = Number(opp.client_id);
+      const statusObj = statusMap.get(Number(opp.status_id));
+      const statusName = statusObj?.status_name || opp.status_name || 'New Lead';
+      map.set(cId, {
+        ...opp,
+        statusName,
+        statusObj,
+      });
+    });
+    return map;
+  }, [opportunities, statuses]);
 
   const opportunityClientIds = useMemo(() => {
     return new Set(opportunities.map((opp) => Number(opp.client_id)));
@@ -203,7 +267,8 @@ export default function ClientsManagement() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {displayedClients.map((c, index) => {
-                  const hasOpportunity = opportunityClientIds.has(Number(c.client_id));
+                  const clientOpp = clientOpportunityMap.get(Number(c.client_id));
+                  const hasOpportunity = !!clientOpp;
                   const initials = (c.name || 'ST').substring(0, 2).toUpperCase();
                   const formattedClientId = c.client_id
                     ? String(c.client_id).startsWith('EDU_STUDENT_')
@@ -251,20 +316,24 @@ export default function ClientsManagement() {
 
                       {/* 4th Column: Pipeline Status */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
-                        {hasOpportunity ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                            <Check className="w-3 h-3 text-emerald-600" />
-                            In Opportunity
+                        {clientOpp ? (
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                              getPipelineStatusBadge(clientOpp.statusName).badgeClass
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                getPipelineStatusBadge(clientOpp.statusName).dotClass
+                              } shrink-0`}
+                            />
+                            <span>{clientOpp.statusName}</span>
                           </span>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={() => setOpportunityClient(c)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border border-blue-300 bg-blue-50/40 text-blue-900 hover:bg-blue-50 hover:border-blue-600 transition-all cursor-pointer shadow-2xs"
-                          >
-                            <Target className="w-3.5 h-3.5 text-blue-600" />
-                            <span>Create Opportunity</span>
-                          </button>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                            <span>No Opportunity</span>
+                          </span>
                         )}
                       </td>
 
@@ -324,6 +393,7 @@ export default function ClientsManagement() {
         onSuccess={(msg) => {
           showToast(msg);
           handleRefresh();
+          dispatch(fetchPipelineData());
         }}
       />
 
@@ -334,6 +404,7 @@ export default function ClientsManagement() {
         onSuccess={(msg) => {
           showToast(msg);
           handleRefresh();
+          dispatch(fetchPipelineData());
         }}
       />
 
